@@ -1,0 +1,679 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>quantum_safe.protocols.envelope - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/cli.html">CLI reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/types.html">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/protocols.html">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/migrate.html">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for quantum_safe.protocols.envelope</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">quantum_safe.protocols.envelope</span>
+<span class="sd">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">Authenticated encryption envelope: KEM-derived key + AES-256-GCM.</span>
+
+<span class="sd">This is what you use when you want to encrypt data to a recipient&#39;s</span>
+<span class="sd">public key such that:</span>
+<span class="sd">  - Only the holder of the corresponding secret key can decrypt it.</span>
+<span class="sd">  - Any tampering with the ciphertext is detected.</span>
+<span class="sd">  - The algorithm used is recorded in the envelope for future migration.</span>
+<span class="sd">  - The format survives algorithm upgrades via the version field.</span>
+
+<span class="sd">Construction</span>
+<span class="sd">------------</span>
+<span class="sd">For a given recipient public key pk:</span>
+
+<span class="sd">  1. Run HybridKEM.encapsulate(pk) → (kem_ct, shared_secret)</span>
+<span class="sd">  2. Derive enc_key = HKDF(shared_secret, info=&quot;qs-envelope-enc-v1&quot;)</span>
+<span class="sd">  3. Derive mac_key = HKDF(shared_secret, info=&quot;qs-envelope-mac-v1&quot;)</span>
+<span class="sd">     (mac_key is currently unused — AES-GCM provides authentication —</span>
+<span class="sd">      but we derive it for forward compatibility with MAC-then-encrypt schemes)</span>
+<span class="sd">  4. Generate a random 12-byte nonce.</span>
+<span class="sd">  5. aead_ct = AES-256-GCM.encrypt(enc_key, nonce, plaintext, aad=metadata)</span>
+<span class="sd">     where metadata = version || algo || kem_ct_fingerprint</span>
+<span class="sd">  6. Store: SealedMessage{version, algo, kem_ct, nonce, aead_ct, aad}</span>
+
+<span class="sd">The metadata is authenticated but not encrypted (AAD in GCM). This means</span>
+<span class="sd">the algorithm name and version are visible without decryption — useful for</span>
+<span class="sd">operational tools that need to inspect ciphertexts without access to the key.</span>
+
+<span class="sd">Wire format (CBOR-encoded SealedMessage)</span>
+<span class="sd">-----------------------------------------</span>
+<span class="sd">{</span>
+<span class="sd">    &quot;v&quot;:    1,                    # envelope format version</span>
+<span class="sd">    &quot;algo&quot;: &quot;X25519+ML-KEM-768&quot;,  # KEM algorithm used</span>
+<span class="sd">    &quot;kct&quot;:  &lt;bytes&gt;,              # KEM ciphertext (HybridCipherText.to_bytes())</span>
+<span class="sd">    &quot;n&quot;:    &lt;bytes&gt;,              # 12-byte AES-GCM nonce</span>
+<span class="sd">    &quot;ct&quot;:   &lt;bytes&gt;,              # AES-256-GCM ciphertext + 16-byte tag</span>
+<span class="sd">    &quot;aad&quot;:  &lt;bytes&gt;,              # additional authenticated data (visible, not encrypted)</span>
+<span class="sd">}</span>
+
+<span class="sd">Migration</span>
+<span class="sd">---------</span>
+<span class="sd">When you want to upgrade from one KEM algorithm to another:</span>
+<span class="sd">  1. Decrypt the existing SealedMessage (you need the old secret key for this).</span>
+<span class="sd">  2. Re-seal the plaintext with the new algorithm.</span>
+<span class="sd">  3. Delete the old SealedMessage.</span>
+
+<span class="sd">The version field and algorithm name make it straightforward to identify</span>
+<span class="sd">which sealed messages need upgrading — scan for version=1, algo=old_algo.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.ciphers.aead</span><span class="w"> </span><span class="kn">import</span> <span class="n">AESGCM</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe._internal</span><span class="w"> </span><span class="kn">import</span> <span class="n">serialization</span> <span class="k">as</span> <span class="n">_ser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DecapsulationError</span><span class="p">,</span>
+    <span class="n">KeyParseError</span><span class="p">,</span>
+    <span class="n">SerializationError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">HybridKEM</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">HybridCipherText</span><span class="p">,</span> <span class="n">PublicKey</span><span class="p">,</span> <span class="n">SecretKey</span><span class="p">,</span> <span class="n">SharedSecret</span>
+
+<span class="c1"># Envelope format version. Bump for backward-incompatible changes.</span>
+<span class="n">_ENVELOPE_VERSION</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># AES-GCM parameters</span>
+<span class="n">_NONCE_LEN</span> <span class="o">=</span> <span class="mi">12</span>        <span class="c1"># bytes — GCM standard nonce</span>
+<span class="n">_KEY_LEN</span> <span class="o">=</span> <span class="mi">32</span>          <span class="c1"># bytes — AES-256</span>
+<span class="n">_GCM_TAG_LEN</span> <span class="o">=</span> <span class="mi">16</span>      <span class="c1"># bytes — appended to ciphertext by AESGCM</span>
+
+<span class="c1"># HKDF info strings for key derivation — version-pinned for domain separation</span>
+<span class="n">_ENC_KEY_INFO</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;qs-envelope-enc-v1&quot;</span>
+<span class="n">_MAC_KEY_INFO</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;qs-envelope-mac-v1&quot;</span>
+
+
+<div class="viewcode-block" id="SealedMessage">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SealedMessage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A ciphertext envelope produced by Envelope.seal().</span>
+
+<span class="sd">    All fields are needed to decrypt. The `aad` field is authenticated</span>
+<span class="sd">    but not encrypted — it&#39;s safe to inspect without the decryption key.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        version:    Envelope format version.</span>
+<span class="sd">        algorithm:  KEM algorithm used (e.g. &quot;X25519+ML-KEM-768&quot;).</span>
+<span class="sd">        kem_ct:     KEM ciphertext bytes (HybridCipherText wire format).</span>
+<span class="sd">        nonce:      12-byte AES-GCM nonce. Never reused.</span>
+<span class="sd">        ciphertext: AES-256-GCM encrypted payload including 16-byte tag.</span>
+<span class="sd">        aad:        Additional authenticated data. Visible but authenticated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">version</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">kem_ct</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">nonce</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">ciphertext</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">aad</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_NONCE_LEN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;nonce must be exactly </span><span class="si">{</span><span class="n">_NONCE_LEN</span><span class="si">}</span><span class="s2"> bytes, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Serialization</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SealedMessage.to_bytes">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage.to_bytes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize to CBOR (or JSON-b64 fallback) bytes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_ser</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s2">&quot;v&quot;</span><span class="p">:</span>    <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="s2">&quot;algo&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="s2">&quot;kct&quot;</span><span class="p">:</span>  <span class="bp">self</span><span class="o">.</span><span class="n">kem_ct</span><span class="p">,</span>
+            <span class="s2">&quot;n&quot;</span><span class="p">:</span>    <span class="bp">self</span><span class="o">.</span><span class="n">nonce</span><span class="p">,</span>
+            <span class="s2">&quot;ct&quot;</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">ciphertext</span><span class="p">,</span>
+            <span class="s2">&quot;aad&quot;</span><span class="p">:</span>  <span class="bp">self</span><span class="o">.</span><span class="n">aad</span><span class="p">,</span>
+        <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="SealedMessage.from_bytes">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage.from_bytes">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_bytes</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SealedMessage&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize from bytes produced by to_bytes().&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">_ser</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">KeyParseError</span><span class="p">(</span><span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;CBOR/JSON decode failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="n">required</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;algo&quot;</span><span class="p">,</span> <span class="s2">&quot;kct&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="s2">&quot;ct&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">required</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">KeyParseError</span><span class="p">(</span><span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;missing field &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">],</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;algo&quot;</span><span class="p">],</span>
+            <span class="n">kem_ct</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;kct&quot;</span><span class="p">]),</span>
+            <span class="n">nonce</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">]),</span>
+            <span class="n">ciphertext</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;ct&quot;</span><span class="p">]),</span>
+            <span class="n">aad</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;aad&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SealedMessage.to_hex">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage.to_hex">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_hex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience: serialize to a hex string.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SealedMessage.from_hex">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage.from_hex">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_hex</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hex_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SealedMessage&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize from a hex string.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">hex_str</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">KeyParseError</span><span class="p">(</span><span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;hex decode failed: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span></div>
+
+
+<div class="viewcode-block" id="SealedMessage.inspect">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.SealedMessage.inspect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inspect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a dict of visible (non-secret) metadata for logging/debugging.</span>
+
+<span class="sd">        Never logs ciphertext or key material. Safe to include in structured logs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="s2">&quot;kem_ct_size&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kem_ct</span><span class="p">),</span>
+            <span class="s2">&quot;ciphertext_size&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ciphertext</span><span class="p">),</span>
+            <span class="s2">&quot;aad&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">aad</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aad</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;SealedMessage(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;v=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;algo=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;ct_size=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ciphertext</span><span class="p">)</span><span class="si">}</span><span class="s2">B)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Envelope">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.Envelope">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Envelope</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Authenticated encryption using hybrid KEM + AES-256-GCM.</span>
+
+<span class="sd">    This is a class with only class methods — you don&#39;t instantiate it.</span>
+<span class="sd">    Think of it as a namespace for seal() and open().</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        # Sender:</span>
+<span class="sd">        sealed = Envelope.seal(b&quot;top secret&quot;, recipient_public_key)</span>
+<span class="sd">        wire   = sealed.to_bytes()        # send this over the network</span>
+
+<span class="sd">        # Recipient:</span>
+<span class="sd">        msg    = sealed.from_bytes(wire)</span>
+<span class="sd">        plain  = Envelope.open(msg, recipient_secret_key)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Envelope.seal">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.Envelope.seal">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seal</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">plaintext</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">recipient_public_key</span><span class="p">:</span> <span class="n">PublicKey</span><span class="p">,</span>
+        <span class="n">aad</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">kem</span><span class="p">:</span> <span class="n">HybridKEM</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SealedMessage</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encrypt plaintext to the recipient&#39;s public key.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            plaintext:           The data to encrypt. No size limit.</span>
+<span class="sd">            recipient_public_key: Recipient&#39;s HybridKEM public key.</span>
+<span class="sd">            aad:                 Additional authenticated data. Included</span>
+<span class="sd">                                 unencrypted in the envelope but authenticated</span>
+<span class="sd">                                 by GCM — any modification fails decryption.</span>
+<span class="sd">                                 Use for metadata you want visible but protected</span>
+<span class="sd">                                 (e.g. recipient ID, timestamp, content type).</span>
+<span class="sd">            kem:                 HybridKEM instance to use. If None, creates</span>
+<span class="sd">                                 a default HybridKEM() matching the key&#39;s</span>
+<span class="sd">                                 algorithm.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SealedMessage that can be decrypted with Envelope.open().</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            UnsupportedAlgorithm: if the key&#39;s algorithm isn&#39;t a known</span>
+<span class="sd">                                  hybrid KEM combination.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">kem</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_kem_for_key</span><span class="p">(</span><span class="n">recipient_public_key</span><span class="p">)</span>
+
+        <span class="c1"># KEM encapsulation — this is the core of the construction</span>
+        <span class="n">kem_ct</span><span class="p">,</span> <span class="n">shared_secret</span> <span class="o">=</span> <span class="n">kem</span><span class="o">.</span><span class="n">encapsulate</span><span class="p">(</span><span class="n">recipient_public_key</span><span class="p">)</span>
+
+        <span class="c1"># Derive AES key from the shared secret</span>
+        <span class="n">enc_key</span> <span class="o">=</span> <span class="n">shared_secret</span><span class="o">.</span><span class="n">derive_key</span><span class="p">(</span>
+            <span class="n">length</span><span class="o">=</span><span class="n">_KEY_LEN</span><span class="p">,</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">_ENC_KEY_INFO</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Random nonce — 12 bytes for AES-GCM</span>
+        <span class="n">nonce</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="n">_NONCE_LEN</span><span class="p">)</span>
+
+        <span class="c1"># Build AAD: version byte || algo string, plus any caller-supplied aad.</span>
+        <span class="c1"># This binds the version and algorithm into the authentication tag.</span>
+        <span class="n">built_aad</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_build_aad</span><span class="p">(</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">_ENVELOPE_VERSION</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">recipient_public_key</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="n">aad</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Encrypt + authenticate</span>
+        <span class="n">aes</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">enc_key</span><span class="p">)</span>
+        <span class="n">ciphertext</span> <span class="o">=</span> <span class="n">aes</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">nonce</span><span class="p">,</span> <span class="n">plaintext</span><span class="p">,</span> <span class="n">built_aad</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">SealedMessage</span><span class="p">(</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">_ENVELOPE_VERSION</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">recipient_public_key</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="n">kem_ct</span><span class="o">=</span><span class="n">kem_ct</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(),</span>
+            <span class="n">nonce</span><span class="o">=</span><span class="n">nonce</span><span class="p">,</span>
+            <span class="n">ciphertext</span><span class="o">=</span><span class="n">ciphertext</span><span class="p">,</span>
+            <span class="n">aad</span><span class="o">=</span><span class="n">aad</span><span class="p">,</span>  <span class="c1"># store the caller&#39;s aad (not the built one)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Envelope.open">
+<a class="viewcode-back" href="../../../api/protocols.html#quantum_safe.protocols.envelope.Envelope.open">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">sealed</span><span class="p">:</span> <span class="n">SealedMessage</span><span class="p">,</span>
+        <span class="n">recipient_secret_key</span><span class="p">:</span> <span class="n">SecretKey</span><span class="p">,</span>
+        <span class="n">kem</span><span class="p">:</span> <span class="n">HybridKEM</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decrypt a SealedMessage.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sealed:               SealedMessage from Envelope.seal() or</span>
+<span class="sd">                                  deserialized from the wire.</span>
+<span class="sd">            recipient_secret_key: The recipient&#39;s HybridKEM secret key.</span>
+<span class="sd">            kem:                  HybridKEM instance. If None, auto-created</span>
+<span class="sd">                                  from the envelope&#39;s algorithm field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Original plaintext bytes.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DecapsulationError:  if KEM decapsulation fails.</span>
+<span class="sd">            cryptography.exceptions.InvalidTag: if the ciphertext is tampered</span>
+<span class="sd">                                  or the wrong key is used (GCM authentication</span>
+<span class="sd">                                  failure). We let this propagate from</span>
+<span class="sd">                                  cryptography directly — don&#39;t catch it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">kem</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_kem_for_algorithm</span><span class="p">(</span><span class="n">sealed</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span>
+
+        <span class="c1"># Reconstruct the HybridCipherText from wire bytes</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">kem_ct</span> <span class="o">=</span> <span class="n">HybridCipherText</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span>
+                <span class="n">sealed</span><span class="o">.</span><span class="n">kem_ct</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">sealed</span><span class="o">.</span><span class="n">algorithm</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="n">sealed</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="c1"># KEM decapsulation — recovers the shared secret</span>
+        <span class="n">shared_secret</span> <span class="o">=</span> <span class="n">kem</span><span class="o">.</span><span class="n">decapsulate</span><span class="p">(</span><span class="n">recipient_secret_key</span><span class="p">,</span> <span class="n">kem_ct</span><span class="p">)</span>
+
+        <span class="c1"># Derive the same AES key</span>
+        <span class="n">enc_key</span> <span class="o">=</span> <span class="n">shared_secret</span><span class="o">.</span><span class="n">derive_key</span><span class="p">(</span>
+            <span class="n">length</span><span class="o">=</span><span class="n">_KEY_LEN</span><span class="p">,</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">_ENC_KEY_INFO</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Rebuild AAD — must match what was used during seal()</span>
+        <span class="n">built_aad</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_build_aad</span><span class="p">(</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">sealed</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">sealed</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="n">extra</span><span class="o">=</span><span class="n">sealed</span><span class="o">.</span><span class="n">aad</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Decrypt + verify authentication tag</span>
+        <span class="c1"># AESGCM.decrypt() raises InvalidTag if tampered — let it propagate.</span>
+        <span class="n">aes</span> <span class="o">=</span> <span class="n">AESGCM</span><span class="p">(</span><span class="n">enc_key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">aes</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">sealed</span><span class="o">.</span><span class="n">nonce</span><span class="p">,</span> <span class="n">sealed</span><span class="o">.</span><span class="n">ciphertext</span><span class="p">,</span> <span class="n">built_aad</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_aad</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extra</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the full AAD passed to AES-GCM.</span>
+
+<span class="sd">        We always include version and algorithm so these fields are</span>
+<span class="sd">        authenticated even when the caller doesn&#39;t pass any extra aad.</span>
+
+<span class="sd">        Format: version_byte || algo_len_byte || algo_bytes || extra_aad</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">algo_bytes</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">algo_bytes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">255</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;algorithm name too long for AAD encoding&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">version</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">algo_bytes</span><span class="p">)])</span> <span class="o">+</span> <span class="n">algo_bytes</span> <span class="o">+</span> <span class="n">extra</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_kem_for_key</span><span class="p">(</span><span class="n">public_key</span><span class="p">:</span> <span class="n">PublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HybridKEM</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a HybridKEM matching the algorithm of the given key.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Envelope</span><span class="o">.</span><span class="n">_kem_for_algorithm</span><span class="p">(</span><span class="n">public_key</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_kem_for_algorithm</span><span class="p">(</span><span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HybridKEM</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse a hybrid algorithm string and create a matching HybridKEM.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_hybrid_name</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">classical</span><span class="p">,</span> <span class="n">pqc</span> <span class="o">=</span> <span class="n">parse_hybrid_name</span><span class="p">(</span><span class="n">algorithm</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnsupportedAlgorithm</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span>
+                <span class="n">algorithm</span><span class="p">,</span>
+                <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X25519+ML-KEM-768&quot;</span><span class="p">,</span> <span class="s2">&quot;X25519+ML-KEM-1024&quot;</span><span class="p">],</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">return</span> <span class="n">HybridKEM</span><span class="p">(</span><span class="n">classical</span><span class="o">=</span><span class="n">classical</span><span class="p">,</span> <span class="n">pqc</span><span class="o">=</span><span class="n">pqc</span><span class="p">)</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -1,0 +1,1127 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Audit (quantum_safe.audit)" href="audit.html"><link rel="prev" title="Protocols (quantum_safe.protocols)" href="protocols.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Migration (quantum_safe.migrate) - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/cli.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/benchmarks.html">Benchmarking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="protocols.html">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/migrate.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="migration-quantum-safe-migrate">
+<h1>Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)<a class="headerlink" href="#migration-quantum-safe-migrate" title="Link to this heading">¶</a></h1>
+<p>Tools for scanning codebases and upgrading classical keys to hybrid PQC.</p>
+<section id="scanner">
+<h2>Scanner<a class="headerlink" href="#scanner" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Scanner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.scanner.</span></span><span class="sig-name descname"><span class="pre">Scanner</span></span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#Scanner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.Scanner" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Scans Python source files for classical cryptography usage.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">report</span> <span class="o">=</span> <span class="n">Scanner</span><span class="o">.</span><span class="n">scan_directory</span><span class="p">(</span><span class="s2">&quot;./src&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+
+<span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">has_blocking_findings</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">high</span> <span class="o">+</span> <span class="n">report</span><span class="o">.</span><span class="n">critical</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Scanner.scan_file">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scan_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#Scanner.scan_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.Scanner.scan_file" title="Link to this definition">¶</a></dt>
+<dd><p>Scan a single Python file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Path to a .py file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport" title="quantum_safe.migrate.scanner.ScanReport"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanReport</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ScanReport with findings for this file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Scanner.scan_directory">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scan_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_file_size_kb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#Scanner.scan_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.Scanner.scan_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Recursively scan a directory for classical crypto usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span>) – Root directory to scan.</p></li>
+<li><p><strong>exclude</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Glob patterns to exclude.
+Default excludes: .git, __pycache__, .venv, node_modules.</p></li>
+<li><p><strong>max_file_size_kb</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Skip files larger than this (avoid scanning minified/generated code).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport" title="quantum_safe.migrate.scanner.ScanReport"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanReport</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ScanReport with aggregated findings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Scanner.scan_source">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scan_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'&lt;string&gt;'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#Scanner.scan_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.Scanner.scan_source" title="Link to this definition">¶</a></dt>
+<dd><p>Scan a source string directly (useful for testing or inline analysis).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>filename</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport" title="quantum_safe.migrate.scanner.ScanReport"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanReport</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.scanner.</span></span><span class="sig-name descname"><span class="pre">ScanReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_scanned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">findings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#ScanReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Aggregated results from scanning one or more files/directories.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.root">
+<span class="sig-name descname"><span class="pre">root</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.root" title="Link to this definition">¶</a></dt>
+<dd><p>The directory or file that was scanned.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.files_scanned">
+<span class="sig-name descname"><span class="pre">files_scanned</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.files_scanned" title="Link to this definition">¶</a></dt>
+<dd><p>Number of Python files analyzed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.findings">
+<span class="sig-name descname"><span class="pre">findings</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.findings" title="Link to this definition">¶</a></dt>
+<dd><p>All findings, sorted by (file, line).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.errors">
+<span class="sig-name descname"><span class="pre">errors</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.errors" title="Link to this definition">¶</a></dt>
+<dd><p>Files that could not be parsed (syntax errors, permission issues).</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>root</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>files_scanned</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p></li>
+<li><p><strong>findings</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference internal" href="#quantum_safe.migrate.scanner.Finding" title="quantum_safe.migrate.scanner.Finding"><code class="xref py py-class docutils literal notranslate"><span class="pre">Finding</span></code></a>]</span>)</p></li>
+<li><p><strong>errors</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.has_blocking_findings">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">has_blocking_findings</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.has_blocking_findings" title="Link to this definition">¶</a></dt>
+<dd><p>True if there are any HIGH or CRITICAL findings.</p>
+<p>This is the condition that should cause a CI gate to fail.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#ScanReport.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.summary" title="Link to this definition">¶</a></dt>
+<dd><p>One-line summary for logging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#ScanReport.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.to_json" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize to JSON.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>indent</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.ScanReport.to_sarif">
+<span class="sig-name descname"><span class="pre">to_sarif</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#ScanReport.to_sarif"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.ScanReport.to_sarif" title="Link to this definition">¶</a></dt>
+<dd><p>Produce a SARIF 2.1.0 document for GitHub Code Scanning / GitLab SAST.</p>
+<p>The result can be written to a file and uploaded as a SARIF artifact.
+See: <a class="reference external" href="https://docs.github.com/en/code-security/code-scanning/sarif-schema">https://docs.github.com/en/code-security/code-scanning/sarif-schema</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.scanner.</span></span><span class="sig-name descname"><span class="pre">Finding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">severity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snippet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fix_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/scanner.html#Finding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A single classical crypto usage finding.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.file">
+<span class="sig-name descname"><span class="pre">file</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.file" title="Link to this definition">¶</a></dt>
+<dd><p>Absolute or relative path to the source file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.line">
+<span class="sig-name descname"><span class="pre">line</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.line" title="Link to this definition">¶</a></dt>
+<dd><p>1-based line number.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.col">
+<span class="sig-name descname"><span class="pre">col</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.col" title="Link to this definition">¶</a></dt>
+<dd><p>1-based column number.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.severity">
+<span class="sig-name descname"><span class="pre">severity</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.severity" title="Link to this definition">¶</a></dt>
+<dd><p>Severity level.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.rule_id">
+<span class="sig-name descname"><span class="pre">rule_id</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.rule_id" title="Link to this definition">¶</a></dt>
+<dd><p>Short machine-readable rule identifier, e.g. “QS001”.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.message">
+<span class="sig-name descname"><span class="pre">message</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.message" title="Link to this definition">¶</a></dt>
+<dd><p>Human-readable description.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.snippet">
+<span class="sig-name descname"><span class="pre">snippet</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.snippet" title="Link to this definition">¶</a></dt>
+<dd><p>The offending source line, stripped of leading whitespace.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.scanner.Finding.fix_hint">
+<span class="sig-name descname"><span class="pre">fix_hint</span></span><a class="headerlink" href="#quantum_safe.migrate.scanner.Finding.fix_hint" title="Link to this definition">¶</a></dt>
+<dd><p>Optional suggestion for how to fix the issue.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>line</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p></li>
+<li><p><strong>col</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p></li>
+<li><p><strong>severity</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Severity</span></code></span>)</p></li>
+<li><p><strong>rule_id</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>message</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>snippet</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>fix_hint</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="upgrader">
+<h2>Upgrader<a class="headerlink" href="#upgrader" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.upgrader.</span></span><span class="sig-name descname"><span class="pre">Upgrader</span></span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Upgrades classical keys to hybrid PQC keys.</p>
+<p>All methods are class methods — no instantiation needed.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.migrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Upgrader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.types.keys</span><span class="w"> </span><span class="kn">import</span> <span class="n">MigrationState</span>
+
+<span class="c1"># Upgrade an X25519 secret key to hybrid</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">Upgrader</span><span class="o">.</span><span class="n">upgrade_kem_key</span><span class="p">(</span>
+    <span class="n">classical_secret_bytes</span><span class="o">=</span><span class="n">x25519_private_bytes</span><span class="p">,</span>
+    <span class="n">classical_public_bytes</span><span class="o">=</span><span class="n">x25519_public_bytes</span><span class="p">,</span>
+    <span class="n">classical_algorithm</span><span class="o">=</span><span class="s2">&quot;X25519&quot;</span><span class="p">,</span>
+    <span class="n">target_pqc</span><span class="o">=</span><span class="s2">&quot;ML-KEM-768&quot;</span><span class="p">,</span>
+    <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">new_kp</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">new_keypair</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">new_kp</span><span class="o">.</span><span class="n">algorithm</span><span class="p">)</span>  <span class="c1"># &quot;X25519+ML-KEM-768&quot;</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader.upgrade_kem_key">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">upgrade_kem_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classical_secret_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_public_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X25519'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pqc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ML-KEM-768'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader.upgrade_kem_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader.upgrade_kem_key" title="Link to this definition">¶</a></dt>
+<dd><p>Upgrade a classical KEM key to a hybrid key.</p>
+<p>The original classical sub-key is retained in the output — it is
+the same bytes as classical_secret_bytes / classical_public_bytes,
+just wrapped alongside the new PQC component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classical_secret_bytes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Raw bytes of the classical private key.
+For X25519: 32 bytes.</p></li>
+<li><p><strong>classical_public_bytes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Raw bytes of the classical public key.
+For X25519: 32 bytes.</p></li>
+<li><p><strong>classical_algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – “X25519” or “P-256”.</p></li>
+<li><p><strong>target_pqc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – PQC algorithm to add. Default “ML-KEM-768”.</p></li>
+<li><p><strong>backend</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – PQC backend.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult" title="quantum_safe.migrate.upgrader.UpgradeResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpgradeResult</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>UpgradeResult with the new hybrid KeyPair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader.upgrade_signing_key">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">upgrade_signing_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classical_secret_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_public_bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Ed25519'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_pqc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ML-DSA-65'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader.upgrade_signing_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader.upgrade_signing_key" title="Link to this definition">¶</a></dt>
+<dd><p>Upgrade a classical signing key to a hybrid signing key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classical_secret_bytes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Raw bytes of the classical private key.
+For Ed25519: 32 bytes.</p></li>
+<li><p><strong>classical_public_bytes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Raw bytes of the classical public key.
+For Ed25519: 32 bytes.</p></li>
+<li><p><strong>classical_algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – “Ed25519” or “P-256”.</p></li>
+<li><p><strong>target_pqc</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – PQC signature algorithm. Default “ML-DSA-65”.</p></li>
+<li><p><strong>backend</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – PQC backend.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult" title="quantum_safe.migrate.upgrader.UpgradeResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">UpgradeResult</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>UpgradeResult with the new hybrid signing KeyPair.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader.strip_classical_component">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">strip_classical_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hybrid_keypair</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader.strip_classical_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader.strip_classical_component" title="Link to this definition">¶</a></dt>
+<dd><p>Remove the classical sub-key from a hybrid keypair.</p>
+<p>Use this when you’re confident all clients support PQC and you
+want to move to PQC_ONLY migration state.</p>
+<p>Warning: This is a one-way operation. Old clients that only
+support classical algorithms will no longer be able to use
+the returned key. Make sure you’ve fully migrated before calling this.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hybrid_keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>) – A keypair in HYBRID_TRANSITION or PQC_PREFERRED state.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new KeyPair with only the PQC component, in PQC_ONLY state.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – if the keypair is not in a hybrid state.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader.check_needs_upgrade">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">check_needs_upgrade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keypair</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader.check_needs_upgrade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader.check_needs_upgrade" title="Link to this definition">¶</a></dt>
+<dd><p>Return True if the keypair should be upgraded.</p>
+<p>A key needs upgrade if it is in CLASSICAL_ONLY migration state.
+HYBRID_TRANSITION and above are considered “migrated enough” for
+the transition period.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.Upgrader.describe_key">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">describe_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keypair</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#Upgrader.describe_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.Upgrader.describe_key" title="Link to this definition">¶</a></dt>
+<dd><p>Return a human-readable description of a key’s migration status.</p>
+<p>Useful for reporting tools and dashboards.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.upgrader.</span></span><span class="sig-name descname"><span class="pre">UpgradeResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_keypair</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">migration_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backward_compat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/upgrader.html#UpgradeResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Result of a key upgrade operation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.new_keypair">
+<span class="sig-name descname"><span class="pre">new_keypair</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.new_keypair" title="Link to this definition">¶</a></dt>
+<dd><p>The upgraded hybrid keypair.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.old_algorithm">
+<span class="sig-name descname"><span class="pre">old_algorithm</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.old_algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>Algorithm string of the key before upgrade.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.new_algorithm">
+<span class="sig-name descname"><span class="pre">new_algorithm</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.new_algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>Algorithm string of the upgraded key.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.migration_state">
+<span class="sig-name descname"><span class="pre">migration_state</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.migration_state" title="Link to this definition">¶</a></dt>
+<dd><p>Migration state of the new key (always HYBRID_TRANSITION).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.backward_compat">
+<span class="sig-name descname"><span class="pre">backward_compat</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.backward_compat" title="Link to this definition">¶</a></dt>
+<dd><p>True if the new key is backward-compatible with
+the old algorithm (i.e. old clients can still use it).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.migrate.upgrader.UpgradeResult.notes">
+<span class="sig-name descname"><span class="pre">notes</span></span><a class="headerlink" href="#quantum_safe.migrate.upgrader.UpgradeResult.notes" title="Link to this definition">¶</a></dt>
+<dd><p>Human-readable notes about the upgrade.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>)</p></li>
+<li><p><strong>old_algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>new_algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>migration_state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>)</p></li>
+<li><p><strong>backward_compat</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+<li><p><strong>notes</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="migration-state">
+<h2>Migration state<a class="headerlink" href="#migration-state" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.state.</span></span><span class="sig-name descname"><span class="pre">MigrationStateManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manages migration state for a collection of keys.</p>
+<p>This class is storage-agnostic — it takes a dict-like store and
+wraps it with validation, history, and audit logging. You provide
+the storage; we provide the business logic.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>store</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]</span>) – A dict-like object for persistent state storage.
+Keys are string key_ids; values are MigrationRecord bytes.
+In production, back this with Redis, DynamoDB, Postgres, etc.
+In tests, a plain dict works fine.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">store</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># replace with your database abstraction</span>
+<span class="n">mgr</span> <span class="o">=</span> <span class="n">MigrationStateManager</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+
+<span class="c1"># First time we see this key</span>
+<span class="n">rec</span> <span class="o">=</span> <span class="n">mgr</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span>
+    <span class="n">key_id</span><span class="o">=</span><span class="s2">&quot;user-123&quot;</span><span class="p">,</span>
+    <span class="n">from_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">CLASSICAL_ONLY</span><span class="p">,</span>
+    <span class="n">to_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+    <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;X25519+ML-KEM-768&quot;</span><span class="p">,</span>
+    <span class="n">actor</span><span class="o">=</span><span class="s2">&quot;key-rotation-job-v1&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># rec is stored in `store[&quot;user-123_current&quot;]`</span>
+<span class="c1"># Full history in `store[&quot;user-123_history&quot;]`</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.transition">
+<span class="sig-name descname"><span class="pre">transition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'system'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_backward</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.transition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.transition" title="Link to this definition">¶</a></dt>
+<dd><p>Record a state transition for a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key_id</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Application key identifier.</p></li>
+<li><p><strong>from_state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>) – Expected current state (for optimistic concurrency check).</p></li>
+<li><p><strong>to_state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>) – New target state.</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Key algorithm after this transition.</p></li>
+<li><p><strong>actor</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Who is performing the migration.</p></li>
+<li><p><strong>reason</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Why (required for backward transitions).</p></li>
+<li><p><strong>metadata</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Arbitrary key-value pairs for audit.</p></li>
+<li><p><strong>allow_backward</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Set True to explicitly permit backward transitions.
+Still requires a non-empty reason string.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationRecord</span></code></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The created MigrationRecord.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – if the transition is not valid or current state
+    doesn’t match from_state.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.get_current_state">
+<span class="sig-name descname"><span class="pre">get_current_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.get_current_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.get_current_state" title="Link to this definition">¶</a></dt>
+<dd><p>Return the current migration state for a key, or None if unknown.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key_id</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.get_current_record">
+<span class="sig-name descname"><span class="pre">get_current_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.get_current_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.get_current_record" title="Link to this definition">¶</a></dt>
+<dd><p>Return the full current record for a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key_id</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationRecord</span></code> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.get_history">
+<span class="sig-name descname"><span class="pre">get_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.get_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.get_history" title="Link to this definition">¶</a></dt>
+<dd><p>Return full migration history for a key, oldest first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key_id</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationRecord</span></code>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.keys_by_state">
+<span class="sig-name descname"><span class="pre">keys_by_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.keys_by_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.keys_by_state" title="Link to this definition">¶</a></dt>
+<dd><p>Return all key IDs currently in the given migration state.</p>
+<p>This is a full scan — in production, maintain a secondary index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.needs_migration">
+<span class="sig-name descname"><span class="pre">needs_migration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.needs_migration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.needs_migration" title="Link to this definition">¶</a></dt>
+<dd><p>Return key IDs that are not yet in HYBRID_TRANSITION or better.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.state.MigrationStateManager.migration_progress">
+<span class="sig-name descname"><span class="pre">migration_progress</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/state.html#MigrationStateManager.migration_progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.state.MigrationStateManager.migration_progress" title="Link to this definition">¶</a></dt>
+<dd><p>Return a count of keys in each migration state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="shims">
+<h2>Shims<a class="headerlink" href="#shims" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.FernetShim">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.shims.</span></span><span class="sig-name descname"><span class="pre">FernetShim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#FernetShim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.FernetShim" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_ShimBase</span></code></p>
+<p>Drop-in replacement for cryptography.fernet.Fernet.</p>
+<p>Replaces the symmetric Fernet construction with asymmetric hybrid KEM +
+AES-256-GCM encryption. See module docstring for semantic differences.</p>
+<dl class="simple">
+<dt>The interface is intentionally similar to Fernet but not identical:</dt><dd><ul class="simple">
+<li><p>No <cite>generate_key()</cite> class method (keys are asymmetric now)</p></li>
+<li><p><cite>encrypt(data)</cite> → bytes  (SealedMessage serialized)</p></li>
+<li><p><cite>decrypt(token)</cite> → bytes</p></li>
+</ul>
+</dd>
+</dl>
+<p>Call shim_stats() to see how often this shim is being used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>backend</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.FernetShim.encrypt">
+<span class="sig-name descname"><span class="pre">encrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#FernetShim.encrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.FernetShim.encrypt" title="Link to this definition">¶</a></dt>
+<dd><p>Encrypt data. Returns a SealedMessage serialized to bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.FernetShim.decrypt">
+<span class="sig-name descname"><span class="pre">decrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#FernetShim.decrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.FernetShim.decrypt" title="Link to this definition">¶</a></dt>
+<dd><p>Decrypt a token produced by encrypt().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.FernetShim.public_key">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">public_key</span></span><a class="headerlink" href="#quantum_safe.migrate.shims.FernetShim.public_key" title="Link to this definition">¶</a></dt>
+<dd><p>The public key used for encryption. Share this with senders.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.FernetShim.secret_key">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">secret_key</span></span><a class="headerlink" href="#quantum_safe.migrate.shims.FernetShim.secret_key" title="Link to this definition">¶</a></dt>
+<dd><p>The secret key used for decryption. Keep this private.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.JWTShim">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.migrate.shims.</span></span><span class="sig-name descname"><span class="pre">JWTShim</span></span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#JWTShim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.JWTShim" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_ShimBase</span></code></p>
+<p>Drop-in replacement for PyJWT’s jwt.encode() / jwt.decode().</p>
+<p>Replaces classical JWT signing (RS256, ES256, HS256) with hybrid
+PQC signing (Ed25519+ML-DSA-65).</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Before:</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+<span class="n">token</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">({</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">},</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;RS256&quot;</span><span class="p">)</span>
+<span class="n">claims</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">public_key</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;RS256&quot;</span><span class="p">])</span>
+
+<span class="c1"># After (drop-in):</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.migrate.shims</span><span class="w"> </span><span class="kn">import</span> <span class="n">JWTShim</span> <span class="k">as</span> <span class="n">jwt</span>
+<span class="n">token</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">({</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">},</span> <span class="n">keypair</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;Ed25519+ML-DSA-65&quot;</span><span class="p">)</span>
+<span class="n">claims</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">public_key</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Ed25519+ML-DSA-65&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The <cite>key</cite> parameter accepts a quantum_safe.types.KeyPair for encoding
+and a quantum_safe.types.PublicKey for decoding.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.JWTShim.encode">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">encode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Ed25519+ML-DSA-65'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#JWTShim.encode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.JWTShim.encode" title="Link to this definition">¶</a></dt>
+<dd><p>Sign a JWT payload.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>payload</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>) – Claims dict.</p></li>
+<li><p><strong>key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – quantum_safe.types.KeyPair for signing.</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Hybrid or PQC algorithm string.</p></li>
+<li><p><strong>kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JWT token string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.migrate.shims.JWTShim.decode">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">decode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/migrate/shims.html#JWTShim.decode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.migrate.shims.JWTShim.decode" title="Link to this definition">¶</a></dt>
+<dd><p>Verify and decode a JWT.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – JWT string from encode().</p></li>
+<li><p><strong>key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>) – quantum_safe.types.PublicKey for verification.</p></li>
+<li><p><strong>algorithms</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>] | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Ignored — algorithm is inferred from the token header.</p></li>
+<li><p><strong>kwargs</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Verified claims dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="audit.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="protocols.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a><ul>
+<li><a class="reference internal" href="#scanner">Scanner</a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Scanner"><code class="docutils literal notranslate"><span class="pre">Scanner</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Scanner.scan_file"><code class="docutils literal notranslate"><span class="pre">Scanner.scan_file()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Scanner.scan_directory"><code class="docutils literal notranslate"><span class="pre">Scanner.scan_directory()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Scanner.scan_source"><code class="docutils literal notranslate"><span class="pre">Scanner.scan_source()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport"><code class="docutils literal notranslate"><span class="pre">ScanReport</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.root"><code class="docutils literal notranslate"><span class="pre">ScanReport.root</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.files_scanned"><code class="docutils literal notranslate"><span class="pre">ScanReport.files_scanned</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.findings"><code class="docutils literal notranslate"><span class="pre">ScanReport.findings</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.errors"><code class="docutils literal notranslate"><span class="pre">ScanReport.errors</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.has_blocking_findings"><code class="docutils literal notranslate"><span class="pre">ScanReport.has_blocking_findings</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.summary"><code class="docutils literal notranslate"><span class="pre">ScanReport.summary()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.to_json"><code class="docutils literal notranslate"><span class="pre">ScanReport.to_json()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.ScanReport.to_sarif"><code class="docutils literal notranslate"><span class="pre">ScanReport.to_sarif()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding"><code class="docutils literal notranslate"><span class="pre">Finding</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.file"><code class="docutils literal notranslate"><span class="pre">Finding.file</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.line"><code class="docutils literal notranslate"><span class="pre">Finding.line</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.col"><code class="docutils literal notranslate"><span class="pre">Finding.col</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.severity"><code class="docutils literal notranslate"><span class="pre">Finding.severity</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.rule_id"><code class="docutils literal notranslate"><span class="pre">Finding.rule_id</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.message"><code class="docutils literal notranslate"><span class="pre">Finding.message</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.snippet"><code class="docutils literal notranslate"><span class="pre">Finding.snippet</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.scanner.Finding.fix_hint"><code class="docutils literal notranslate"><span class="pre">Finding.fix_hint</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#upgrader">Upgrader</a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader"><code class="docutils literal notranslate"><span class="pre">Upgrader</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader.upgrade_kem_key"><code class="docutils literal notranslate"><span class="pre">Upgrader.upgrade_kem_key()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader.upgrade_signing_key"><code class="docutils literal notranslate"><span class="pre">Upgrader.upgrade_signing_key()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader.strip_classical_component"><code class="docutils literal notranslate"><span class="pre">Upgrader.strip_classical_component()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader.check_needs_upgrade"><code class="docutils literal notranslate"><span class="pre">Upgrader.check_needs_upgrade()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.Upgrader.describe_key"><code class="docutils literal notranslate"><span class="pre">Upgrader.describe_key()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult"><code class="docutils literal notranslate"><span class="pre">UpgradeResult</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.new_keypair"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.new_keypair</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.old_algorithm"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.old_algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.new_algorithm"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.new_algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.migration_state"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.migration_state</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.backward_compat"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.backward_compat</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.upgrader.UpgradeResult.notes"><code class="docutils literal notranslate"><span class="pre">UpgradeResult.notes</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#migration-state">Migration state</a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.transition"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.transition()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.get_current_state"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.get_current_state()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.get_current_record"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.get_current_record()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.get_history"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.get_history()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.keys_by_state"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.keys_by_state()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.needs_migration"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.needs_migration()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.state.MigrationStateManager.migration_progress"><code class="docutils literal notranslate"><span class="pre">MigrationStateManager.migration_progress()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#shims">Shims</a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.FernetShim"><code class="docutils literal notranslate"><span class="pre">FernetShim</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.FernetShim.encrypt"><code class="docutils literal notranslate"><span class="pre">FernetShim.encrypt()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.FernetShim.decrypt"><code class="docutils literal notranslate"><span class="pre">FernetShim.decrypt()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.FernetShim.public_key"><code class="docutils literal notranslate"><span class="pre">FernetShim.public_key</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.FernetShim.secret_key"><code class="docutils literal notranslate"><span class="pre">FernetShim.secret_key</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.JWTShim"><code class="docutils literal notranslate"><span class="pre">JWTShim</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.JWTShim.encode"><code class="docutils literal notranslate"><span class="pre">JWTShim.encode()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.migrate.shims.JWTShim.decode"><code class="docutils literal notranslate"><span class="pre">JWTShim.decode()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

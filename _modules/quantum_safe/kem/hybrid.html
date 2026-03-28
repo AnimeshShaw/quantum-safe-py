@@ -1,0 +1,812 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>quantum_safe.kem.hybrid - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/cli.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/benchmarks.html">Benchmarking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/types.html">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/protocols.html">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/migrate.html">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for quantum_safe.kem.hybrid</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">quantum_safe.kem.hybrid</span>
+<span class="sd">~~~~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">HybridKEM: combines a classical Diffie-Hellman KEM (X25519 or P-256) with</span>
+<span class="sd">a PQC KEM (ML-KEM) into a single hybrid operation.</span>
+
+<span class="sd">The construction is based on draft-ietf-tls-hybrid-design and is exactly</span>
+<span class="sd">what TLS 1.3 hybrid key exchange uses (the X25519MLKEM768 group in RFC 9001</span>
+<span class="sd">and the IANA TLS group registry).</span>
+
+<span class="sd">Why hybrid?</span>
+<span class="sd">-----------</span>
+<span class="sd">During the transition period, we can&#39;t be certain that ML-KEM is unbroken.</span>
+<span class="sd">NIST standardized it, but it&#39;s young — a decade-old algorithm with a massive</span>
+<span class="sd">cryptanalysis community behind it is worth more assurance than mathematical</span>
+<span class="sd">proofs alone. Hybrid mode means:</span>
+
+<span class="sd">  - If ML-KEM is broken but X25519 isn&#39;t: the hybrid is still X25519-secure.</span>
+<span class="sd">  - If X25519 is broken by a quantum computer but ML-KEM isn&#39;t: the hybrid</span>
+<span class="sd">    is still ML-KEM-secure.</span>
+<span class="sd">  - Both would have to be broken simultaneously for the hybrid to fail.</span>
+
+<span class="sd">This is the position taken by NIST, CISA, BSI, NCSC, and every major TLS</span>
+<span class="sd">library that has added PQC support.</span>
+
+<span class="sd">The combiner</span>
+<span class="sd">------------</span>
+<span class="sd">Given:</span>
+<span class="sd">  - X25519 ephemeral keypair: (epk_x, esk_x)</span>
+<span class="sd">  - ML-KEM keypair: (pk_m, sk_m)</span>
+
+<span class="sd">Encapsulate:</span>
+<span class="sd">  1. Generate ephemeral X25519 keypair (epk_x, esk_x).</span>
+<span class="sd">  2. Compute X25519 DH: ss_x = X25519(esk_x, pk_x_recipient)</span>
+<span class="sd">  3. Run ML-KEM encapsulate: (ct_m, ss_m) = MLKEMEncap(pk_m)</span>
+<span class="sd">  4. Combined ciphertext: ct = len(epk_x) || epk_x || ct_m</span>
+<span class="sd">     (ephemeral public key replaces a traditional ciphertext for X25519)</span>
+<span class="sd">  5. Combined secret: ss = HKDF(ikm=ss_x||ss_m, salt=ct_x||ct_m, info=...)</span>
+
+<span class="sd">Decapsulate:</span>
+<span class="sd">  1. Split ct into epk_x and ct_m.</span>
+<span class="sd">  2. Compute X25519 DH: ss_x = X25519(sk_x, epk_x)</span>
+<span class="sd">  3. Run ML-KEM decapsulate: ss_m = MLKEMDecap(sk_m, ct_m)</span>
+<span class="sd">  4. Derive combined secret with same HKDF call.</span>
+
+<span class="sd">The public key for a hybrid KEM is (pk_x || pk_m) — both components.</span>
+<span class="sd">The secret key is (sk_x || sk_m) — both components.</span>
+
+<span class="sd">Key format</span>
+<span class="sd">----------</span>
+<span class="sd">We store hybrid keys in a length-prefixed format so we can split them</span>
+<span class="sd">without out-of-band length information:</span>
+
+<span class="sd">    2 bytes big-endian: classical_component_len</span>
+<span class="sd">    N bytes:            classical component (public or secret key)</span>
+<span class="sd">    remaining bytes:    pqc component</span>
+
+<span class="sd">This is the same framing as HybridCipherText.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.x25519</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">X25519PrivateKey</span><span class="p">,</span>
+    <span class="n">X25519PublicKey</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Encoding</span><span class="p">,</span>
+    <span class="n">NoEncryption</span><span class="p">,</span>
+    <span class="n">PrivateFormat</span><span class="p">,</span>
+    <span class="n">PublicFormat</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_kem_backend</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DecapsulationError</span><span class="p">,</span>
+    <span class="n">InsecureOperationError</span><span class="p">,</span>
+    <span class="n">UnsupportedAlgorithm</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_HYBRID_CLASSICAL</span><span class="p">,</span>
+    <span class="n">DEFAULT_HYBRID_PQC</span><span class="p">,</span>
+    <span class="n">canonical_hybrid_name</span><span class="p">,</span>
+    <span class="n">validate_hybrid_combination</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HybridCipherText</span><span class="p">,</span>
+    <span class="n">KeyPair</span><span class="p">,</span>
+    <span class="n">MigrationState</span><span class="p">,</span>
+    <span class="n">PublicKey</span><span class="p">,</span>
+    <span class="n">SecretKey</span><span class="p">,</span>
+    <span class="n">SharedSecret</span><span class="p">,</span>
+    <span class="n">combine_shared_secrets</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.backends.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractKEMBackend</span>
+
+
+<span class="c1"># Length prefix format: 2-byte big-endian uint16</span>
+<span class="n">_LEN_FMT</span> <span class="o">=</span> <span class="s2">&quot;&gt;H&quot;</span>
+<span class="n">_LEN_SIZE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pack_components</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pack two byte strings with a length prefix on the first.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">_LEN_FMT</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span> <span class="o">+</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unpack_components</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unpack two byte strings packed by _pack_components.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">_LEN_SIZE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">a_len</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack_from</span><span class="p">(</span><span class="n">_LEN_FMT</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">_LEN_SIZE</span> <span class="o">+</span> <span class="n">a_len</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">_LEN_SIZE</span><span class="p">:</span> <span class="n">_LEN_SIZE</span> <span class="o">+</span> <span class="n">a_len</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">_LEN_SIZE</span> <span class="o">+</span> <span class="n">a_len</span><span class="p">:]</span>
+    <span class="k">return</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+
+
+<div class="viewcode-block" id="HybridKEM">
+<a class="viewcode-back" href="../../../api/kem.html#quantum_safe.kem.hybrid.HybridKEM">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HybridKEM</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hybrid KEM: classical Diffie-Hellman + post-quantum KEM.</span>
+
+<span class="sd">    Default configuration: X25519 + ML-KEM-768. This matches the TLS 1.3</span>
+<span class="sd">    hybrid group X25519MLKEM768 and is recommended by all major standards</span>
+<span class="sd">    bodies for the current transition period.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        classical:      Classical KEM algorithm. Currently &quot;X25519&quot; or &quot;P-256&quot;.</span>
+<span class="sd">                        Default: &quot;X25519&quot;.</span>
+<span class="sd">        pqc:            PQC KEM algorithm. Default: &quot;ML-KEM-768&quot;.</span>
+<span class="sd">        backend:        Backend for PQC operations: &quot;auto&quot;, &quot;liboqs&quot;,</span>
+<span class="sd">                        &quot;rustcrypto&quot;. Default: &quot;auto&quot;.</span>
+<span class="sd">        validate:       If True (default), validate that the classical+pqc</span>
+<span class="sd">                        combination is an approved hybrid. Set False only</span>
+<span class="sd">                        if you&#39;re testing a non-standard combination.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        from quantum_safe import HybridKEM</span>
+
+<span class="sd">        kem = HybridKEM()                      # X25519 + ML-KEM-768</span>
+<span class="sd">        kp  = kem.generate_keypair()</span>
+<span class="sd">        ct, ss = kem.encapsulate(kp.public)</span>
+<span class="sd">        ss2    = kem.decapsulate(kp.secret, ct)</span>
+<span class="sd">        assert ss == ss2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">classical</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_HYBRID_CLASSICAL</span><span class="p">,</span>
+        <span class="n">pqc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_HYBRID_PQC</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">validate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">validate</span><span class="p">:</span>
+            <span class="n">validate_hybrid_combination</span><span class="p">(</span><span class="n">classical</span><span class="p">,</span> <span class="n">pqc</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">=</span> <span class="n">classical</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span> <span class="o">=</span> <span class="n">pqc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span> <span class="o">=</span> <span class="n">canonical_hybrid_name</span><span class="p">(</span><span class="n">classical</span><span class="p">,</span> <span class="n">pqc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="p">:</span> <span class="n">AbstractKEMBackend</span> <span class="o">=</span> <span class="n">get_kem_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+
+        <span class="c1"># Pre-validate that the backend supports the PQC algorithm</span>
+        <span class="n">supported</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">supported_algorithms</span><span class="p">()}</span>
+        <span class="k">if</span> <span class="n">pqc</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span><span class="n">pqc</span><span class="p">,</span> <span class="n">available</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">supported</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Full hybrid algorithm string, e.g. &#39;X25519+ML-KEM-768&#39;.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">classical_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pqc_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backend_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Key generation</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="HybridKEM.generate_keypair">
+<a class="viewcode-back" href="../../../api/kem.html#quantum_safe.kem.hybrid.HybridKEM.generate_keypair">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_keypair</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeyPair</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a hybrid key pair.</span>
+
+<span class="sd">        The public key contains both the X25519 public key and the ML-KEM</span>
+<span class="sd">        public key, packed with a length prefix. The secret key is similarly</span>
+<span class="sd">        structured.</span>
+
+<span class="sd">        The migration_state is set to HYBRID_TRANSITION by default — this</span>
+<span class="sd">        key participates in the current hybrid deployment.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            KeyPair where both .public and .secret contain hybrid key material.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Generate classical component</span>
+        <span class="n">classical_priv</span><span class="p">,</span> <span class="n">classical_pub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_classical_keypair</span><span class="p">()</span>
+
+        <span class="c1"># Generate PQC component via backend</span>
+        <span class="n">pqc_pub_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">keygen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span><span class="p">)</span>
+
+        <span class="c1"># Pack: length-prefix classical, append PQC</span>
+        <span class="n">combined_pub</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_pub</span><span class="p">,</span> <span class="n">pqc_pub_bytes</span><span class="p">)</span>
+        <span class="n">combined_sec</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_priv</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span><span class="p">)</span>
+
+        <span class="n">pub</span> <span class="o">=</span> <span class="n">PublicKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_pub</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">sec</span> <span class="o">=</span> <span class="n">SecretKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_sec</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">KeyPair</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="n">pub</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">sec</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Encapsulate</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="HybridKEM.encapsulate">
+<a class="viewcode-back" href="../../../api/kem.html#quantum_safe.kem.hybrid.HybridKEM.encapsulate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encapsulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">public_key</span><span class="p">:</span> <span class="n">PublicKey</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">HybridCipherText</span><span class="p">,</span> <span class="n">SharedSecret</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Encapsulate a shared secret under the recipient&#39;s hybrid public key.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            public_key: The recipient&#39;s HybridKEM public key.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (ct, ss): HybridCipherText to send to the recipient, SharedSecret</span>
+<span class="sd">                      for the sender&#39;s use.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            The HybridCipherText.to_bytes() gives you the wire-format bytes</span>
+<span class="sd">            to transmit. The SharedSecret is 32 bytes of combined key material</span>
+<span class="sd">            derived from both the classical and PQC exchanges.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">public_key</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span>
+                <span class="n">public_key</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+                <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Split the recipient&#39;s combined public key</span>
+        <span class="n">classical_pub_bytes</span><span class="p">,</span> <span class="n">pqc_pub_bytes</span> <span class="o">=</span> <span class="n">_unpack_components</span><span class="p">(</span>
+            <span class="n">public_key</span><span class="o">.</span><span class="n">raw_bytes</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- Classical half ---</span>
+        <span class="n">classical_ct</span><span class="p">,</span> <span class="n">classical_ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encapsulate_classical</span><span class="p">(</span><span class="n">classical_pub_bytes</span><span class="p">)</span>
+
+        <span class="c1"># --- PQC half ---</span>
+        <span class="n">pqc_ct_bytes</span><span class="p">,</span> <span class="n">pqc_ss_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">encapsulate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span><span class="p">,</span> <span class="n">pqc_pub_bytes</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- Combine ---</span>
+        <span class="n">hct</span> <span class="o">=</span> <span class="n">HybridCipherText</span><span class="p">(</span>
+            <span class="n">classical_ct</span><span class="o">=</span><span class="n">classical_ct</span><span class="p">,</span>
+            <span class="n">pqc_ct</span><span class="o">=</span><span class="n">pqc_ct_bytes</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">combined_ss</span> <span class="o">=</span> <span class="n">combine_shared_secrets</span><span class="p">(</span>
+            <span class="n">classical_ss</span><span class="o">=</span><span class="n">classical_ss</span><span class="p">,</span>
+            <span class="n">pqc_ss</span><span class="o">=</span><span class="n">pqc_ss_bytes</span><span class="p">[:</span><span class="mi">32</span><span class="p">],</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+            <span class="n">classical_ct</span><span class="o">=</span><span class="n">classical_ct</span><span class="p">,</span>
+            <span class="n">pqc_ct</span><span class="o">=</span><span class="n">pqc_ct_bytes</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">hct</span><span class="p">,</span> <span class="n">combined_ss</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Decapsulate</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="HybridKEM.decapsulate">
+<a class="viewcode-back" href="../../../api/kem.html#quantum_safe.kem.hybrid.HybridKEM.decapsulate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decapsulate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">secret_key</span><span class="p">:</span> <span class="n">SecretKey</span><span class="p">,</span> <span class="n">ciphertext</span><span class="p">:</span> <span class="n">HybridCipherText</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SharedSecret</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Decapsulate: recover the shared secret from a hybrid ciphertext.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            secret_key: The recipient&#39;s HybridKEM secret key.</span>
+<span class="sd">            ciphertext: HybridCipherText from the sender.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SharedSecret matching the sender&#39;s.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DecapsulationError: on structural failures. Note that ML-KEM</span>
+<span class="sd">                uses implicit rejection, so a bad ML-KEM ciphertext returns</span>
+<span class="sd">                a pseudorandom value rather than failing — this is by design.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">secret_key</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span>
+                <span class="n">secret_key</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+                <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Split secret key into classical + PQC components</span>
+        <span class="n">classical_sec_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span> <span class="o">=</span> <span class="n">_unpack_components</span><span class="p">(</span>
+            <span class="n">secret_key</span><span class="o">.</span><span class="n">raw_bytes</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- Classical half ---</span>
+        <span class="n">classical_ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decapsulate_classical</span><span class="p">(</span>
+            <span class="n">classical_sec_bytes</span><span class="p">,</span> <span class="n">ciphertext</span><span class="o">.</span><span class="n">classical_ct</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- PQC half ---</span>
+        <span class="n">pqc_ss_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">decapsulate</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span><span class="p">,</span> <span class="n">ciphertext</span><span class="o">.</span><span class="n">pqc_ct</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- Combine (same construction as encapsulate) ---</span>
+        <span class="k">return</span> <span class="n">combine_shared_secrets</span><span class="p">(</span>
+            <span class="n">classical_ss</span><span class="o">=</span><span class="n">classical_ss</span><span class="p">,</span>
+            <span class="n">pqc_ss</span><span class="o">=</span><span class="n">pqc_ss_bytes</span><span class="p">[:</span><span class="mi">32</span><span class="p">],</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">,</span>
+            <span class="n">classical_ct</span><span class="o">=</span><span class="n">ciphertext</span><span class="o">.</span><span class="n">classical_ct</span><span class="p">,</span>
+            <span class="n">pqc_ct</span><span class="o">=</span><span class="n">ciphertext</span><span class="o">.</span><span class="n">pqc_ct</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Classical KEM internals</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gen_classical_keypair</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate classical ephemeral key material.</span>
+
+<span class="sd">        Returns (private_bytes, public_bytes).</span>
+
+<span class="sd">        We generate a fresh ephemeral key for every key pair. In the context</span>
+<span class="sd">        of hybrid KEM, the classical component functions as a long-term key</span>
+<span class="sd">        (unlike in DH-based protocols where it would be ephemeral per session).</span>
+<span class="sd">        The caller decides the key lifecycle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;X25519&quot;</span><span class="p">:</span>
+            <span class="n">priv</span> <span class="o">=</span> <span class="n">X25519PrivateKey</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+            <span class="n">pub</span> <span class="o">=</span> <span class="n">priv</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+            <span class="n">priv_bytes</span> <span class="o">=</span> <span class="n">priv</span><span class="o">.</span><span class="n">private_bytes</span><span class="p">(</span>
+                <span class="n">Encoding</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">PrivateFormat</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">NoEncryption</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="n">pub_bytes</span> <span class="o">=</span> <span class="n">pub</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">Raw</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">priv_bytes</span><span class="p">,</span> <span class="n">pub_bytes</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;P-256&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.ec</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">SECP256R1</span><span class="p">,</span>
+                <span class="n">generate_private_key</span><span class="p">,</span>
+                <span class="n">ECDH</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+            <span class="n">priv</span> <span class="o">=</span> <span class="n">generate_private_key</span><span class="p">(</span><span class="n">SECP256R1</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
+            <span class="n">pub</span> <span class="o">=</span> <span class="n">priv</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+            <span class="n">priv_bytes</span> <span class="o">=</span> <span class="n">priv</span><span class="o">.</span><span class="n">private_bytes</span><span class="p">(</span>
+                <span class="n">Encoding</span><span class="o">.</span><span class="n">PEM</span><span class="p">,</span> <span class="n">PrivateFormat</span><span class="o">.</span><span class="n">PKCS8</span><span class="p">,</span> <span class="n">NoEncryption</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="n">pub_bytes</span> <span class="o">=</span> <span class="n">pub</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span>
+                <span class="n">Encoding</span><span class="o">.</span><span class="n">X962</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">UncompressedPoint</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">priv_bytes</span><span class="p">,</span> <span class="n">pub_bytes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span><span class="p">,</span>
+                <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X25519&quot;</span><span class="p">,</span> <span class="s2">&quot;P-256&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_encapsulate_classical</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">recipient_pub_bytes</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform classical key encapsulation.</span>
+
+<span class="sd">        For X25519, encapsulation = generate ephemeral keypair, compute DH.</span>
+<span class="sd">        The &#39;ciphertext&#39; is the ephemeral public key.</span>
+
+<span class="sd">        Returns (classical_ct_bytes, shared_secret_bytes).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;X25519&quot;</span><span class="p">:</span>
+            <span class="c1"># Generate an ephemeral X25519 keypair</span>
+            <span class="n">ephem_priv</span> <span class="o">=</span> <span class="n">X25519PrivateKey</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+            <span class="n">ephem_pub</span> <span class="o">=</span> <span class="n">ephem_priv</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+
+            <span class="c1"># Load recipient&#39;s X25519 public key</span>
+            <span class="n">recipient_pub</span> <span class="o">=</span> <span class="n">X25519PublicKey</span><span class="o">.</span><span class="n">from_public_bytes</span><span class="p">(</span><span class="n">recipient_pub_bytes</span><span class="p">)</span>
+
+            <span class="c1"># DH exchange</span>
+            <span class="n">shared</span> <span class="o">=</span> <span class="n">ephem_priv</span><span class="o">.</span><span class="n">exchange</span><span class="p">(</span><span class="n">recipient_pub</span><span class="p">)</span>
+
+            <span class="c1"># The &quot;ciphertext&quot; is the ephemeral public key</span>
+            <span class="n">ct</span> <span class="o">=</span> <span class="n">ephem_pub</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">Raw</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">Raw</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ct</span><span class="p">,</span> <span class="n">shared</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;P-256&quot;</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.ec</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">SECP256R1</span><span class="p">,</span>
+                <span class="n">generate_private_key</span><span class="p">,</span>
+                <span class="n">EllipticCurvePublicKey</span><span class="p">,</span>
+                <span class="n">ECDH</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.ec</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">EllipticCurvePublicNumbers</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">ephem_priv</span> <span class="o">=</span> <span class="n">generate_private_key</span><span class="p">(</span><span class="n">SECP256R1</span><span class="p">(),</span> <span class="n">default_backend</span><span class="p">())</span>
+            <span class="n">ephem_pub</span> <span class="o">=</span> <span class="n">ephem_priv</span><span class="o">.</span><span class="n">public_key</span><span class="p">()</span>
+
+            <span class="c1"># Load recipient&#39;s public key from uncompressed point</span>
+            <span class="c1"># cryptography doesn&#39;t have a direct from_encoded_point in all versions</span>
+            <span class="c1"># so we use the longer form</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.ec</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">EllipticCurvePublicNumbers</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">recipient_pub_bytes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">65</span> <span class="ow">or</span> <span class="n">recipient_pub_bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mh">0x04</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_classical</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">recipient_pub_bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">33</span><span class="p">],</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">recipient_pub_bytes</span><span class="p">[</span><span class="mi">33</span><span class="p">:</span><span class="mi">65</span><span class="p">],</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+            <span class="n">recipient_pub</span> <span class="o">=</span> <span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">SECP256R1</span><span class="p">())</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+                <span class="n">default_backend</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="n">shared_key</span> <span class="o">=</span> <span class="n">ephem_priv</span><span class="o">.</span><span class="n">exchange</span><span class="p">(</span><span class="n">ECDH</span><span class="p">(),</span> <span class="n">recipient_pub</span><span class="p">)</span>
+            <span class="n">ct</span> <span class="o">=</span> <span class="n">ephem_pub</span><span class="o">.</span><span class="n">public_bytes</span><span class="p">(</span><span class="n">Encoding</span><span class="o">.</span><span class="n">X962</span><span class="p">,</span> <span class="n">PublicFormat</span><span class="o">.</span><span class="n">UncompressedPoint</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ct</span><span class="p">,</span> <span class="n">shared_key</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_classical</span><span class="p">,</span> <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X25519&quot;</span><span class="p">,</span> <span class="s2">&quot;P-256&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_decapsulate_classical</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">secret_key_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">ciphertext_bytes</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recover the classical shared secret.</span>
+
+<span class="sd">        For X25519, the ciphertext is the sender&#39;s ephemeral public key.</span>
+<span class="sd">        We compute DH(our_secret_key, sender_ephemeral_pub).</span>
+
+<span class="sd">        Returns shared_secret_bytes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;X25519&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Load our static secret key</span>
+                <span class="n">our_priv</span> <span class="o">=</span> <span class="n">X25519PrivateKey</span><span class="o">.</span><span class="n">from_private_bytes</span><span class="p">(</span><span class="n">secret_key_bytes</span><span class="p">)</span>
+                <span class="c1"># Load sender&#39;s ephemeral public key (the &quot;ciphertext&quot;)</span>
+                <span class="n">sender_ephem_pub</span> <span class="o">=</span> <span class="n">X25519PublicKey</span><span class="o">.</span><span class="n">from_public_bytes</span><span class="p">(</span><span class="n">ciphertext_bytes</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">our_priv</span><span class="o">.</span><span class="n">exchange</span><span class="p">(</span><span class="n">sender_ephem_pub</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_classical</span> <span class="o">==</span> <span class="s2">&quot;P-256&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.asymmetric.ec</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">SECP256R1</span><span class="p">,</span>
+                    <span class="n">EllipticCurvePrivateKey</span><span class="p">,</span>
+                    <span class="n">EllipticCurvePublicNumbers</span><span class="p">,</span>
+                    <span class="n">ECDH</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_backend</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">cryptography.hazmat.primitives.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pem_private_key</span>
+
+                <span class="n">our_priv</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+                    <span class="n">EllipticCurvePrivateKey</span><span class="p">,</span>
+                    <span class="n">load_pem_private_key</span><span class="p">(</span><span class="n">secret_key_bytes</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                         <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()),</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ciphertext_bytes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">65</span> <span class="ow">or</span> <span class="n">ciphertext_bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mh">0x04</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">ciphertext_bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">33</span><span class="p">],</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">ciphertext_bytes</span><span class="p">[</span><span class="mi">33</span><span class="p">:</span><span class="mi">65</span><span class="p">],</span> <span class="s2">&quot;big&quot;</span><span class="p">)</span>
+                <span class="n">sender_pub</span> <span class="o">=</span> <span class="n">EllipticCurvePublicNumbers</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">SECP256R1</span><span class="p">())</span><span class="o">.</span><span class="n">public_key</span><span class="p">(</span>
+                    <span class="n">default_backend</span><span class="p">()</span>
+                <span class="p">)</span>
+                <span class="n">shared</span> <span class="o">=</span> <span class="n">our_priv</span><span class="o">.</span><span class="n">exchange</span><span class="p">(</span><span class="n">ECDH</span><span class="p">(),</span> <span class="n">sender_pub</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">shared</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>
+            <span class="k">except</span> <span class="n">DecapsulationError</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DecapsulationError</span><span class="p">(</span><span class="n">algo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_algorithm</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnsupportedAlgorithm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_classical</span><span class="p">,</span> <span class="n">available</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X25519&quot;</span><span class="p">,</span> <span class="s2">&quot;P-256&quot;</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;HybridKEM(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;classical=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_classical</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;pqc=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_pqc</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;backend=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_backend</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

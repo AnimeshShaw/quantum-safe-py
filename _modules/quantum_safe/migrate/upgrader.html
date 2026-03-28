@@ -1,0 +1,659 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>quantum_safe.migrate.upgrader - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/cli.html">CLI reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/types.html">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/protocols.html">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/migrate.html">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for quantum_safe.migrate.upgrader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">quantum_safe.migrate.upgrader</span>
+<span class="sd">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+
+<span class="sd">Key upgrader: takes an existing classical key and produces a hybrid</span>
+<span class="sd">replacement that retains backward compatibility.</span>
+
+<span class="sd">The central design challenge in key migration is that you can&#39;t just</span>
+<span class="sd">swap keys atomically — at some point during rollout, both old and new</span>
+<span class="sd">clients exist. The Upgrader solves this by producing a HybridKey that:</span>
+
+<span class="sd">  1. Contains the original classical sub-key unchanged.</span>
+<span class="sd">  2. Adds a PQC sub-key alongside it.</span>
+<span class="sd">  3. Sets migration_state=HYBRID_TRANSITION so the state machine</span>
+<span class="sd">     can track progress.</span>
+
+<span class="sd">This means:</span>
+<span class="sd">  - Old senders using X25519-only can still encrypt to the new public key</span>
+<span class="sd">    (they just use the X25519 component and ignore the ML-KEM extension).</span>
+<span class="sd">  - New senders using HybridKEM use both components.</span>
+<span class="sd">  - The upgrade is reversible during the transition period.</span>
+
+<span class="sd">Supported upgrade paths</span>
+<span class="sd">------------------------</span>
+<span class="sd">  X25519 private key     → X25519+ML-KEM-768 hybrid KEM key</span>
+<span class="sd">  Ed25519 signing key    → Ed25519+ML-DSA-65 hybrid signing key</span>
+<span class="sd">  ECDSA P-256 sign key   → P-256+ML-DSA-65 hybrid signing key</span>
+<span class="sd">  (pure PQC keys are already migrated — no upgrade needed)</span>
+
+<span class="sd">Upgrade result</span>
+<span class="sd">--------------</span>
+<span class="sd">UpgradeResult bundles the new hybrid KeyPair with metadata about what</span>
+<span class="sd">was done. The original key bytes are NOT stored in the result — the</span>
+<span class="sd">caller should keep the original for the backward-compat window and</span>
+<span class="sd">then delete it after the migration period.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClassicalKeyDetected</span><span class="p">,</span>
+    <span class="n">UnsupportedAlgorithm</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyPair</span><span class="p">,</span> <span class="n">MigrationState</span><span class="p">,</span> <span class="n">PublicKey</span><span class="p">,</span> <span class="n">SecretKey</span>
+
+
+<div class="viewcode-block" id="UpgradeResult">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.UpgradeResult">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UpgradeResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of a key upgrade operation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        new_keypair:        The upgraded hybrid keypair.</span>
+<span class="sd">        old_algorithm:      Algorithm string of the key before upgrade.</span>
+<span class="sd">        new_algorithm:      Algorithm string of the upgraded key.</span>
+<span class="sd">        migration_state:    Migration state of the new key (always HYBRID_TRANSITION).</span>
+<span class="sd">        backward_compat:    True if the new key is backward-compatible with</span>
+<span class="sd">                            the old algorithm (i.e. old clients can still use it).</span>
+<span class="sd">        notes:              Human-readable notes about the upgrade.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">new_keypair</span><span class="p">:</span> <span class="n">KeyPair</span>
+    <span class="n">old_algorithm</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">new_algorithm</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">migration_state</span><span class="p">:</span> <span class="n">MigrationState</span>
+    <span class="n">backward_compat</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;UpgradeResult(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">old_algorithm</span><span class="si">!r}</span><span class="s2"> → </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">new_algorithm</span><span class="si">!r}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;compat=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">backward_compat</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Upgrader">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Upgrader</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upgrades classical keys to hybrid PQC keys.</span>
+
+<span class="sd">    All methods are class methods — no instantiation needed.</span>
+
+<span class="sd">    Example::</span>
+
+<span class="sd">        from quantum_safe.migrate import Upgrader</span>
+<span class="sd">        from quantum_safe.types.keys import MigrationState</span>
+
+<span class="sd">        # Upgrade an X25519 secret key to hybrid</span>
+<span class="sd">        result = Upgrader.upgrade_kem_key(</span>
+<span class="sd">            classical_secret_bytes=x25519_private_bytes,</span>
+<span class="sd">            classical_public_bytes=x25519_public_bytes,</span>
+<span class="sd">            classical_algorithm=&quot;X25519&quot;,</span>
+<span class="sd">            target_pqc=&quot;ML-KEM-768&quot;,</span>
+<span class="sd">            backend=&quot;auto&quot;,</span>
+<span class="sd">        )</span>
+<span class="sd">        new_kp = result.new_keypair</span>
+<span class="sd">        print(new_kp.algorithm)  # &quot;X25519+ML-KEM-768&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Upgrader.upgrade_kem_key">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader.upgrade_kem_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upgrade_kem_key</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">classical_secret_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">classical_public_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">classical_algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;X25519&quot;</span><span class="p">,</span>
+        <span class="n">target_pqc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ML-KEM-768&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UpgradeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Upgrade a classical KEM key to a hybrid key.</span>
+
+<span class="sd">        The original classical sub-key is retained in the output — it is</span>
+<span class="sd">        the same bytes as classical_secret_bytes / classical_public_bytes,</span>
+<span class="sd">        just wrapped alongside the new PQC component.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            classical_secret_bytes: Raw bytes of the classical private key.</span>
+<span class="sd">                                    For X25519: 32 bytes.</span>
+<span class="sd">            classical_public_bytes: Raw bytes of the classical public key.</span>
+<span class="sd">                                    For X25519: 32 bytes.</span>
+<span class="sd">            classical_algorithm:    &quot;X25519&quot; or &quot;P-256&quot;.</span>
+<span class="sd">            target_pqc:             PQC algorithm to add. Default &quot;ML-KEM-768&quot;.</span>
+<span class="sd">            backend:                PQC backend.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            UpgradeResult with the new hybrid KeyPair.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_kem_backend</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="n">canonical_hybrid_name</span><span class="p">,</span> <span class="n">validate_hybrid_combination</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pack_components</span>
+
+        <span class="n">validate_hybrid_combination</span><span class="p">(</span><span class="n">classical_algorithm</span><span class="p">,</span> <span class="n">target_pqc</span><span class="p">)</span>
+        <span class="n">new_algo</span> <span class="o">=</span> <span class="n">canonical_hybrid_name</span><span class="p">(</span><span class="n">classical_algorithm</span><span class="p">,</span> <span class="n">target_pqc</span><span class="p">)</span>
+
+        <span class="c1"># Generate a fresh PQC sub-key</span>
+        <span class="n">pqc_backend</span> <span class="o">=</span> <span class="n">get_kem_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+        <span class="n">pqc_pub_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span> <span class="o">=</span> <span class="n">pqc_backend</span><span class="o">.</span><span class="n">keygen</span><span class="p">(</span><span class="n">target_pqc</span><span class="p">)</span>
+
+        <span class="c1"># Pack: classical first, PQC second (same format as HybridKEM.generate_keypair)</span>
+        <span class="n">combined_pub</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_public_bytes</span><span class="p">,</span> <span class="n">pqc_pub_bytes</span><span class="p">)</span>
+        <span class="n">combined_sec</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_secret_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span><span class="p">)</span>
+
+        <span class="n">new_pub</span> <span class="o">=</span> <span class="n">PublicKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_pub</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">pqc_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_sec</span> <span class="o">=</span> <span class="n">SecretKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_sec</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">pqc_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_kp</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="n">new_pub</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">new_sec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">UpgradeResult</span><span class="p">(</span>
+            <span class="n">new_keypair</span><span class="o">=</span><span class="n">new_kp</span><span class="p">,</span>
+            <span class="n">old_algorithm</span><span class="o">=</span><span class="n">classical_algorithm</span><span class="p">,</span>
+            <span class="n">new_algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backward_compat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">notes</span><span class="o">=</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Original </span><span class="si">{</span><span class="n">classical_algorithm</span><span class="si">}</span><span class="s2"> sub-key retained in hybrid key. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Old senders can still use the </span><span class="si">{</span><span class="n">classical_algorithm</span><span class="si">}</span><span class="s2"> component. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;New senders will use the full </span><span class="si">{</span><span class="n">new_algo</span><span class="si">}</span><span class="s2"> hybrid construction.&quot;</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Upgrader.upgrade_signing_key">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader.upgrade_signing_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">upgrade_signing_key</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">classical_secret_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">classical_public_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+        <span class="n">classical_algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Ed25519&quot;</span><span class="p">,</span>
+        <span class="n">target_pqc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ML-DSA-65&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UpgradeResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Upgrade a classical signing key to a hybrid signing key.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            classical_secret_bytes: Raw bytes of the classical private key.</span>
+<span class="sd">                                    For Ed25519: 32 bytes.</span>
+<span class="sd">            classical_public_bytes: Raw bytes of the classical public key.</span>
+<span class="sd">                                    For Ed25519: 32 bytes.</span>
+<span class="sd">            classical_algorithm:    &quot;Ed25519&quot; or &quot;P-256&quot;.</span>
+<span class="sd">            target_pqc:             PQC signature algorithm. Default &quot;ML-DSA-65&quot;.</span>
+<span class="sd">            backend:                PQC backend.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            UpgradeResult with the new hybrid signing KeyPair.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.backends</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_signature_backend</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.signatures.algorithms</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">canonical_hybrid_name</span><span class="p">,</span>
+            <span class="n">validate_hybrid_combination</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.signatures.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pack_components</span>
+
+        <span class="n">validate_hybrid_combination</span><span class="p">(</span><span class="n">classical_algorithm</span><span class="p">,</span> <span class="n">target_pqc</span><span class="p">)</span>
+        <span class="n">new_algo</span> <span class="o">=</span> <span class="n">canonical_hybrid_name</span><span class="p">(</span><span class="n">classical_algorithm</span><span class="p">,</span> <span class="n">target_pqc</span><span class="p">)</span>
+
+        <span class="c1"># Generate a fresh PQC signing sub-key</span>
+        <span class="n">sig_backend</span> <span class="o">=</span> <span class="n">get_signature_backend</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+        <span class="n">pqc_pub_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span> <span class="o">=</span> <span class="n">sig_backend</span><span class="o">.</span><span class="n">keygen</span><span class="p">(</span><span class="n">target_pqc</span><span class="p">)</span>
+
+        <span class="c1"># Pack: classical first, PQC second</span>
+        <span class="n">combined_pub</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_public_bytes</span><span class="p">,</span> <span class="n">pqc_pub_bytes</span><span class="p">)</span>
+        <span class="n">combined_sec</span> <span class="o">=</span> <span class="n">_pack_components</span><span class="p">(</span><span class="n">classical_secret_bytes</span><span class="p">,</span> <span class="n">pqc_sec_bytes</span><span class="p">)</span>
+
+        <span class="n">new_pub</span> <span class="o">=</span> <span class="n">PublicKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_pub</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">sig_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_sec</span> <span class="o">=</span> <span class="n">SecretKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">combined_sec</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">sig_backend</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_kp</span> <span class="o">=</span> <span class="n">KeyPair</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="n">new_pub</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">new_sec</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">UpgradeResult</span><span class="p">(</span>
+            <span class="n">new_keypair</span><span class="o">=</span><span class="n">new_kp</span><span class="p">,</span>
+            <span class="n">old_algorithm</span><span class="o">=</span><span class="n">classical_algorithm</span><span class="p">,</span>
+            <span class="n">new_algorithm</span><span class="o">=</span><span class="n">new_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">,</span>
+            <span class="n">backward_compat</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">notes</span><span class="o">=</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Original </span><span class="si">{</span><span class="n">classical_algorithm</span><span class="si">}</span><span class="s2"> signing key retained. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Existing verifiers can still check the </span><span class="si">{</span><span class="n">classical_algorithm</span><span class="si">}</span><span class="s2"> sub-signature. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;New verifiers require both sub-signatures to pass.&quot;</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Upgrader.strip_classical_component">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader.strip_classical_component">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">strip_classical_component</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hybrid_keypair</span><span class="p">:</span> <span class="n">KeyPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeyPair</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the classical sub-key from a hybrid keypair.</span>
+
+<span class="sd">        Use this when you&#39;re confident all clients support PQC and you</span>
+<span class="sd">        want to move to PQC_ONLY migration state.</span>
+
+<span class="sd">        Warning: This is a one-way operation. Old clients that only</span>
+<span class="sd">        support classical algorithms will no longer be able to use</span>
+<span class="sd">        the returned key. Make sure you&#39;ve fully migrated before calling this.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            hybrid_keypair: A keypair in HYBRID_TRANSITION or PQC_PREFERRED state.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A new KeyPair with only the PQC component, in PQC_ONLY state.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if the keypair is not in a hybrid state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;+&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">algorithm</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Key &#39;</span><span class="si">{</span><span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">algorithm</span><span class="si">}</span><span class="s2">&#39; is not a hybrid key. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Nothing to strip.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.kem.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">_unpack_components</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DecapsulationError</span>
+
+        <span class="c1"># Determine if this is a KEM or signature key based on algorithm name</span>
+        <span class="n">algo</span> <span class="o">=</span> <span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">algorithm</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">pqc_algo</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Unpack the PQC-only components</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_classical_pub</span><span class="p">,</span> <span class="n">pqc_pub</span> <span class="o">=</span> <span class="n">_unpack_components</span><span class="p">(</span><span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">public</span><span class="o">.</span><span class="n">raw_bytes</span><span class="p">)</span>
+            <span class="n">_classical_sec</span><span class="p">,</span> <span class="n">pqc_sec</span> <span class="o">=</span> <span class="n">_unpack_components</span><span class="p">(</span><span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">secret</span><span class="o">.</span><span class="n">raw_bytes</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">DecapsulationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to unpack hybrid key: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+        <span class="n">new_pub</span> <span class="o">=</span> <span class="n">PublicKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">pqc_pub</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">pqc_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">PQC_ONLY</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">public</span><span class="o">.</span><span class="n">backend_tag</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">new_sec</span> <span class="o">=</span> <span class="n">SecretKey</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">=</span><span class="n">pqc_sec</span><span class="p">,</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="n">pqc_algo</span><span class="p">,</span>
+            <span class="n">migration_state</span><span class="o">=</span><span class="n">MigrationState</span><span class="o">.</span><span class="n">PQC_ONLY</span><span class="p">,</span>
+            <span class="n">backend_tag</span><span class="o">=</span><span class="n">hybrid_keypair</span><span class="o">.</span><span class="n">secret</span><span class="o">.</span><span class="n">backend_tag</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;strip_classical_component() produced a PQC-only key &#39;</span><span class="si">{</span><span class="n">pqc_algo</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Classical clients can no longer use this key. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;This action should be logged in your migration audit trail.&quot;</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">KeyPair</span><span class="p">(</span><span class="n">public</span><span class="o">=</span><span class="n">new_pub</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">new_sec</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Upgrader.check_needs_upgrade">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader.check_needs_upgrade">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_needs_upgrade</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">keypair</span><span class="p">:</span> <span class="n">KeyPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if the keypair should be upgraded.</span>
+
+<span class="sd">        A key needs upgrade if it is in CLASSICAL_ONLY migration state.</span>
+<span class="sd">        HYBRID_TRANSITION and above are considered &quot;migrated enough&quot; for</span>
+<span class="sd">        the transition period.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">keypair</span><span class="o">.</span><span class="n">public</span><span class="o">.</span><span class="n">migration_state</span>
+        <span class="k">return</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MigrationState</span><span class="o">.</span><span class="n">CLASSICAL_ONLY</span></div>
+
+
+<div class="viewcode-block" id="Upgrader.describe_key">
+<a class="viewcode-back" href="../../../api/migrate.html#quantum_safe.migrate.upgrader.Upgrader.describe_key">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe_key</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">keypair</span><span class="p">:</span> <span class="n">KeyPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a human-readable description of a key&#39;s migration status.</span>
+
+<span class="sd">        Useful for reporting tools and dashboards.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pub</span> <span class="o">=</span> <span class="n">keypair</span><span class="o">.</span><span class="n">public</span>
+        <span class="n">is_hybrid</span> <span class="o">=</span> <span class="s2">&quot;+&quot;</span> <span class="ow">in</span> <span class="n">keypair</span><span class="o">.</span><span class="n">algorithm</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span>        <span class="n">keypair</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span>
+            <span class="s2">&quot;migration_state&quot;</span><span class="p">:</span>  <span class="n">pub</span><span class="o">.</span><span class="n">migration_state</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="s2">&quot;is_hybrid&quot;</span><span class="p">:</span>        <span class="n">is_hybrid</span><span class="p">,</span>
+            <span class="s2">&quot;needs_upgrade&quot;</span><span class="p">:</span>    <span class="bp">cls</span><span class="o">.</span><span class="n">check_needs_upgrade</span><span class="p">(</span><span class="n">keypair</span><span class="p">),</span>
+            <span class="s2">&quot;fingerprint&quot;</span><span class="p">:</span>      <span class="n">pub</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">()[:</span><span class="mi">16</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;public_key_size&quot;</span><span class="p">:</span>  <span class="nb">len</span><span class="p">(</span><span class="n">pub</span><span class="o">.</span><span class="n">raw_bytes</span><span class="p">),</span>
+            <span class="s2">&quot;recommendation&quot;</span><span class="p">:</span>   <span class="bp">cls</span><span class="o">.</span><span class="n">_recommend</span><span class="p">(</span><span class="n">pub</span><span class="o">.</span><span class="n">migration_state</span><span class="p">,</span> <span class="n">is_hybrid</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_recommend</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">MigrationState</span><span class="p">,</span> <span class="n">is_hybrid</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MigrationState</span><span class="o">.</span><span class="n">CLASSICAL_ONLY</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Upgrade to HYBRID_TRANSITION using Upgrader.upgrade_kem_key() or upgrade_signing_key()&quot;</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MigrationState</span><span class="o">.</span><span class="n">HYBRID_TRANSITION</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Transition complete. Advance to PQC_PREFERRED when all clients support hybrid.&quot;</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MigrationState</span><span class="o">.</span><span class="n">PQC_PREFERRED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Consider moving to PQC_ONLY once all classical clients are retired.&quot;</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MigrationState</span><span class="o">.</span><span class="n">PQC_ONLY</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;Fully migrated. No action needed.&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;Unknown state — inspect manually.&quot;</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

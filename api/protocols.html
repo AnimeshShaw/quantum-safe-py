@@ -1,0 +1,925 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Migration (quantum_safe.migrate)" href="migrate.html"><link rel="prev" title="Signatures (quantum_safe.signatures)" href="signatures.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Protocols (quantum_safe.protocols) - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/cli.html">CLI reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/benchmarks.html">Benchmarking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/protocols.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="protocols-quantum-safe-protocols">
+<h1>Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)<a class="headerlink" href="#protocols-quantum-safe-protocols" title="Link to this heading">¶</a></h1>
+<p>Higher-level protocol helpers built on top of the KEM and signature primitives.</p>
+<section id="envelope">
+<h2>Envelope<a class="headerlink" href="#envelope" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.Envelope">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.envelope.</span></span><span class="sig-name descname"><span class="pre">Envelope</span></span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#Envelope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.Envelope" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Authenticated encryption using hybrid KEM + AES-256-GCM.</p>
+<p>This is a class with only class methods — you don’t instantiate it.
+Think of it as a namespace for seal() and open().</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Sender:</span>
+<span class="n">sealed</span> <span class="o">=</span> <span class="n">Envelope</span><span class="o">.</span><span class="n">seal</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;top secret&quot;</span><span class="p">,</span> <span class="n">recipient_public_key</span><span class="p">)</span>
+<span class="n">wire</span>   <span class="o">=</span> <span class="n">sealed</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">()</span>        <span class="c1"># send this over the network</span>
+
+<span class="c1"># Recipient:</span>
+<span class="n">msg</span>    <span class="o">=</span> <span class="n">sealed</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">wire</span><span class="p">)</span>
+<span class="n">plain</span>  <span class="o">=</span> <span class="n">Envelope</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">recipient_secret_key</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.Envelope.seal">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">seal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plaintext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient_public_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#Envelope.seal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.Envelope.seal" title="Link to this definition">¶</a></dt>
+<dd><p>Encrypt plaintext to the recipient’s public key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plaintext</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – The data to encrypt. No size limit.</p></li>
+<li><p><strong>recipient_public_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span>) – Recipient’s HybridKEM public key.</p></li>
+<li><p><strong>aad</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Additional authenticated data. Included
+unencrypted in the envelope but authenticated
+by GCM — any modification fails decryption.
+Use for metadata you want visible but protected
+(e.g. recipient ID, timestamp, content type).</p></li>
+<li><p><strong>kem</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="kem.html#quantum_safe.kem.hybrid.HybridKEM" title="quantum_safe.kem.hybrid.HybridKEM"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridKEM</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – HybridKEM instance to use. If None, creates
+a default HybridKEM() matching the key’s
+algorithm.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage" title="quantum_safe.protocols.envelope.SealedMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">SealedMessage</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SealedMessage that can be decrypted with Envelope.open().</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="exceptions.html#quantum_safe.exceptions.UnsupportedAlgorithm" title="quantum_safe.exceptions.UnsupportedAlgorithm"><strong>UnsupportedAlgorithm</strong></a> – if the key’s algorithm isn’t a known
+    hybrid KEM combination.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.Envelope.open">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sealed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient_secret_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#Envelope.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.Envelope.open" title="Link to this definition">¶</a></dt>
+<dd><p>Decrypt a SealedMessage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sealed</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage" title="quantum_safe.protocols.envelope.SealedMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">SealedMessage</span></code></a></span>) – SealedMessage from Envelope.seal() or
+deserialized from the wire.</p></li>
+<li><p><strong>recipient_secret_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.SecretKey" title="quantum_safe.types.keys.SecretKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecretKey</span></code></a></span>) – The recipient’s HybridKEM secret key.</p></li>
+<li><p><strong>kem</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="kem.html#quantum_safe.kem.hybrid.HybridKEM" title="quantum_safe.kem.hybrid.HybridKEM"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridKEM</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – HybridKEM instance. If None, auto-created
+from the envelope’s algorithm field.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Original plaintext bytes.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="exceptions.html#quantum_safe.exceptions.DecapsulationError" title="quantum_safe.exceptions.DecapsulationError"><strong>DecapsulationError</strong></a> – if KEM decapsulation fails.</p></li>
+<li><p><strong>cryptography.exceptions.InvalidTag</strong> – if the ciphertext is tampered
+    or the wrong key is used (GCM authentication
+    failure). We let this propagate from
+    cryptography directly — don’t catch it.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.envelope.</span></span><span class="sig-name descname"><span class="pre">SealedMessage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kem_ct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonce</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ciphertext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A ciphertext envelope produced by Envelope.seal().</p>
+<p>All fields are needed to decrypt. The <cite>aad</cite> field is authenticated
+but not encrypted — it’s safe to inspect without the decryption key.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.version">
+<span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.version" title="Link to this definition">¶</a></dt>
+<dd><p>Envelope format version.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.algorithm">
+<span class="sig-name descname"><span class="pre">algorithm</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>KEM algorithm used (e.g. “X25519+ML-KEM-768”).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.kem_ct">
+<span class="sig-name descname"><span class="pre">kem_ct</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.kem_ct" title="Link to this definition">¶</a></dt>
+<dd><p>KEM ciphertext bytes (HybridCipherText wire format).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.nonce">
+<span class="sig-name descname"><span class="pre">nonce</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.nonce" title="Link to this definition">¶</a></dt>
+<dd><p>12-byte AES-GCM nonce. Never reused.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.ciphertext">
+<span class="sig-name descname"><span class="pre">ciphertext</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.ciphertext" title="Link to this definition">¶</a></dt>
+<dd><p>AES-256-GCM encrypted payload including 16-byte tag.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.aad">
+<span class="sig-name descname"><span class="pre">aad</span></span><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.aad" title="Link to this definition">¶</a></dt>
+<dd><p>Additional authenticated data. Visible but authenticated.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>version</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>kem_ct</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>nonce</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>ciphertext</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>aad</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.to_bytes">
+<span class="sig-name descname"><span class="pre">to_bytes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage.to_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.to_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize to CBOR (or JSON-b64 fallback) bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.from_bytes">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage.from_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.from_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize from bytes produced by to_bytes().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage" title="quantum_safe.protocols.envelope.SealedMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">SealedMessage</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.to_hex">
+<span class="sig-name descname"><span class="pre">to_hex</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage.to_hex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.to_hex" title="Link to this definition">¶</a></dt>
+<dd><p>Convenience: serialize to a hex string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.from_hex">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_hex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hex_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage.from_hex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.from_hex" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize from a hex string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hex_str</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage" title="quantum_safe.protocols.envelope.SealedMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">SealedMessage</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.envelope.SealedMessage.inspect">
+<span class="sig-name descname"><span class="pre">inspect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/envelope.html#SealedMessage.inspect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.envelope.SealedMessage.inspect" title="Link to this definition">¶</a></dt>
+<dd><p>Return a dict of visible (non-secret) metadata for logging/debugging.</p>
+<p>Never logs ciphertext or key material. Safe to include in structured logs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="jwt">
+<h2>JWT<a class="headerlink" href="#jwt" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.jwt.JWTSigner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.jwt.</span></span><span class="sig-name descname"><span class="pre">JWTSigner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keypair</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hedged</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">issuer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/jwt.html#JWTSigner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.jwt.JWTSigner" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Signs JWTs using PQC or hybrid signature algorithms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>) – The signing keypair. Algorithm is inferred from the key.</p></li>
+<li><p><strong>hedged</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Use hedged signing mode (default True). See module docstring.</p></li>
+<li><p><strong>issuer</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional issuer string to embed in tokens as the <cite>iss</cite> claim.</p></li>
+<li><p><strong>backend</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Signature backend: “auto”, “liboqs”, “rustcrypto”.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">signer</span> <span class="o">=</span> <span class="n">JWTSigner</span><span class="p">(</span><span class="n">keypair</span><span class="p">,</span> <span class="n">issuer</span><span class="o">=</span><span class="s2">&quot;auth.myapp.com&quot;</span><span class="p">)</span>
+<span class="n">token</span>  <span class="o">=</span> <span class="n">signer</span><span class="o">.</span><span class="n">sign</span><span class="p">({</span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="s2">&quot;user123&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span><span class="p">})</span>
+<span class="c1"># → &quot;eyJhbGci...&quot;</span>
+
+<span class="n">verifier</span> <span class="o">=</span> <span class="n">JWTVerifier</span><span class="p">(</span><span class="n">public_key</span><span class="p">)</span>
+<span class="n">claims</span>   <span class="o">=</span> <span class="n">verifier</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="c1"># → {&quot;sub&quot;: &quot;user123&quot;, &quot;role&quot;: &quot;admin&quot;, &quot;iss&quot;: &quot;auth.myapp.com&quot;, ...}</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.jwt.JWTSigner.sign">
+<span class="sig-name descname"><span class="pre">sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">claims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expires_in</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b'jwt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/jwt.html#JWTSigner.sign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.jwt.JWTSigner.sign" title="Link to this definition">¶</a></dt>
+<dd><p>Sign a claims dict and return a JWT string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>claims</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>) – Dict of JWT claims. Standard claims (iss, iat, exp)
+are added automatically.</p></li>
+<li><p><strong>expires_in</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Token lifetime in seconds. Default 1 hour.
+Pass 0 to omit exp (not recommended).</p></li>
+<li><p><strong>context</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Signing context for domain separation.
+Default b”jwt” — override to prevent cross-purpose reuse.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JWT string in the form “header.payload.signature”.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.jwt.JWTVerifier">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.jwt.</span></span><span class="sig-name descname"><span class="pre">JWTVerifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">public_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">issuer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/jwt.html#JWTVerifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.jwt.JWTVerifier" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Verifies PQC/hybrid JWTs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>public_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span>) – The signer’s public key. Algorithm is inferred from it.</p></li>
+<li><p><strong>issuer</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – If set, the <cite>iss</cite> claim must match this value.</p></li>
+<li><p><strong>audience</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – If set, the <cite>aud</cite> claim must include this value.</p></li>
+<li><p><strong>backend</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – Signature backend.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">verifier</span> <span class="o">=</span> <span class="n">JWTVerifier</span><span class="p">(</span><span class="n">public_key</span><span class="p">,</span> <span class="n">issuer</span><span class="o">=</span><span class="s2">&quot;auth.myapp.com&quot;</span><span class="p">)</span>
+<span class="n">claims</span>   <span class="o">=</span> <span class="n">verifier</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="n">user_id</span>  <span class="o">=</span> <span class="n">claims</span><span class="p">[</span><span class="s2">&quot;sub&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.jwt.JWTVerifier.verify">
+<span class="sig-name descname"><span class="pre">verify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b'jwt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_exp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_nbf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/jwt.html#JWTVerifier.verify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.jwt.JWTVerifier.verify" title="Link to this definition">¶</a></dt>
+<dd><p>Verify a JWT and return its claims.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – JWT string from JWTSigner.sign().</p></li>
+<li><p><strong>context</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Signing context. Must match what was used to sign.</p></li>
+<li><p><strong>validate_exp</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Check expiration (default True).</p></li>
+<li><p><strong>validate_nbf</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>) – Check not-before (default True).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Verified claims dict.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="exceptions.html#quantum_safe.exceptions.VerificationError" title="quantum_safe.exceptions.VerificationError"><strong>VerificationError</strong></a> – If the signature is invalid or claims fail.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the token is structurally malformed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="tls">
+<h2>TLS<a class="headerlink" href="#tls" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.tls.</span></span><span class="sig-name descname"><span class="pre">HybridTLSConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kem_algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X25519+ML-KEM-768'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback_classical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">require_hybrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tls_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">TLSVersion.TLSv1_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oqs_provider_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/tls.html#HybridTLSConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Configuration for hybrid TLS key exchange.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.kem_algorithm">
+<span class="sig-name descname"><span class="pre">kem_algorithm</span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.kem_algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>The hybrid KEM algorithm to request.
+Default: “X25519+ML-KEM-768”.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.fallback_classical">
+<span class="sig-name descname"><span class="pre">fallback_classical</span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.fallback_classical" title="Link to this definition">¶</a></dt>
+<dd><p>If True (default), include classical X25519 as a
+fallback group. This allows handshaking with peers
+that don’t support hybrid.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.require_hybrid">
+<span class="sig-name descname"><span class="pre">require_hybrid</span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.require_hybrid" title="Link to this definition">¶</a></dt>
+<dd><p>If True, reject connections from peers that don’t
+support hybrid key exchange. Default False — too
+disruptive for most deployments today.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.min_tls_version">
+<span class="sig-name descname"><span class="pre">min_tls_version</span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.min_tls_version" title="Link to this definition">¶</a></dt>
+<dd><p>Minimum TLS version. Default TLS 1.3 — never
+negotiate lower.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.oqs_provider_path">
+<span class="sig-name descname"><span class="pre">oqs_provider_path</span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.oqs_provider_path" title="Link to this definition">¶</a></dt>
+<dd><p>Path to OQS OpenSSL provider .so/.dylib.
+If None, we search standard provider locations.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kem_algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>fallback_classical</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+<li><p><strong>require_hybrid</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+<li><p><strong>min_tls_version</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.TLSVersion" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TLSVersion</span></code></a></span>)</p></li>
+<li><p><strong>oqs_provider_path</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.HybridTLSConfig.group_preference">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">group_preference</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#quantum_safe.protocols.tls.HybridTLSConfig.group_preference" title="Link to this definition">¶</a></dt>
+<dd><p>Ordered list of TLS group names to pass to set_groups().</p>
+<p>Hybrid groups are listed first. Classical groups follow as fallbacks
+if fallback_classical is True.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="quantum_safe.protocols.tls.configure_hybrid_context">
+<span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.tls.</span></span><span class="sig-name descname"><span class="pre">configure_hybrid_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/tls.html#configure_hybrid_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.tls.configure_hybrid_context" title="Link to this definition">¶</a></dt>
+<dd><p>Configure an ssl.SSLContext for hybrid key exchange.</p>
+<p>This modifies the context in-place and also returns it for chaining.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ctx</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.SSLContext" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SSLContext</span></code></a></span>) – An ssl.SSLContext to configure. You create this with
+ssl.create_default_context() or ssl.SSLContext().</p></li>
+<li><p><strong>config</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig" title="quantum_safe.protocols.tls.HybridTLSConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridTLSConfig</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – HybridTLSConfig. If None, uses default (X25519+ML-KEM-768
+with X25519 fallback).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.SSLContext" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">SSLContext</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The modified ssl.SSLContext.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.SSLError" title="(in Python v3.14)"><strong>ssl.SSLError</strong></a> – if the requested groups aren’t supported by the
+    installed OpenSSL.</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.protocols.tls</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_hybrid_context</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">create_default_context</span><span class="p">()</span>
+<span class="n">configure_hybrid_context</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+<span class="c1"># ctx now prefers X25519MLKEM768 with X25519 fallback</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+<section id="x-509">
+<h2>X.509<a class="headerlink" href="#x-509" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.protocols.x509.HybridCertificateBuilder">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.x509.</span></span><span class="sig-name descname"><span class="pre">HybridCertificateBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject_cn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_private_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pqc_keypair</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validity_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">365</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_ca</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dns_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip_addresses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">organization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">country</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">issuer_cert</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">issuer_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extended_key_usage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/x509.html#HybridCertificateBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.x509.HybridCertificateBuilder" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Builder for hybrid X.509 certificates.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.protocols.x509</span><span class="w"> </span><span class="kn">import</span> <span class="n">HybridCertificateBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">quantum_safe.signatures.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">HybridSign</span>
+
+<span class="c1"># Generate key material</span>
+<span class="n">signer</span>    <span class="o">=</span> <span class="n">HybridSign</span><span class="p">()</span>
+<span class="n">hybrid_kp</span> <span class="o">=</span> <span class="n">signer</span><span class="o">.</span><span class="n">generate_keypair</span><span class="p">()</span>
+<span class="n">classical_priv</span> <span class="o">=</span> <span class="n">Ed25519PrivateKey</span><span class="o">.</span><span class="n">generate</span><span class="p">()</span>
+
+<span class="n">builder</span> <span class="o">=</span> <span class="n">HybridCertificateBuilder</span><span class="p">(</span>
+    <span class="n">subject_cn</span><span class="o">=</span><span class="s2">&quot;service.internal&quot;</span><span class="p">,</span>
+    <span class="n">classical_private_key</span><span class="o">=</span><span class="n">classical_priv</span><span class="p">,</span>
+    <span class="n">pqc_keypair</span><span class="o">=</span><span class="n">hybrid_kp</span><span class="p">,</span>
+    <span class="n">validity_days</span><span class="o">=</span><span class="mi">365</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">cert_pem</span><span class="p">,</span> <span class="n">cosig_bundle</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>subject_cn</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>classical_private_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>)</p></li>
+<li><p><strong>pqc_keypair</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span>)</p></li>
+<li><p><strong>validity_days</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>)</p></li>
+<li><p><strong>is_ca</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+<li><p><strong>dns_names</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>)</p></li>
+<li><p><strong>ip_addresses</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span>)</p></li>
+<li><p><strong>organization</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>country</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>issuer_cert</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>)</p></li>
+<li><p><strong>issuer_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span>)</p></li>
+<li><p><strong>extended_key_usage</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ObjectIdentifier</span></code>]</span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.x509.HybridCertificateBuilder.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/x509.html#HybridCertificateBuilder.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.x509.HybridCertificateBuilder.build" title="Link to this definition">¶</a></dt>
+<dd><p>Build the hybrid certificate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]</span></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><em>(cert_pem, cosig_bundle)</em> –</p>
+<dl class="simple">
+<dt>cert_pem:      PEM-encoded X.509 certificate with embedded</dt><dd><p>PQC public key extension. Valid to classical
+verifiers.</p>
+</dd>
+<dt>cosig_bundle:  CBOR-encoded co-signature bundle:</dt><dd><p>{pqc_sig: bytes, pqc_algo: str, cert_fp: str}
+Verifiers that support hybrid validation check
+this alongside the certificate.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>signer</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></span>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.protocols.x509.HybridCertificateBuilder.verify_cosig">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">verify_cosig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cert_pem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cosig_bundle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pqc_public_key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/x509.html#HybridCertificateBuilder.verify_cosig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.x509.HybridCertificateBuilder.verify_cosig" title="Link to this definition">¶</a></dt>
+<dd><p>Verify a hybrid certificate’s PQC co-signature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cert_pem</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – PEM-encoded certificate.</p></li>
+<li><p><strong>cosig_bundle</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Co-signature bundle from build().</p></li>
+<li><p><strong>pqc_public_key</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="types.html#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span>) – The signer’s PQC public key.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="exceptions.html#quantum_safe.exceptions.VerificationError" title="quantum_safe.exceptions.VerificationError"><strong>VerificationError</strong></a> – if the co-signature is invalid.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#quantum_safe.exceptions.KeyParseError" title="quantum_safe.exceptions.KeyParseError"><strong>KeyParseError</strong></a> – if the bundle is malformed.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="quantum_safe.protocols.x509.generate_classical_keypair_for_cert">
+<span class="sig-prename descclassname"><span class="pre">quantum_safe.protocols.x509.</span></span><span class="sig-name descname"><span class="pre">generate_classical_keypair_for_cert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">algorithm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Ed25519'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/protocols/x509.html#generate_classical_keypair_for_cert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.protocols.x509.generate_classical_keypair_for_cert" title="Link to this definition">¶</a></dt>
+<dd><p>Generate a classical keypair suitable for certificate signing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – “Ed25519”, “P-256”, or “P-384”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A private key object from the cryptography library.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="migrate.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="signatures.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a><ul>
+<li><a class="reference internal" href="#envelope">Envelope</a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.Envelope"><code class="docutils literal notranslate"><span class="pre">Envelope</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.Envelope.seal"><code class="docutils literal notranslate"><span class="pre">Envelope.seal()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.Envelope.open"><code class="docutils literal notranslate"><span class="pre">Envelope.open()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage"><code class="docutils literal notranslate"><span class="pre">SealedMessage</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.version"><code class="docutils literal notranslate"><span class="pre">SealedMessage.version</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.algorithm"><code class="docutils literal notranslate"><span class="pre">SealedMessage.algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.kem_ct"><code class="docutils literal notranslate"><span class="pre">SealedMessage.kem_ct</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.nonce"><code class="docutils literal notranslate"><span class="pre">SealedMessage.nonce</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.ciphertext"><code class="docutils literal notranslate"><span class="pre">SealedMessage.ciphertext</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.aad"><code class="docutils literal notranslate"><span class="pre">SealedMessage.aad</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.to_bytes"><code class="docutils literal notranslate"><span class="pre">SealedMessage.to_bytes()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.from_bytes"><code class="docutils literal notranslate"><span class="pre">SealedMessage.from_bytes()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.to_hex"><code class="docutils literal notranslate"><span class="pre">SealedMessage.to_hex()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.from_hex"><code class="docutils literal notranslate"><span class="pre">SealedMessage.from_hex()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.envelope.SealedMessage.inspect"><code class="docutils literal notranslate"><span class="pre">SealedMessage.inspect()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#jwt">JWT</a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.jwt.JWTSigner"><code class="docutils literal notranslate"><span class="pre">JWTSigner</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.jwt.JWTSigner.sign"><code class="docutils literal notranslate"><span class="pre">JWTSigner.sign()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.protocols.jwt.JWTVerifier"><code class="docutils literal notranslate"><span class="pre">JWTVerifier</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.jwt.JWTVerifier.verify"><code class="docutils literal notranslate"><span class="pre">JWTVerifier.verify()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tls">TLS</a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.kem_algorithm"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.kem_algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.fallback_classical"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.fallback_classical</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.require_hybrid"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.require_hybrid</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.min_tls_version"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.min_tls_version</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.oqs_provider_path"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.oqs_provider_path</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.HybridTLSConfig.group_preference"><code class="docutils literal notranslate"><span class="pre">HybridTLSConfig.group_preference</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.protocols.tls.configure_hybrid_context"><code class="docutils literal notranslate"><span class="pre">configure_hybrid_context()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#x-509">X.509</a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.x509.HybridCertificateBuilder"><code class="docutils literal notranslate"><span class="pre">HybridCertificateBuilder</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.protocols.x509.HybridCertificateBuilder.build"><code class="docutils literal notranslate"><span class="pre">HybridCertificateBuilder.build()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.protocols.x509.HybridCertificateBuilder.verify_cosig"><code class="docutils literal notranslate"><span class="pre">HybridCertificateBuilder.verify_cosig()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.protocols.x509.generate_classical_keypair_for_cert"><code class="docutils literal notranslate"><span class="pre">generate_classical_keypair_for_cert()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -1,0 +1,910 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="KEM (quantum_safe.kem)" href="kem.html"><link rel="prev" title="CLI reference" href="../guides/cli.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Types (quantum_safe.types) - quantum-safe</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">quantum-safe</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">quantum-safe</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/concepts.html">Core concepts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/kem.html">Key encapsulation (KEM)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/signatures.html">Digital signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/protocols.html">Protocol helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/migration.html">Migration tooling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/audit.html">Audit and compliance</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/cli.html">CLI reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="kem.html">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signatures.html">Signatures (<code class="docutils literal notranslate"><span class="pre">quantum_safe.signatures</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="protocols.html">Protocols (<code class="docutils literal notranslate"><span class="pre">quantum_safe.protocols</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">Migration (<code class="docutils literal notranslate"><span class="pre">quantum_safe.migrate</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audit.html">Audit (<code class="docutils literal notranslate"><span class="pre">quantum_safe.audit</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Backends (<code class="docutils literal notranslate"><span class="pre">quantum_safe.backends</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Exceptions (<code class="docutils literal notranslate"><span class="pre">quantum_safe.exceptions</span></code>)</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/types.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="types-quantum-safe-types">
+<h1>Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)<a class="headerlink" href="#types-quantum-safe-types" title="Link to this heading">¶</a></h1>
+<p>Core data types returned by all key and signature operations.
+Raw bytes are never returned directly — every output is a distinct type
+that prevents accidental misuse (e.g. passing a <code class="docutils literal notranslate"><span class="pre">SharedSecret</span></code> where
+a <code class="docutils literal notranslate"><span class="pre">CipherText</span></code> is expected).</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.</span></span><span class="sig-name descname"><span class="pre">PublicKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">migration_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MigrationState.HYBRID_TRANSITION</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'unknown'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#PublicKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.PublicKey" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKey</span></code></p>
+<p>A public key for a KEM or signature scheme.</p>
+<p>Public keys are safe to share, log, and store without special handling.
+They support all serialization formats including JWK.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>migration_state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>)</p></li>
+<li><p><strong>backend_tag</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.raw_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">raw_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><span class="pre">bytes</span></a></span><a class="headerlink" href="#quantum_safe.types.PublicKey.raw_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>The raw key bytes as returned by the cryptographic backend.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.algorithm">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">algorithm</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#quantum_safe.types.PublicKey.algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>Algorithm identifier, e.g. ‘ML-KEM-768’ or ‘X25519+ML-KEM-768’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.key_type">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">key_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">KeyType</span></span><a class="headerlink" href="#quantum_safe.types.PublicKey.key_type" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this is a public or secret key.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.migration_state">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">migration_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><span class="pre">MigrationState</span></a></span><a class="headerlink" href="#quantum_safe.types.PublicKey.migration_state" title="Link to this definition">¶</a></dt>
+<dd><p>The PQC migration state of this key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.from_pem">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_pem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#PublicKey.from_pem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.PublicKey.from_pem" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a public key from PEM format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pem</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.from_cbor">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_cbor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#PublicKey.from_cbor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.PublicKey.from_cbor" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a public key from CBOR bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.PublicKey.from_jwk">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_jwk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jwk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#PublicKey.from_jwk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.PublicKey.from_jwk" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a public key from a JWK dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>jwk</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.</span></span><span class="sig-name descname"><span class="pre">SecretKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">migration_state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">MigrationState.HYBRID_TRANSITION</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'unknown'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#SecretKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SecretKey" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKey</span></code></p>
+<p>A secret key for a KEM or signature scheme.</p>
+<p>Secret keys zeroize their memory on deletion. They should:
+- Never appear in log messages
+- Never be serialized to JWK (which is designed for public sharing)
+- Be stored encrypted at rest (see quantum_safe.protocols.envelope)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>raw</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>migration_state</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><code class="xref py py-class docutils literal notranslate"><span class="pre">MigrationState</span></code></a></span>)</p></li>
+<li><p><strong>backend_tag</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.raw_bytes">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">raw_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><span class="pre">bytes</span></a></span><a class="headerlink" href="#quantum_safe.types.SecretKey.raw_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>The raw key bytes as returned by the cryptographic backend.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.algorithm">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">algorithm</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#quantum_safe.types.SecretKey.algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>Algorithm identifier, e.g. ‘ML-KEM-768’ or ‘X25519+ML-KEM-768’.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.key_type">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">key_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">KeyType</span></span><a class="headerlink" href="#quantum_safe.types.SecretKey.key_type" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this is a public or secret key.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.migration_state">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">migration_state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#quantum_safe.types.MigrationState" title="quantum_safe.types.keys.MigrationState"><span class="pre">MigrationState</span></a></span><a class="headerlink" href="#quantum_safe.types.SecretKey.migration_state" title="Link to this definition">¶</a></dt>
+<dd><p>The PQC migration state of this key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.from_pem">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_pem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#SecretKey.from_pem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SecretKey.from_pem" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a secret key from PEM format.</p>
+<p>Warning: the PEM string itself contains secret material — ensure
+it’s handled appropriately (not logged, not stored in plaintext).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pem</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.SecretKey" title="quantum_safe.types.keys.SecretKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecretKey</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.SecretKey.from_cbor">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_cbor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#SecretKey.from_cbor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SecretKey.from_cbor" title="Link to this definition">¶</a></dt>
+<dd><p>Parse a secret key from CBOR bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.SecretKey" title="quantum_safe.types.keys.SecretKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecretKey</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.KeyPair">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.</span></span><span class="sig-name descname"><span class="pre">KeyPair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">public</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#KeyPair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.KeyPair" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A matched public/secret key pair.</p>
+<p>This is what keygen functions return. It deliberately does NOT inherit
+from BaseKey — it’s a container, not a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>public</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.PublicKey" title="quantum_safe.types.keys.PublicKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">PublicKey</span></code></a></span>)</p></li>
+<li><p><strong>secret</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.SecretKey" title="quantum_safe.types.keys.SecretKey"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecretKey</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.KeyPair.to_cbor_bundle">
+<span class="sig-name descname"><span class="pre">to_cbor_bundle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#KeyPair.to_cbor_bundle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.KeyPair.to_cbor_bundle" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize both keys as a CBOR bundle.</p>
+<p>The bundle contains both public and secret key material. Treat it
+with the same care as the secret key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.KeyPair.from_cbor_bundle">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_cbor_bundle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#KeyPair.from_cbor_bundle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.KeyPair.from_cbor_bundle" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize a key pair from a CBOR bundle.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.KeyPair" title="quantum_safe.types.keys.KeyPair"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPair</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.MigrationState">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.</span></span><span class="sig-name descname"><span class="pre">MigrationState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/keys.html#MigrationState"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.MigrationState" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
+<p>The PQC migration state of a key.</p>
+<p>States progress in one direction (you can’t go from PQC_PREFERRED back
+to CLASSICAL_ONLY through normal operations — that requires an explicit
+downgrade call that logs a warning).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.CipherText">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.kem.</span></span><span class="sig-name descname"><span class="pre">CipherText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#CipherText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.CipherText" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The ciphertext output of KEM encapsulation.</p>
+<p>This is what the encapsulator transmits to the decapsulator.
+It’s not secret — but it is authenticated (MAC’d or KEM-authenticated
+depending on the scheme), so any modification will cause decapsulation
+to fail.</p>
+<dl class="simple">
+<dt>Size varies by algorithm:</dt><dd><p>ML-KEM-512:   768 bytes
+ML-KEM-768:  1088 bytes
+ML-KEM-1024: 1568 bytes</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.HybridCipherText">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.kem.</span></span><span class="sig-name descname"><span class="pre">HybridCipherText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classical_ct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pqc_ct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#HybridCipherText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.HybridCipherText" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Ciphertext from a hybrid KEM: classical ephemeral + PQC encapsulation.</p>
+<dl class="simple">
+<dt>The wire format is:</dt><dd><p>classical_ct_len (2 bytes, big-endian uint16)
+|| classical_ct
+|| pqc_ct</p>
+</dd>
+</dl>
+<p>This framing allows the receiver to split the two components without
+needing out-of-band length information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classical_ct</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>pqc_ct</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.HybridCipherText.to_bytes">
+<span class="sig-name descname"><span class="pre">to_bytes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#HybridCipherText.to_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.HybridCipherText.to_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Encode as length-prefixed wire format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.HybridCipherText.from_bytes">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#HybridCipherText.from_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.HybridCipherText.from_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Decode from length-prefixed wire format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.kem.HybridCipherText" title="quantum_safe.types.kem.HybridCipherText"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridCipherText</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.SharedSecret">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.kem.</span></span><span class="sig-name descname"><span class="pre">SharedSecret</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_hybrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#SharedSecret"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.SharedSecret" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The shared secret output of a KEM operation.</p>
+<p>This is 32 bytes of symmetric key material derived from the KEM.
+Like SecretKey, it zeroizes on deletion.</p>
+<p>You should use this as input to a KDF (e.g. HKDF) to derive actual
+encryption keys — don’t use it directly as an AES key without further
+processing.</p>
+<p>The library does this for you in quantum_safe.protocols.envelope.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>is_hybrid</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.SharedSecret.is_hybrid">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_hybrid</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#quantum_safe.types.kem.SharedSecret.is_hybrid" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this secret was derived from a hybrid KEM.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.kem.SharedSecret.derive_key">
+<span class="sig-name descname"><span class="pre">derive_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">salt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/kem.html#SharedSecret.derive_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.kem.SharedSecret.derive_key" title="Link to this definition">¶</a></dt>
+<dd><p>Derive a key from this shared secret using HKDF-SHA256.</p>
+<p>This is a convenience wrapper. For full control, use
+cryptography.hazmat.primitives.kdf.hkdf directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>length</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – Desired output length in bytes (max 255 * 32 = 8160).</p></li>
+<li><p><strong>salt</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a> | <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span>) – Optional salt. Defaults to a zero-filled string if None.</p></li>
+<li><p><strong>info</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>) – Application-specific context. Include your app name
+and version to prevent cross-context key reuse.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Raw key bytes of the requested length.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<p>enc_key = ss.derive_key(32, info=b”myapp-encryption-v1”)
+mac_key = ss.derive_key(32, info=b”myapp-mac-v1”)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.</span></span><span class="sig-name descname"><span class="pre">SignedMessage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signer_fingerprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signed_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_hybrid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#SignedMessage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SignedMessage" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A message with its signature(s) and metadata.</p>
+<p>Immutable (frozen dataclass) — once created, the message and signature
+cannot be changed. This prevents accidental mutation of audit records.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.message">
+<span class="sig-name descname"><span class="pre">message</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.message" title="Link to this definition">¶</a></dt>
+<dd><p>The original message that was signed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.signature">
+<span class="sig-name descname"><span class="pre">signature</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.signature" title="Link to this definition">¶</a></dt>
+<dd><p>The signature bytes. For hybrid, this contains both
+sub-signatures in a length-prefixed format.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.algorithm">
+<span class="sig-name descname"><span class="pre">algorithm</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.algorithm" title="Link to this definition">¶</a></dt>
+<dd><p>The signing algorithm, e.g. ‘ML-DSA-65’ or
+‘Ed25519+ML-DSA-65’.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.context">
+<span class="sig-name descname"><span class="pre">context</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.context" title="Link to this definition">¶</a></dt>
+<dd><p>Domain-separation context (up to 255 bytes). Should
+include your application name and version.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.signer_fingerprint">
+<span class="sig-name descname"><span class="pre">signer_fingerprint</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.signer_fingerprint" title="Link to this definition">¶</a></dt>
+<dd><p>The fingerprint of the public key used to sign,
+for quick lookup without re-verifying.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.signed_at">
+<span class="sig-name descname"><span class="pre">signed_at</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.signed_at" title="Link to this definition">¶</a></dt>
+<dd><p>Unix timestamp (float) of when the signature was created.
+This is metadata only — it’s not part of the signed content
+and should not be relied upon for security decisions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.is_hybrid">
+<span class="sig-name descname"><span class="pre">is_hybrid</span></span><a class="headerlink" href="#quantum_safe.types.SignedMessage.is_hybrid" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this is a hybrid (classical + PQC) signature.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>signature</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>algorithm</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>context</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>signer_fingerprint</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>signed_at</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span>)</p></li>
+<li><p><strong>is_hybrid</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.to_cbor">
+<span class="sig-name descname"><span class="pre">to_cbor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#SignedMessage.to_cbor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SignedMessage.to_cbor" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize to CBOR for storage or transmission.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.from_cbor">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_cbor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#SignedMessage.from_cbor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SignedMessage.from_cbor" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize from CBOR bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.SignedMessage" title="quantum_safe.types.signatures.SignedMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">SignedMessage</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.SignedMessage.to_jwt_payload">
+<span class="sig-name descname"><span class="pre">to_jwt_payload</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#SignedMessage.to_jwt_payload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.SignedMessage.to_jwt_payload" title="Link to this definition">¶</a></dt>
+<dd><p>Produce a JWT payload dict for this signed message.</p>
+<p>The JWS (JSON Web Signature) representation follows
+draft-ietf-jose-pqc-signatures for algorithm identifiers.</p>
+<p>Note: this produces the <em>payload</em> dict. To get a full JWT string,
+use quantum_safe.protocols.jwt.sign() instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="quantum_safe.types.signatures.HybridSignature">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">quantum_safe.types.signatures.</span></span><span class="sig-name descname"><span class="pre">HybridSignature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classical_sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pqc_sig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classical_algo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pqc_algo</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#HybridSignature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.signatures.HybridSignature" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Internal representation of a hybrid signature.</p>
+<p>Stores the classical and PQC sub-signatures separately before they’re
+combined into a SignedMessage. This is an intermediate type used inside
+HybridSign; callers don’t normally deal with it directly.</p>
+<p>Wire format (CBOR-encoded):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;classical_sig&quot;</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="s2">&quot;pqc_sig&quot;</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="s2">&quot;classical_algo&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s2">&quot;pqc_algo&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classical_sig</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>pqc_sig</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p></li>
+<li><p><strong>classical_algo</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+<li><p><strong>pqc_algo</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.signatures.HybridSignature.to_bytes">
+<span class="sig-name descname"><span class="pre">to_bytes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#HybridSignature.to_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.signatures.HybridSignature.to_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Encode as CBOR for embedding in a SignedMessage.signature field.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="quantum_safe.types.signatures.HybridSignature.from_bytes">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/quantum_safe/types/signatures.html#HybridSignature.from_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#quantum_safe.types.signatures.HybridSignature.from_bytes" title="Link to this definition">¶</a></dt>
+<dd><p>Decode from CBOR bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#quantum_safe.types.signatures.HybridSignature" title="quantum_safe.types.signatures.HybridSignature"><code class="xref py py-class docutils literal notranslate"><span class="pre">HybridSignature</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="kem.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">KEM (<code class="docutils literal notranslate"><span class="pre">quantum_safe.kem</span></code>)</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../guides/cli.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">CLI reference</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Animesh
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Types (<code class="docutils literal notranslate"><span class="pre">quantum_safe.types</span></code>)</a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey"><code class="docutils literal notranslate"><span class="pre">PublicKey</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.raw_bytes"><code class="docutils literal notranslate"><span class="pre">PublicKey.raw_bytes</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.algorithm"><code class="docutils literal notranslate"><span class="pre">PublicKey.algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.key_type"><code class="docutils literal notranslate"><span class="pre">PublicKey.key_type</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.migration_state"><code class="docutils literal notranslate"><span class="pre">PublicKey.migration_state</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.from_pem"><code class="docutils literal notranslate"><span class="pre">PublicKey.from_pem()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.from_cbor"><code class="docutils literal notranslate"><span class="pre">PublicKey.from_cbor()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.PublicKey.from_jwk"><code class="docutils literal notranslate"><span class="pre">PublicKey.from_jwk()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey"><code class="docutils literal notranslate"><span class="pre">SecretKey</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.raw_bytes"><code class="docutils literal notranslate"><span class="pre">SecretKey.raw_bytes</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.algorithm"><code class="docutils literal notranslate"><span class="pre">SecretKey.algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.key_type"><code class="docutils literal notranslate"><span class="pre">SecretKey.key_type</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.migration_state"><code class="docutils literal notranslate"><span class="pre">SecretKey.migration_state</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.from_pem"><code class="docutils literal notranslate"><span class="pre">SecretKey.from_pem()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SecretKey.from_cbor"><code class="docutils literal notranslate"><span class="pre">SecretKey.from_cbor()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.KeyPair"><code class="docutils literal notranslate"><span class="pre">KeyPair</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.KeyPair.to_cbor_bundle"><code class="docutils literal notranslate"><span class="pre">KeyPair.to_cbor_bundle()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.KeyPair.from_cbor_bundle"><code class="docutils literal notranslate"><span class="pre">KeyPair.from_cbor_bundle()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.MigrationState"><code class="docutils literal notranslate"><span class="pre">MigrationState</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.kem.CipherText"><code class="docutils literal notranslate"><span class="pre">CipherText</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.kem.HybridCipherText"><code class="docutils literal notranslate"><span class="pre">HybridCipherText</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.kem.HybridCipherText.to_bytes"><code class="docutils literal notranslate"><span class="pre">HybridCipherText.to_bytes()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.kem.HybridCipherText.from_bytes"><code class="docutils literal notranslate"><span class="pre">HybridCipherText.from_bytes()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.kem.SharedSecret"><code class="docutils literal notranslate"><span class="pre">SharedSecret</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.kem.SharedSecret.is_hybrid"><code class="docutils literal notranslate"><span class="pre">SharedSecret.is_hybrid</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.kem.SharedSecret.derive_key"><code class="docutils literal notranslate"><span class="pre">SharedSecret.derive_key()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage"><code class="docutils literal notranslate"><span class="pre">SignedMessage</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.message"><code class="docutils literal notranslate"><span class="pre">SignedMessage.message</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.signature"><code class="docutils literal notranslate"><span class="pre">SignedMessage.signature</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.algorithm"><code class="docutils literal notranslate"><span class="pre">SignedMessage.algorithm</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.context"><code class="docutils literal notranslate"><span class="pre">SignedMessage.context</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.signer_fingerprint"><code class="docutils literal notranslate"><span class="pre">SignedMessage.signer_fingerprint</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.signed_at"><code class="docutils literal notranslate"><span class="pre">SignedMessage.signed_at</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.is_hybrid"><code class="docutils literal notranslate"><span class="pre">SignedMessage.is_hybrid</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.to_cbor"><code class="docutils literal notranslate"><span class="pre">SignedMessage.to_cbor()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.from_cbor"><code class="docutils literal notranslate"><span class="pre">SignedMessage.from_cbor()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.SignedMessage.to_jwt_payload"><code class="docutils literal notranslate"><span class="pre">SignedMessage.to_jwt_payload()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quantum_safe.types.signatures.HybridSignature"><code class="docutils literal notranslate"><span class="pre">HybridSignature</span></code></a><ul>
+<li><a class="reference internal" href="#quantum_safe.types.signatures.HybridSignature.to_bytes"><code class="docutils literal notranslate"><span class="pre">HybridSignature.to_bytes()</span></code></a></li>
+<li><a class="reference internal" href="#quantum_safe.types.signatures.HybridSignature.from_bytes"><code class="docutils literal notranslate"><span class="pre">HybridSignature.from_bytes()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=38b66d78"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
