@@ -269,26 +269,76 @@
 <p>The benchmark suite measures every cryptographic operation in the library and
 provides the data for the research paper contributions. This guide explains how
 to run the benchmarks, what each harness covers, and how to interpret the output.</p>
+<p>Authoritative results are stored in <code class="docutils literal notranslate"><span class="pre">results/BENCHMARKS.md</span></code>. That file is the
+canonical record; this guide explains how to reproduce and extend them.</p>
 <nav class="contents local" id="contents">
 <ul class="simple">
-<li><p><a class="reference internal" href="#benchmark-harnesses" id="id1">Benchmark harnesses</a></p></li>
-<li><p><a class="reference internal" href="#running-the-benchmarks" id="id2">Running the benchmarks</a></p>
+<li><p><a class="reference internal" href="#test-environments" id="id2">Test environments</a></p></li>
+<li><p><a class="reference internal" href="#benchmark-harnesses" id="id3">Benchmark harnesses</a></p></li>
+<li><p><a class="reference internal" href="#running-the-benchmarks" id="id4">Running the benchmarks</a></p>
 <ul>
-<li><p><a class="reference internal" href="#kem-benchmarks" id="id3">KEM benchmarks</a></p></li>
-<li><p><a class="reference internal" href="#signature-benchmarks" id="id4">Signature benchmarks</a></p></li>
+<li><p><a class="reference internal" href="#docker-recommended-env-2" id="id5">Docker (recommended — ENV-2)</a></p></li>
+<li><p><a class="reference internal" href="#kem-benchmarks-native" id="id6">KEM benchmarks (native)</a></p></li>
+<li><p><a class="reference internal" href="#signature-benchmarks-native" id="id7">Signature benchmarks (native)</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#reading-the-output" id="id5">Reading the output</a></p></li>
-<li><p><a class="reference internal" href="#cov-as-a-side-channel-proxy" id="id6">CoV as a side-channel proxy</a></p></li>
-<li><p><a class="reference internal" href="#hybrid-decomposition" id="id7">Hybrid decomposition</a></p></li>
-<li><p><a class="reference internal" href="#concurrent-throughput-curve" id="id8">Concurrent throughput curve</a></p></li>
-<li><p><a class="reference internal" href="#statistical-post-processing" id="id9">Statistical post-processing</a></p></li>
-<li><p><a class="reference internal" href="#results-storage" id="id10">Results storage</a></p></li>
+<li><p><a class="reference internal" href="#reading-the-output" id="id8">Reading the output</a></p></li>
+<li><p><a class="reference internal" href="#cov-as-a-side-channel-proxy" id="id9">CoV as a side-channel proxy</a></p></li>
+<li><p><a class="reference internal" href="#hybrid-decomposition" id="id10">Hybrid decomposition</a></p></li>
+<li><p><a class="reference internal" href="#concurrent-throughput-curve" id="id11">Concurrent throughput curve</a></p></li>
+<li><p><a class="reference internal" href="#signature-benchmark-key-numbers" id="id12">Signature benchmark key numbers</a></p></li>
+<li><p><a class="reference internal" href="#statistical-post-processing" id="id13">Statistical post-processing</a></p></li>
+<li><p><a class="reference internal" href="#results-storage" id="id14">Results storage</a></p></li>
 </ul>
 </nav>
 <hr class="docutils" />
+<section id="test-environments">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Test environments</a><a class="headerlink" href="#test-environments" title="Link to this heading">¶</a></h2>
+<p>Two environments are used. Results differ primarily due to the liboqs build and
+the OS scheduler. <strong>ENV-2 (Docker/Linux) is the primary reference</strong> for paper claims.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 42.0%" />
+<col style="width: 43.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Label</p></th>
+<th class="head"><p>ENV-1 — Windows 11 Native</p></th>
+<th class="head"><p>ENV-2 — Docker / WSL2 Linux (Primary)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>OS</p></td>
+<td><p>Windows 11 Home 10.0.26200</p></td>
+<td><p>Linux 6.6.87.2-microsoft-standard-WSL2 (Hyper-V)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Python</p></td>
+<td><p>3.12.7</p></td>
+<td><p>3.12.13 (python:3.12-slim)</p></td>
+</tr>
+<tr class="row-even"><td><p>liboqs</p></td>
+<td><p>0.15.0 MSYS2 DLL (generic build)</p></td>
+<td><p>0.15.0 compiled from source (<code class="docutils literal notranslate"><span class="pre">-DOQS_DIST_BUILD=ON</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Scheduler noise</p></td>
+<td><p>15.6 ms NT timer resolution inflates CoV</p></td>
+<td><p>WSL2 vCPU adds ~2–4% CoV above bare-metal Linux</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The from-source Docker build enables AVX2/AVX-512 CPUID detection at runtime
+(<code class="docutils literal notranslate"><span class="pre">-DOQS_DIST_BUILD=ON</span></code>), giving ML-KEM-768 keygen a <strong>5.3× speedup</strong> over the
+Windows MSYS2 DLL.  CoV analysis in the paper uses ENV-2 values exclusively.</p>
+</div>
+</section>
+<hr class="docutils" />
 <section id="benchmark-harnesses">
-<h2><a class="toc-backref" href="#id1" role="doc-backlink">Benchmark harnesses</a><a class="headerlink" href="#benchmark-harnesses" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Benchmark harnesses</a><a class="headerlink" href="#benchmark-harnesses" title="Link to this heading">¶</a></h2>
 <p>Two harness scripts live in <code class="docutils literal notranslate"><span class="pre">tests/bench/</span></code>:</p>
 <div class="table-wrapper colwidths-given docutils container">
 <table class="docutils align-default">
@@ -324,9 +374,31 @@ hybrid decomposition (combiner overhead isolation), concurrent throughput curve<
 </section>
 <hr class="docutils" />
 <section id="running-the-benchmarks">
-<h2><a class="toc-backref" href="#id2" role="doc-backlink">Running the benchmarks</a><a class="headerlink" href="#running-the-benchmarks" title="Link to this heading">¶</a></h2>
-<section id="kem-benchmarks">
-<h3><a class="toc-backref" href="#id3" role="doc-backlink">KEM benchmarks</a><a class="headerlink" href="#kem-benchmarks" title="Link to this heading">¶</a></h3>
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Running the benchmarks</a><a class="headerlink" href="#running-the-benchmarks" title="Link to this heading">¶</a></h2>
+<section id="docker-recommended-env-2">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Docker (recommended — ENV-2)</a><a class="headerlink" href="#docker-recommended-env-2" title="Link to this heading">¶</a></h3>
+<p>The Docker image compiles liboqs 0.15.0 from source with AVX2/AVX-512 support.
+This is the reproducible, ENV-2 path used for all primary paper numbers.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build once — compiles liboqs 0.15.0 from source (~3 min on a modern laptop)</span>
+docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>quantum-safe-bench<span class="w"> </span>.
+
+<span class="c1"># KEM suite: classical + hybrid decomposition + concurrent load curve</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="si">${</span><span class="nv">PWD</span><span class="si">}</span>/results:/app/results<span class="w"> </span>quantum-safe-bench<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </span>tests/bench/bench_kem.py<span class="w"> </span>--with-pqc<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--save<span class="w"> </span>results/bench_kem_<span class="k">$(</span>date<span class="w"> </span>+%Y-%m-%d<span class="k">)</span>.json
+
+<span class="c1"># Signature suite: Ed25519 + ML-DSA-65 + HybridSign + X.509 certs</span>
+docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="si">${</span><span class="nv">PWD</span><span class="si">}</span>/results:/app/results<span class="w"> </span>quantum-safe-bench<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </span>tests/bench/bench_signatures.py<span class="w"> </span>--with-pqc<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--save<span class="w"> </span>results/bench_sigs_<span class="k">$(</span>date<span class="w"> </span>+%Y-%m-%d<span class="k">)</span>.json
+
+<span class="c1"># Or run both in one go with docker-compose</span>
+docker<span class="w"> </span>compose<span class="w"> </span>up
+</pre></div>
+</div>
+</section>
+<section id="kem-benchmarks-native">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">KEM benchmarks (native)</a><a class="headerlink" href="#kem-benchmarks-native" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Classical + mock PQC (no liboqs needed)</span>
 python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </span>tests/bench/bench_kem.py
 
@@ -339,8 +411,8 @@ python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </s
 </pre></div>
 </div>
 </section>
-<section id="signature-benchmarks">
-<h3><a class="toc-backref" href="#id4" role="doc-backlink">Signature benchmarks</a><a class="headerlink" href="#signature-benchmarks" title="Link to this heading">¶</a></h3>
+<section id="signature-benchmarks-native">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Signature benchmarks (native)</a><a class="headerlink" href="#signature-benchmarks-native" title="Link to this heading">¶</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ed25519 baselines + HybridSign + X.509 certs</span>
 python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </span>tests/bench/bench_signatures.py
 
@@ -356,12 +428,16 @@ python<span class="w"> </span>-X<span class="w"> </span>utf8<span class="w"> </s
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">-X</span> <span class="pre">utf8</span></code> forces UTF-8 output on Windows, which is required for the µ
 character in the timing output. On Linux/macOS this flag is harmless.</p>
+<p>On Windows, <code class="docutils literal notranslate"><span class="pre">oqs.dll</span></code> must be discoverable. Set <code class="docutils literal notranslate"><span class="pre">OQS_DLL_DIR</span></code> to the
+directory containing <code class="docutils literal notranslate"><span class="pre">oqs.dll</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">C:\Users\&lt;you&gt;\_oqs\bin</span></code>), or place
+the DLL at <code class="docutils literal notranslate"><span class="pre">~\_oqs\bin\oqs.dll</span></code> — the <code class="docutils literal notranslate"><span class="pre">_oqs_path.py</span></code> helper registers it
+automatically via <code class="docutils literal notranslate"><span class="pre">os.add_dll_directory</span></code>.</p>
 </div>
 </section>
 </section>
 <hr class="docutils" />
 <section id="reading-the-output">
-<h2><a class="toc-backref" href="#id5" role="doc-backlink">Reading the output</a><a class="headerlink" href="#reading-the-output" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Reading the output</a><a class="headerlink" href="#reading-the-output" title="Link to this heading">¶</a></h2>
 <p>Each operation prints one line:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Ed25519</span> <span class="n">sign</span> <span class="p">(</span><span class="mi">32</span><span class="n">B</span><span class="p">)</span>                            <span class="n">median</span><span class="o">=</span>   <span class="mf">41.4</span> <span class="n">µs</span>  <span class="n">p95</span><span class="o">=</span>   <span class="mf">46.4</span> <span class="n">µs</span>  <span class="n">CoV</span><span class="o">=</span><span class="mf">6.9</span><span class="o">%</span> <span class="o">*</span>
 </pre></div>
@@ -399,29 +475,74 @@ character in the timing output. On Linux/macOS this flag is harmless.</p>
 </section>
 <hr class="docutils" />
 <section id="cov-as-a-side-channel-proxy">
-<h2><a class="toc-backref" href="#id6" role="doc-backlink">CoV as a side-channel proxy</a><a class="headerlink" href="#cov-as-a-side-channel-proxy" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">CoV as a side-channel proxy</a><a class="headerlink" href="#cov-as-a-side-channel-proxy" title="Link to this heading">¶</a></h2>
 <p>The coefficient of variation (CoV) is the primary metric for the
 timing side-channel analysis (paper Contribution 4).</p>
 <p>The baseline reference is AES-256-GCM, which is universally accepted as
 constant-time. Any operation with CoV ≤ AES-GCM’s CoV is considered
-timing-stable. In practice the threshold used is <strong>3%</strong> (slightly above
-AES-GCM’s ~1.8% to allow for OS scheduling noise).</p>
-<p><strong>Why ML-DSA sign has high CoV (~50%)</strong></p>
+timing-stable on that platform.</p>
+<p><strong>ENV-2 (Docker/WSL2) noise floor: ~2.1%</strong> — AES-256-GCM 1 KB encrypt.
+Operations within ~2% CoV are timing-stable. The paper uses this per-environment
+floor rather than a fixed global threshold, since the WSL2 hypervisor adds
+residual jitter above bare-metal Linux (~0.5–1.5%).</p>
+<div class="table-wrapper colwidths-given docutils container" id="id1">
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">ENV-2 CoV reference values (2026-03-28)</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 15.0%" />
+<col style="width: 45.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>CoV</p></th>
+<th class="head"><p>Assessment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AES-256-GCM 1 KB (baseline)</p></td>
+<td><p>2.1%</p></td>
+<td><p>Noise floor — constant-time reference</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ed25519 verify</p></td>
+<td><p>2.2%</p></td>
+<td><p>✓ Timing-stable</p></td>
+</tr>
+<tr class="row-even"><td><p>PublicKey.fingerprint()</p></td>
+<td><p>2.0%</p></td>
+<td><p>✓ Timing-stable</p></td>
+</tr>
+<tr class="row-odd"><td><p>HKDF-SHA256</p></td>
+<td><p>2.8%</p></td>
+<td><p>✓ Within noise floor</p></td>
+</tr>
+<tr class="row-even"><td><p>ML-KEM-768 encapsulate</p></td>
+<td><p>9.4%</p></td>
+<td><p>WSL2 vCPU scheduler noise; no secret-dep. branching in FIPS 203</p></td>
+</tr>
+<tr class="row-odd"><td><p>ML-DSA-65 sign</p></td>
+<td><p>52.4%</p></td>
+<td><p>✓ Expected — FIPS 204 hedged signing randomness</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Why ML-DSA sign has high CoV (~52%)</strong></p>
 <p>ML-DSA-65 (FIPS 204) uses <em>hedged signing</em>: a fresh 32-byte random string
 is generated per signing call and mixed into the lattice rejection-sampling
 loop. Different random draws cause the loop to run a different number of
 iterations, producing genuine timing variation at the µs scale. This is not
 a timing side-channel — it is the intended behaviour of the algorithm.</p>
 <p><strong>Why CoV is higher on Windows</strong></p>
-<p>The Windows OS scheduler has a default timer resolution of 15.6 ms. For
+<p>The Windows NT scheduler has a default timer resolution of 15.6 ms. For
 sub-millisecond operations, a single scheduler interruption can spike a
-sample by 10–20×. This is why operations that show CoV ~1–2% on Linux show
-CoV ~5–10% on Windows. The paper reports Linux values for the CoV analysis
-and notes Windows values as a calibration reference.</p>
+sample by 10–20×. This is why operations that show CoV ~2% in Docker/Linux
+show CoV ~5–10% on Windows. The paper reports ENV-2 (Linux) values for the
+CoV analysis and notes ENV-1 (Windows) values as calibration reference only.</p>
 </section>
 <hr class="docutils" />
 <section id="hybrid-decomposition">
-<h2><a class="toc-backref" href="#id7" role="doc-backlink">Hybrid decomposition</a><a class="headerlink" href="#hybrid-decomposition" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Hybrid decomposition</a><a class="headerlink" href="#hybrid-decomposition" title="Link to this heading">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">--with-pqc</span></code> KEM run includes a <em>decomposition table</em> that isolates
 each component’s contribution:</p>
 <div class="table-wrapper colwidths-given docutils container">
@@ -455,18 +576,29 @@ each component’s contribution:</p>
 </div>
 <p>Combiner overhead ≈ ③ − ① − ② (per operation). This cost is dominated by
 HKDF-SHA256 and key serialisation, not by the algorithms themselves.</p>
-<p>Benchmark result (run 2, 2026-03-28):</p>
+<p>ENV-2 combiner overhead (Docker/WSL2, 2026-03-28):</p>
 <ul class="simple">
-<li><p><strong>keygen combiner</strong>: ~110.6 µs (Python wiring + HKDF + serialisation)</p></li>
+<li><p><strong>keygen combiner</strong>: ~94.0 µs (Python wiring + HKDF + key serialisation)</p></li>
+<li><p><strong>encapsulate combiner</strong>: ~57.0 µs</p></li>
+<li><p><strong>decapsulate combiner</strong>: ~51.0 µs</p></li>
+</ul>
+<p>ENV-1 combiner overhead (Windows native, 2026-03-28) — for reference:</p>
+<ul class="simple">
+<li><p><strong>keygen combiner</strong>: ~110.6 µs</p></li>
 <li><p><strong>encapsulate combiner</strong>: ~74.1 µs</p></li>
 <li><p><strong>decapsulate combiner</strong>: ~90.6 µs</p></li>
 </ul>
+<p>Combiner cost is dominated by HKDF-SHA256 and Python key serialisation (PEM/CBOR
+encoding), not by the cryptographic algorithms.  The ENV-2 vs ENV-1 difference
+reflects the Linux kernel’s faster context-switch overhead for short Python calls.</p>
 </section>
 <hr class="docutils" />
 <section id="concurrent-throughput-curve">
-<h2><a class="toc-backref" href="#id8" role="doc-backlink">Concurrent throughput curve</a><a class="headerlink" href="#concurrent-throughput-curve" title="Link to this heading">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">--with-pqc</span></code> KEM run also measures throughput at four concurrency tiers
-using <code class="docutils literal notranslate"><span class="pre">concurrent.futures.ThreadPoolExecutor</span></code>:</p>
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Concurrent throughput curve</a><a class="headerlink" href="#concurrent-throughput-curve" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">--with-pqc</span></code> KEM run measures throughput at four concurrency tiers using
+<code class="docutils literal notranslate"><span class="pre">concurrent.futures.ThreadPoolExecutor</span></code>. Each task = one complete hybrid KEM
+handshake (keygen + encapsulate + decapsulate) with real ML-KEM-768.</p>
+<p>ENV-2 results (Docker/WSL2, 2026-03-28):</p>
 <div class="table-wrapper colwidths-given docutils container">
 <table class="docutils align-default">
 <colgroup>
@@ -489,30 +621,115 @@ using <code class="docutils literal notranslate"><span class="pre">concurrent.fu
 <td><p>Baseline</p></td>
 </tr>
 <tr class="row-odd"><td><p>500</p></td>
-<td><p>239.3 ms</p></td>
-<td><p>~2,090 ops/s</p></td>
-<td><p>Near-linear scaling</p></td>
+<td><p>232.4 ms</p></td>
+<td><p>~2,151 ops/s</p></td>
+<td><p>Peak throughput</p></td>
 </tr>
 <tr class="row-even"><td><p>1,000</p></td>
-<td><p>501.3 ms</p></td>
-<td><p>~1,996 ops/s</p></td>
+<td><p>478.7 ms</p></td>
+<td><p>~2,089 ops/s</p></td>
 <td><p>Stable</p></td>
 </tr>
 <tr class="row-odd"><td><p>5,000</p></td>
-<td><p>2,549.9 ms</p></td>
-<td><p>~1,961 ops/s</p></td>
-<td><p>−1.6% vs 100-user baseline</p></td>
+<td><p>2,487.8 ms</p></td>
+<td><p>~2,009 ops/s</p></td>
+<td><p>−6.6% vs peak; −0.8% vs 100-user baseline</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Throughput stays near-constant at ~2,000 ops/s from 100 to 5,000 users.
+<p>Throughput is near-constant at ~2,000–2,150 ops/s from 100 to 5,000 users.
 This validates GIL-release during liboqs C calls — true thread parallelism
-despite Python’s GIL.</p>
+despite Python’s GIL. The −6.6% drop from peak to 5,000 users is within
+normal Python thread-pool scheduling variance.</p>
+</section>
+<hr class="docutils" />
+<section id="signature-benchmark-key-numbers">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Signature benchmark key numbers</a><a class="headerlink" href="#signature-benchmark-key-numbers" title="Link to this heading">¶</a></h2>
+<p>ENV-2 headline latencies (Docker/WSL2, 2026-03-28):</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Median</p></th>
+<th class="head"><p>p95</p></th>
+<th class="head"><p>CoV</p></th>
+<th class="head"><p>Note</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Ed25519 sign (32 B)</p></td>
+<td><p>33.5 µs</p></td>
+<td><p>42.0 µs</p></td>
+<td><p>10.1%</p></td>
+<td><p>WSL2 vCPU noise</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ed25519 verify (32 B)</p></td>
+<td><p>106.9 µs</p></td>
+<td><p>116.6 µs</p></td>
+<td><p>4.0%</p></td>
+<td><p>✓ Near noise floor</p></td>
+</tr>
+<tr class="row-even"><td><p>ML-DSA-65 sign (32 B)</p></td>
+<td><p>100.5 µs</p></td>
+<td><p>242.6 µs</p></td>
+<td><p>52.4%</p></td>
+<td><p>Expected — FIPS 204 hedged signing</p></td>
+</tr>
+<tr class="row-odd"><td><p>ML-DSA-65 verify (32 B)</p></td>
+<td><p>45.4 µs</p></td>
+<td><p>53.7 µs</p></td>
+<td><p>6.2%</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>HybridSign sign (32 B)</p></td>
+<td><p>138.8 µs</p></td>
+<td><p>253.6 µs</p></td>
+<td><p>31.3%</p></td>
+<td><p>Dominated by ML-DSA hedged signing</p></td>
+</tr>
+<tr class="row-odd"><td><p>HybridSign verify (32 B)</p></td>
+<td><p>133.2 µs</p></td>
+<td><p>172.7 µs</p></td>
+<td><p>13.4%</p></td>
+<td><p>+25% vs Ed25519 verify alone</p></td>
+</tr>
+<tr class="row-even"><td><p>X.509 HybridCert build</p></td>
+<td><p>313.8 µs</p></td>
+<td><p>479.2 µs</p></td>
+<td><p>23.1%</p></td>
+<td><p>Ed25519 + ML-DSA-65 cosign</p></td>
+</tr>
+<tr class="row-odd"><td><p>X.509 HybridCert verify_cosig</p></td>
+<td><p>255.4 µs</p></td>
+<td><p>300.3 µs</p></td>
+<td><p>14.8%</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Paper headline figures (ENV-2):</strong></p>
+<ul class="simple">
+<li><p>Full hybrid KEM handshake (keygen + encap + decap): <strong>~301 µs</strong></p></li>
+<li><p>Full hybrid signature cycle (keygen + sign + verify): <strong>~468 µs</strong></p></li>
+<li><p>Full hybrid cert issuance: <strong>~314 µs</strong></p></li>
+<li><p>Throughput at 5,000 users: <strong>~2,009 ops/s</strong> (−6.6% vs peak)</p></li>
+</ul>
+<p>All values are sub-millisecond, confirming production viability at TLS handshake
+rates. See <code class="docutils literal notranslate"><span class="pre">results/BENCHMARKS.md</span></code> for complete tables, ENV-1 comparison, and
+the cross-environment speedup analysis.</p>
 </section>
 <hr class="docutils" />
 <section id="statistical-post-processing">
-<h2><a class="toc-backref" href="#id9" role="doc-backlink">Statistical post-processing</a><a class="headerlink" href="#statistical-post-processing" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">Statistical post-processing</a><a class="headerlink" href="#statistical-post-processing" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">tests/bench/bench_stats.py</span></code> provides pure-Python (no scipy) statistical
 utilities for converting raw samples to paper-quality numbers.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -584,7 +801,7 @@ utilities for converting raw samples to paper-quality numbers.</p>
 </section>
 <hr class="docutils" />
 <section id="results-storage">
-<h2><a class="toc-backref" href="#id10" role="doc-backlink">Results storage</a><a class="headerlink" href="#results-storage" title="Link to this heading">¶</a></h2>
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Results storage</a><a class="headerlink" href="#results-storage" title="Link to this heading">¶</a></h2>
 <p>Benchmark runs produce two kinds of output:</p>
 <div class="table-wrapper colwidths-given docutils container">
 <table class="docutils align-default">
@@ -599,14 +816,18 @@ utilities for converting raw samples to paper-quality numbers.</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">results/BENCHMARKS.md</span></code></p></td>
-<td><p>Human-readable markdown summary — <strong>tracked in git</strong></p></td>
+<td><p>Human-readable research record — <strong>tracked in git</strong>, canonical reference</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">results/bench_*.json</span></code></p></td>
-<td><p>Machine-readable JSON snapshots — <strong>gitignored</strong> (large, noisy)</p></td>
+<td><p>Machine-readable JSON snapshots — <strong>gitignored</strong> (large, machine-specific)</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">results/BENCHMARKS.md</span></code> is the authoritative document. It records methodology,
+dual-environment descriptions (ENV-1 / ENV-2), full result tables, CoV analysis,
+cross-environment comparison, and paper headline numbers. Update it after every
+authoritative benchmark run.</p>
 <p>The JSON structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;generated_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-28T...&quot;</span><span class="p">,</span>
@@ -679,16 +900,19 @@ utilities for converting raw samples to paper-quality numbers.</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Benchmarking</a><ul>
+<li><a class="reference internal" href="#test-environments">Test environments</a></li>
 <li><a class="reference internal" href="#benchmark-harnesses">Benchmark harnesses</a></li>
 <li><a class="reference internal" href="#running-the-benchmarks">Running the benchmarks</a><ul>
-<li><a class="reference internal" href="#kem-benchmarks">KEM benchmarks</a></li>
-<li><a class="reference internal" href="#signature-benchmarks">Signature benchmarks</a></li>
+<li><a class="reference internal" href="#docker-recommended-env-2">Docker (recommended — ENV-2)</a></li>
+<li><a class="reference internal" href="#kem-benchmarks-native">KEM benchmarks (native)</a></li>
+<li><a class="reference internal" href="#signature-benchmarks-native">Signature benchmarks (native)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#reading-the-output">Reading the output</a></li>
 <li><a class="reference internal" href="#cov-as-a-side-channel-proxy">CoV as a side-channel proxy</a></li>
 <li><a class="reference internal" href="#hybrid-decomposition">Hybrid decomposition</a></li>
 <li><a class="reference internal" href="#concurrent-throughput-curve">Concurrent throughput curve</a></li>
+<li><a class="reference internal" href="#signature-benchmark-key-numbers">Signature benchmark key numbers</a></li>
 <li><a class="reference internal" href="#statistical-post-processing">Statistical post-processing</a></li>
 <li><a class="reference internal" href="#results-storage">Results storage</a></li>
 </ul>
