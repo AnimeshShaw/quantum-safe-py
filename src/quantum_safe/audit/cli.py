@@ -171,14 +171,17 @@ if _HAS_CLICK:
         else:
             click.echo(out)
 
-        # Exit code based on fail_on
+        # Exit code based on fail_on.
+        # ``--fail-on never`` suppresses ALL non-zero exits from this command,
+        # including policy-level failures.  Any other value causes exit 1 when
+        # either (a) a finding at or above the threshold exists, or (b) the
+        # policy evaluator marks the audit as failed.
         if fail_on != "never":
             fail_sev = Severity[fail_on.upper()]
             if any(f.severity >= fail_sev for f in filtered_findings):
                 sys.exit(1)
-
-        if not report.passed:
-            sys.exit(1)
+            if not report.passed:
+                sys.exit(1)
 
     # ------------------------------------------------------------------
     # sbom subcommand

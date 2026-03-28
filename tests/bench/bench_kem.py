@@ -343,23 +343,158 @@ def bench_concurrent_load() -> list[BenchResult]:
             concurrent.futures.wait(futures)
 
     results = []
-    
+
     # Simulate 100 concurrent users (Run 50 times for a stable median)
     results.append(_bench(
-        "Concurrent Handshakes (100 users)", 
-        lambda: simulate_users(100), 
-        iterations=50, 
-        warmup=5
+        "Concurrent Handshakes (100 users)",
+        lambda: simulate_users(100),
+        iterations=50,
+        warmup=5,
     ))
-    
+
     # Simulate 500 concurrent users (Run 20 times because this is extremely heavy)
     results.append(_bench(
-        "Concurrent Handshakes (500 users)", 
-        lambda: simulate_users(500), 
-        iterations=20, 
-        warmup=2
+        "Concurrent Handshakes (500 users)",
+        lambda: simulate_users(500),
+        iterations=20,
+        warmup=2,
     ))
-    
+
+    return results
+
+
+def bench_concurrent_load_extended() -> list[BenchResult]:
+    """Extended concurrent load tiers: 1000 and 5000 simultaneous users.
+
+    These are Contribution 3 data points for the throughput curve hero figure.
+    Results at these scales reveal whether the hybrid KEM degrades gracefully
+    under production-like concurrent load or exhibits quadratic blowup from
+    lock contention in the liboqs C library.
+
+    Wall-clock interpretation
+    -------------------------
+    Each benchmark iteration fires num_users threads simultaneously and waits
+    for all to complete.  The reported median is the **total wall-clock time**
+    for all users.  To get per-user throughput::
+
+        ops_per_sec = num_users / median_s
+
+    With 100 threads on the benchmark machine the GIL is released during the
+    liboqs C calls, so concurrency is genuine — not artificially throttled by
+    Python.
+
+    Note: iterations are intentionally low (10 for 1000-user, 3 for 5000-user)
+    because each iteration is a full 1000/5000-user burst.  The warmup phase
+    prevents the first burst from being penalised by OS thread pool warm-up.
+    """
+    from quantum_safe.kem.hybrid import HybridKEM
+    import concurrent.futures
+
+    kem = HybridKEM()
+    kp = kem.generate_keypair()
+
+    def handle_single_user() -> None:
+        ct, ss = kem.encapsulate(kp.public)
+        kem.decapsulate(kp.secret, ct)
+
+    def simulate_users(num_users: int) -> None:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=num_users) as executor:
+            futures = [executor.submit(handle_single_user) for _ in range(num_users)]
+            concurrent.futures.wait(futures)
+
+    results = []
+
+    results.append(_bench(
+        "Concurrent Handshakes (1000 users)",
+        lambda: simulate_users(1000),
+        iterations=10,
+        warmup=1,
+    ))
+
+    results.append(_bench(
+        "Concurrent Handshakes (5000 users)",
+        lambda: simulate_users(5000),
+        iterations=5,   # 5 iterations → 3 samples after 1% clip — enough for CoV
+        warmup=1,
+    ))
+
+    return results
+
+
+def bench_hybrid_decomposition() -> list[BenchResult]:
+    """Decompose the hybrid KEM handshake cost into its three components.
+
+    This is the supporting data for paper Contribution 2 (§5.2):
+    quantifying the exact overhead each layer contributes.
+
+    Components measured
+    -------------------
+    ① Pure X25519 (classical) — keygen + DH exchange, no PQC
+    ② Pure ML-KEM-768 (PQC) — keygen + encapsulate + decapsulate via liboqs
+    ③ Full HybridKEM — all of the above plus the HKDF combiner and serialisation
+
+    The combiner overhead is approximated as:
+        combiner_cost ≈ HybridKEM_total - X25519_total - ML_KEM_total
+
+    Why this matters for the paper
+    --------------------------------
+    Prior work (Stebila et al. 2020) quotes combiner overhead as "negligible".
+    Our measurements quantify "negligible" precisely in µs and as a % of total
+    hybrid handshake time, giving Table 2 of the paper a concrete number.
+    """
+    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+    from quantum_safe.kem.hybrid import HybridKEM
+    from quantum_safe.backends.base import AbstractKEMBackend
+
+    results: list[BenchResult] = []
+
+    # ① Classical-only: pure X25519 keygen + DH
+    alice = X25519PrivateKey.generate()
+    bob = X25519PrivateKey.generate()
+    bob_pub = bob.public_key()
+
+    results.append(_bench("Decomp ① X25519 keygen",        lambda: X25519PrivateKey.generate()))
+    results.append(_bench("Decomp ① X25519 DH exchange",   lambda: alice.exchange(bob_pub)))
+
+    # ② PQC-only: pure ML-KEM-768 via liboqs (skip if unavailable)
+    try:
+        import oqs
+        with oqs.KeyEncapsulation("ML-KEM-768") as pqc:
+            pub_key = pqc.generate_keypair()
+            ct, _ = pqc.encap_secret(pub_key)
+            results.append(_bench("Decomp ② ML-KEM-768 keygen",       lambda: pqc.generate_keypair()))
+            results.append(_bench("Decomp ② ML-KEM-768 encapsulate",  lambda: pqc.encap_secret(pub_key)))
+            results.append(_bench("Decomp ② ML-KEM-768 decapsulate",  lambda: pqc.decap_secret(ct)))
+    except Exception:
+        # Mock PQC to measure the combiner cost in isolation
+        class _MockBackend(AbstractKEMBackend):
+            name = "mock"
+            def keygen(self, a):        return b"\xAA" * 1184, b"\xBB" * 2400
+            def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
+            def decapsulate(self, a, s, c): return b"\xDD" * 32
+            def is_available(self):     return True
+            def supported_algorithms(self): return []
+
+        kem_mock = HybridKEM.__new__(HybridKEM)
+        kem_mock._classical = "X25519"
+        kem_mock._pqc = "ML-KEM-768"
+        kem_mock._algorithm = "X25519+ML-KEM-768"
+        kem_mock._backend = _MockBackend()
+        kp_mock = kem_mock.generate_keypair()
+        ct_mock, _ = kem_mock.encapsulate(kp_mock.public)
+        results.append(_bench("Decomp ② ML-KEM-768 keygen (mock)",       lambda: kem_mock.generate_keypair()))
+        results.append(_bench("Decomp ② ML-KEM-768 encapsulate (mock)",  lambda: kem_mock.encapsulate(kp_mock.public)))
+        results.append(_bench("Decomp ② ML-KEM-768 decapsulate (mock)",  lambda: kem_mock.decapsulate(kp_mock.secret, ct_mock)))
+
+    # ③ Full hybrid: X25519 + ML-KEM-768 + HKDF combiner + serialisation
+    kem_full = HybridKEM()
+    kp_full = kem_full.generate_keypair()
+    ct_full, _ = kem_full.encapsulate(kp_full.public)
+
+    results.append(_bench("Decomp ③ HybridKEM keygen      (full)",       lambda: kem_full.generate_keypair()))
+    results.append(_bench("Decomp ③ HybridKEM encapsulate (full)",       lambda: kem_full.encapsulate(kp_full.public)))
+    results.append(_bench("Decomp ③ HybridKEM decapsulate (full)",       lambda: kem_full.decapsulate(kp_full.secret, ct_full)))
+
     return results
 
 # ---------------------------------------------------------------------------
@@ -386,8 +521,10 @@ def run_all(save_json: str | None = None, iterations: int = 1000, with_pqc: bool
         ("Envelope seal/open", bench_envelope_seal_open),
         ("Key serialization", bench_serialization),
         ("Server Load Simulation", bench_concurrent_load),
+        ("Server Load Simulation (extended)", bench_concurrent_load_extended),
+        ("Hybrid Decomposition", bench_hybrid_decomposition),
     ]
-    
+
     # Add the real PQC tests if the flag is passed
     if with_pqc:
         suites.append(("HybridKEM (Real PQC)", bench_hybrid_kem_real))

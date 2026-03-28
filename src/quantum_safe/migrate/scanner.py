@@ -41,6 +41,7 @@ Limitations
 from __future__ import annotations
 
 import ast
+import fnmatch
 import json
 import os
 import pathlib
@@ -660,6 +661,9 @@ class Scanner:
             ]
             for filename in filenames:
                 if not filename.endswith(".py"):
+                    continue
+                # Check filename against exclusion patterns (supports fnmatch globs)
+                if any(fnmatch.fnmatch(filename, pat) for pat in excluded):
                     continue
                 full = pathlib.Path(dirpath) / filename
                 try:
