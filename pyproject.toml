@@ -1,0 +1,151 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantum-safe"
+version = "0.1.0"
+description = "Production-grade post-quantum cryptography with hybrid KEM, migration tooling, and protocol helpers"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [
+    { name = "quantum-safe contributors" },
+]
+keywords = [
+    "cryptography",
+    "post-quantum",
+    "pqc",
+    "ml-kem",
+    "kyber",
+    "ml-dsa",
+    "dilithium",
+    "hybrid",
+    "tls",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security :: Cryptography",
+    "Typing :: Typed",
+]
+
+# Core deps are kept intentionally minimal.
+# oqs is optional because some users might only want the
+# pure-Python/noble backend path (e.g. WASM targets).
+dependencies = [
+    "cryptography>=42.0",   # for classical primitives + X.509
+    "pydantic>=2.5",        # for structured config objects
+    "click>=8.1",           # CLI
+    "rich>=13.0",           # CLI output formatting
+    "cbor2>=5.6",           # CBOR key serialization
+]
+
+[project.optional-dependencies]
+liboqs = [
+    "liboqs-python>=0.10.0",
+]
+# pyca cryptography already pulls in cffi; this just makes the
+# dep explicit so people know what they're getting.
+rustcrypto = [
+    # quantum-safe-py is our thin PyO3 wrapper around ml-kem/ml-dsa crates
+    # Not on PyPI yet — installed from local wheel during dev
+    # "quantum-safe-py>=0.1.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-benchmark>=4.0",
+    "pytest-cov>=4.1",
+    "pytest-asyncio>=0.23",
+    "hypothesis>=6.100",
+    "mypy>=1.8",
+    "ruff>=0.3",
+    "black>=24.0",
+    "pre-commit>=3.6",
+]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.24",
+]
+
+[project.scripts]
+qs-audit = "quantum_safe.audit.cli:main"
+qs-migrate = "quantum_safe.migrate.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/quantum-safe/quantum-safe-py"
+Documentation = "https://quantum-safe.readthedocs.io"
+"Bug Tracker" = "https://github.com/quantum-safe/quantum-safe-py/issues"
+
+# ---------------------------------------------------------------------------
+# Hatch build config
+# ---------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["src/quantum_safe"]
+
+# ---------------------------------------------------------------------------
+# Ruff linter config
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "ANN", "S", "B", "A", "C4", "T20"]
+ignore = [
+    "ANN101",  # missing type annotation for `self`
+    "ANN102",  # missing type annotation for `cls`
+    "S101",    # use of assert — fine in tests
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "S"]
+
+# ---------------------------------------------------------------------------
+# Mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+# liboqs-python doesn't ship stubs
+[[tool.mypy.overrides]]
+module = ["oqs.*", "cbor2.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "-ra",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m not slow')",
+    "requires_liboqs: needs liboqs-python installed",
+    "requires_oqs: alias for requires_liboqs",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src/quantum_safe"]
+omit = ["*/tests/*", "*/_internal/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+]
