@@ -64,7 +64,7 @@ from __future__ import annotations
 import os
 import struct
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey,
@@ -417,10 +417,6 @@ class HybridKEM:
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 EllipticCurvePublicNumbers,
             )
-            from cryptography.hazmat.primitives.serialization import load_pem_public_key
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                from_encoded_point, EllipticCurvePublicKey
-            )
 
             ephem_priv = generate_private_key(SECP256R1(), default_backend())
             ephem_pub = ephem_priv.public_key()
@@ -469,14 +465,18 @@ class HybridKEM:
             try:
                 from cryptography.hazmat.primitives.asymmetric.ec import (
                     SECP256R1,
+                    EllipticCurvePrivateKey,
                     EllipticCurvePublicNumbers,
                     ECDH,
                 )
                 from cryptography.hazmat.backends import default_backend
                 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
-                our_priv = load_pem_private_key(secret_key_bytes, password=None,
-                                                backend=default_backend())
+                our_priv = cast(
+                    EllipticCurvePrivateKey,
+                    load_pem_private_key(secret_key_bytes, password=None,
+                                         backend=default_backend()),
+                )
                 if len(ciphertext_bytes) != 65 or ciphertext_bytes[0] != 0x04:
                     raise DecapsulationError(algo=self._algorithm)
                 x = int.from_bytes(ciphertext_bytes[1:33], "big")

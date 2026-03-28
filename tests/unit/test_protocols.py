@@ -52,6 +52,7 @@ from quantum_safe.protocols.x509 import (
     HybridCertificateBuilder,
     generate_classical_keypair_for_cert,
 )
+from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
 from quantum_safe.signatures.hybrid import HybridSign
 from quantum_safe.signatures.core import Sign
 from quantum_safe.types import (
@@ -70,7 +71,7 @@ from quantum_safe.kem.hybrid import HybridKEM
 # ---------------------------------------------------------------------------
 
 
-class MockPQCBackend:
+class MockPQCBackend(AbstractKEMBackend):
     """Fake PQC KEM for envelope/JWT tests."""
     name = "mock"
     def keygen(self, a):    return b"\xAA" * 1184, b"\xBB" * 2400
@@ -80,7 +81,7 @@ class MockPQCBackend:
     def supported_algorithms(self): return []
 
 
-class MockSigBackend:
+class MockSigBackend(AbstractSignatureBackend):
     """Fake PQC signature backend for JWT/x509 tests."""
     name = "mock"
     def keygen(self, a):    return b"\xAA" * 1952, b"\xBB" * 4000
@@ -592,7 +593,7 @@ class TestHybridCertificateBuilder:
 
         cert = cx509.load_pem_x509_certificate(cert_pem, default_backend())
         cn = cert.subject.get_attributes_for_oid(
-            cx509.oid.NameOID.COMMON_NAME
+            cx509.NameOID.COMMON_NAME
         )[0].value
         assert cn == "myservice.example.com"
 

@@ -29,6 +29,7 @@ from quantum_safe.kem.algorithms import (
     parse_hybrid_name,
     validate_hybrid_combination,
 )
+from quantum_safe.backends.base import AbstractKEMBackend
 from quantum_safe.kem.core import KEM
 from quantum_safe.kem.hybrid import HybridKEM, _pack_components, _unpack_components
 from quantum_safe.types import (
@@ -46,7 +47,7 @@ from quantum_safe.types import (
 # ---------------------------------------------------------------------------
 
 
-class MockKEMBackend:
+class MockKEMBackend(AbstractKEMBackend):
     """Minimal KEM backend that does fake deterministic key ops.
 
     The 'cryptography' is not real — don't use this for security.
@@ -62,9 +63,9 @@ class MockKEMBackend:
             AlgorithmInfo(
                 name="ML-KEM-768",
                 nist_level=3,
-                public_key_bytes=1184,
-                secret_key_bytes=2400,
-                ciphertext_bytes=1088,
+                public_key_size=1184,
+                secret_key_size=2400,
+                ciphertext_size=1088,
                 is_kem=True,
                 is_signature=False,
                 is_nist_standard=True,

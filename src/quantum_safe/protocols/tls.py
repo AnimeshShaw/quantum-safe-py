@@ -219,7 +219,7 @@ def configure_hybrid_context(
     if hasattr(ctx, "set_groups"):
         # PyOpenSSL or OQS-patched ssl
         try:
-            ctx.set_groups(groups)
+            getattr(ctx, "set_groups")(groups)
             set_groups_succeeded = True
         except ssl.SSLError as exc:
             warnings.warn(

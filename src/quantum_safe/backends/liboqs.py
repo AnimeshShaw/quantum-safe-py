@@ -28,7 +28,7 @@ new one per call rather than sharing instances.
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
 from quantum_safe.exceptions import (
@@ -190,7 +190,7 @@ _SIG_LIBOQS_NAMES: dict[str, str] = {
 }
 
 
-def _import_oqs() -> "object":
+def _import_oqs() -> Any:
     """Import the oqs module or raise BackendNotAvailable."""
     try:
         import oqs  # type: ignore[import]

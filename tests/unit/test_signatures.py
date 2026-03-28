@@ -28,6 +28,7 @@ from quantum_safe.signatures.algorithms import (
     get_algorithm_spec,
     validate_hybrid_combination,
 )
+from quantum_safe.backends.base import AbstractSignatureBackend
 from quantum_safe.signatures.core import Sign
 from quantum_safe.signatures.hybrid import HybridSign, _pack_components, _unpack_components
 from quantum_safe.types import (
@@ -44,7 +45,7 @@ from quantum_safe.types.signatures import HybridSignature, SignedMessage
 # ---------------------------------------------------------------------------
 
 
-class MockSignatureBackend:
+class MockSignatureBackend(AbstractSignatureBackend):
     """Fake signature backend using HMAC-SHA256.
 
     Not cryptographically secure — only for testing the library's

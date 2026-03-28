@@ -180,7 +180,9 @@ def bench_hybrid_kem_classical_only() -> list[BenchResult]:
     """Benchmark the X25519 half of HybridKEM in isolation."""
     from quantum_safe.kem.hybrid import HybridKEM
 
-    class MockPQCBackend:
+    from quantum_safe.backends.base import AbstractKEMBackend
+
+    class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
         def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
         def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
@@ -241,7 +243,9 @@ def bench_envelope_seal_open() -> list[BenchResult]:
     from quantum_safe.protocols.envelope import Envelope
     from quantum_safe.kem.hybrid import HybridKEM
 
-    class MockPQCBackend:
+    from quantum_safe.backends.base import AbstractKEMBackend
+
+    class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
         def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
         def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
@@ -269,7 +273,9 @@ def bench_serialization() -> list[BenchResult]:
     """Key serialization / deserialization."""
     from quantum_safe.kem.hybrid import HybridKEM
 
-    class MockPQCBackend:
+    from quantum_safe.backends.base import AbstractKEMBackend
+
+    class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
         def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
         def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32

@@ -28,13 +28,13 @@ Until then, is_available() returns False and the liboqs backend is used.
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
 from quantum_safe.exceptions import BackendNotAvailable
 
 
-def _import_qs_py() -> "object":
+def _import_qs_py() -> Any:
     """Import the quantum_safe_py native extension or raise BackendNotAvailable."""
     try:
         import quantum_safe_py as _qs_py  # type: ignore[import]

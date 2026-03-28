@@ -227,7 +227,7 @@ class HybridCertificateBuilder:
 
         return cert_pem, cosig_bundle
 
-    def _generate_cosig(self, data: bytes, signer: object = None) -> bytes:
+    def _generate_cosig(self, data: bytes, signer: Any = None) -> bytes:
         """Generate the PQC co-signature bundle."""
         from quantum_safe.signatures.hybrid import HybridSign
         from quantum_safe.signatures.core import Sign

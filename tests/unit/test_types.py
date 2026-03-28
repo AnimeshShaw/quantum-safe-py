@@ -7,6 +7,7 @@ test the type system, serialization, and memory safety behaviors.
 
 import gc
 import time
+from typing import Any
 
 import cbor2
 import pytest
@@ -382,7 +383,7 @@ class TestCombineSharedSecrets:
         assert combined.is_hybrid
 
     def test_different_inputs_different_outputs(self):
-        kwargs = dict(
+        kwargs: dict[str, Any] = dict(
             pqc_ss=b"\x02" * 32,
             algorithm="X25519+ML-KEM-768",
             classical_ct=b"\x03" * 32,
@@ -393,7 +394,7 @@ class TestCombineSharedSecrets:
         assert ss1 != ss2
 
     def test_deterministic(self):
-        kwargs = dict(
+        kwargs: dict[str, Any] = dict(
             classical_ss=b"\x01" * 32,
             pqc_ss=b"\x02" * 32,
             algorithm="X25519+ML-KEM-768",

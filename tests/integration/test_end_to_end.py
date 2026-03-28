@@ -23,6 +23,7 @@ import warnings
 import pytest
 
 from quantum_safe.audit import AuditPolicy, Auditor, NISTComplianceChecker, SBOMEnricher
+from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
 from quantum_safe.audit.sbom import PQCReadiness
 from quantum_safe.kem.hybrid import HybridKEM
 from quantum_safe.migrate import MigrationStateManager, Scanner, Upgrader
@@ -43,7 +44,7 @@ from quantum_safe.exceptions import VerificationError, UnsupportedAlgorithm
 # ---------------------------------------------------------------------------
 
 
-class _MockKEMBackend:
+class _MockKEMBackend(AbstractKEMBackend):
     name = "mock"
     def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
     def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
@@ -52,7 +53,7 @@ class _MockKEMBackend:
     def supported_algorithms(self): return []
 
 
-class _MockSigBackend:
+class _MockSigBackend(AbstractSignatureBackend):
     name = "mock"
     def keygen(self, a): return b"\xAA" * 1952, b"\xBB" * 4000
     def sign(self, a, sk, msg, ctx=b""): return b"\xCC" * 3293
