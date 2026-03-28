@@ -110,7 +110,26 @@ python3 -m pytest tests/ -v
 python3 -m pytest tests/unit/test_kem.py -v
 python3 -m pytest tests/unit/test_signatures.py -v
 python3 -m pytest tests/unit/test_audit.py -v
+
+# CLI integration tests (qs-audit and qs-migrate via Click CliRunner)
+python3 -m pytest tests/unit/test_cli.py -v
+
+# Statistical benchmark utility tests
+python3 -m pytest tests/unit/test_bench_stats.py -v
 ```
+
+### Test file inventory
+
+| File | What it covers | liboqs needed? |
+|------|----------------|---------------|
+| `tests/unit/test_kem.py` | KEM types, hybrid combiner, serialization | No |
+| `tests/unit/test_signatures.py` | Signature types, HybridSign, hedged mode | No |
+| `tests/unit/test_protocols.py` | Envelope, JWT, TLS, X.509 | No |
+| `tests/unit/test_migrate.py` | Scanner rules, Upgrader, state machine | No |
+| `tests/unit/test_audit.py` | Auditor, policy, compliance, SBOM | No |
+| `tests/unit/test_cli.py` | `qs-audit` and `qs-migrate` CLI (45 tests) | No |
+| `tests/unit/test_bench_stats.py` | Bootstrap CI, Welch t-test, Cohen's d, LaTeX (58 tests) | No |
+| `tests/integration/` | End-to-end hybrid round-trips | Optional |
 
 ### Run tests without pytest (stdlib only)
 
@@ -129,32 +148,57 @@ print('Findings:', [(f.rule_id, f.severity.name) for f in r.findings])
 
 ## 5. Running the benchmarks
 
+Two benchmark harnesses cover the full paper data. Both use 1000 iterations,
+100 warmup, 1% outlier trim, and `time.perf_counter`.
+
+### KEM benchmarks
+
 ```bash
-# Classical components (always works)
-python3 tests/bench/bench_kem.py
+# Classical + mock PQC (no liboqs needed)
+python3 -X utf8 tests/bench/bench_kem.py
 
-# Save results to JSON
-python3 tests/bench/bench_kem.py --save results/bench_$(date +%Y%m%d).json
+# Full suite with real ML-KEM-768 via liboqs (includes decomposition + extended load)
+python3 -X utf8 tests/bench/bench_kem.py --with-pqc
 
-# Higher iteration count for research-grade data
-python3 tests/bench/bench_kem.py --iterations 10000 --save results/bench_10k.json
+# Save JSON snapshot
+python3 -X utf8 tests/bench/bench_kem.py --with-pqc \
+  --save results/bench_kem_$(date +%Y-%m-%d).json
 ```
 
-Sample output:
-```
-── Classical primitives ──
-  X25519 keygen                               median=   14.2µs  p95=   17.8µs  CoV=4.2%
-  X25519 DH exchange                          median=   12.6µs  p95=   15.1µs  CoV=3.1%
-  Ed25519 sign                                median=   24.1µs  p95=   28.4µs  CoV=2.8%
-  Ed25519 verify                              median=   62.3µs  p95=   70.2µs  CoV=1.9%
+The `--with-pqc` flag adds:
+- Real ML-KEM-768 keygen / encapsulate / decapsulate (liboqs)
+- Hybrid decomposition table (X25519-only, ML-KEM-768-only, combined — isolates combiner cost)
+- Extended concurrent load: 100 / 500 / 1000 / 5000 simultaneous users
 
-── HybridKEM (classical half) ──
-  HybridKEM keygen (X25519+mock PQC)          median=   16.8µs  p95=   20.3µs  CoV=4.5%
-  HybridKEM encapsulate (X25519+mock)         median=   15.2µs  p95=   18.9µs  CoV=3.8%
-  HybridKEM decapsulate (X25519+mock)         median=   14.9µs  p95=   18.4µs  CoV=3.6%
+### Signature benchmarks
+
+```bash
+# Ed25519 baseline + HybridSign + X.509 certs (no liboqs needed for Ed25519/HybridSign)
+python3 -X utf8 tests/bench/bench_signatures.py
+
+# Add standalone ML-DSA-65 timing (liboqs required)
+python3 -X utf8 tests/bench/bench_signatures.py --with-pqc
+
+# Save JSON snapshot
+python3 -X utf8 tests/bench/bench_signatures.py --with-pqc \
+  --save results/bench_sigs_$(date +%Y-%m-%d).json
 ```
 
-With liboqs installed, ML-KEM benchmarks run automatically.
+### Interpreting the output
+
+| Column | Meaning |
+|--------|---------|
+| `median` | 50th percentile latency — the headline number |
+| `p95` | 95th percentile — worst-case for 95% of requests |
+| `CoV` | Coefficient of variation — side-channel proxy metric |
+| `*` flag | CoV > 5% — high variance (Windows scheduler jitter on short ops) |
+| `~` flag | CoV 3–5% — moderate variance, worth watching |
+
+**CoV interpretation:** Values ≤ 2% indicate constant-time behaviour. ML-DSA sign
+shows CoV ~50% — expected, because FIPS 204 uses hedged signing with fresh
+randomness each call (not a timing side-channel).
+
+Results are recorded in `results/BENCHMARKS.md`. JSON files are gitignored.
 
 ---
 
@@ -477,30 +521,41 @@ pip install pytest pytest-benchmark
 
 ## 11. Research benchmarking workflow
 
-For the Quantum-Safe Code Auditor paper:
+Full paper reproduction sequence:
 
 ```bash
-# Phase 1: baseline classical primitives
-python3 tests/bench/bench_kem.py --iterations 10000 --save results/phase1_classical.json
-
-# Phase 2: with liboqs installed — full ML-KEM benchmarks
+# Step 1 — install with liboqs
 pip install 'quantum-safe[liboqs]'
-python3 tests/bench/bench_kem.py --iterations 10000 --save results/phase2_mlkem.json
 
-# The JSON structure is:
-# {"results": [{"name": "...", "median_us": ..., "p95_us": ..., "cov_pct": ...}]}
+# Step 2 — KEM suite (classical baselines + ML-KEM-768 + decomposition + concurrent load)
+python3 -X utf8 tests/bench/bench_kem.py --with-pqc \
+  --save results/bench_kem_$(date +%Y-%m-%d).json
 
-# Parse and compare
+# Step 3 — Signature suite (Ed25519 + ML-DSA-65 + HybridSign + X.509 certs)
+python3 -X utf8 tests/bench/bench_signatures.py --with-pqc \
+  --save results/bench_sigs_$(date +%Y-%m-%d).json
+
+# Step 4 — Post-process with statistical utilities
 python3 -c "
-import json
-with open('results/phase2_mlkem.json') as f:
+import sys, json
+sys.path.insert(0, 'tests/bench')
+from bench_stats import bootstrap_ci, welch_t_test, cohens_d
+
+with open('results/bench_kem_$(date +%Y-%m-%d).json') as f:
     data = json.load(f)
-for r in data['results']:
-    print(f'{r[\"name\"]:<45} median={r[\"median_us\"]:8.1f}µs  CoV={r[\"cov_pct\"]:.1f}%')
+
+# Print all results with bootstrap CIs
+for section, results in data['results'].items():
+    for r in results:
+        lo, med, hi = bootstrap_ci(r.get('samples_us', [r['median_us']]))
+        print(f\"{r['name']:<50} {med:8.1f} µs  [{lo:.1f}, {hi:.1f}]  CoV={r['cov_pct']:.1f}%\")
 "
 ```
 
-The `cov_pct` (coefficient of variation) column in the benchmark output
-is the key metric for the timing side-channel analysis in your paper.
-Values below 2% suggest constant-time execution; above 5% warrants
-investigation as a potential side-channel risk.
+The statistical utilities in `tests/bench/bench_stats.py` provide:
+
+- `bootstrap_ci(samples, confidence=0.95)` — 95% CI via Efron percentile bootstrap
+- `welch_t_test(samples_a, samples_b)` — significance test, p-value, overhead%
+- `cohens_d(samples_a, samples_b)` — standardised effect size
+- `latex_table(rows, columns)` — ready-to-paste LaTeX `booktabs` table
+- `cov_stability_report(results)` — CoV proxy summary for side-channel section

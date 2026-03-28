@@ -471,14 +471,37 @@ python -m pytest tests/ -v -m "not requires_liboqs"
 ### Running benchmarks
 
 ```bash
-# Classical components only (no liboqs needed)
-python tests/bench/bench_kem.py
+# KEM benchmarks (classical + mock PQC, always works)
+python -X utf8 tests/bench/bench_kem.py
 
-# Save results to JSON
-python tests/bench/bench_kem.py --save bench_results.json
+# Full KEM suite with real ML-KEM-768 via liboqs
+python -X utf8 tests/bench/bench_kem.py --with-pqc
 
-# More iterations for research-grade data
-python tests/bench/bench_kem.py --iterations 10000 --save bench_high.json
+# Signature benchmarks (Ed25519 baseline, HybridSign, X.509 certs)
+python -X utf8 tests/bench/bench_signatures.py --with-pqc
+
+# Save JSON snapshots for reproducibility
+python -X utf8 tests/bench/bench_kem.py --with-pqc \
+  --save results/bench_kem_$(date +%Y-%m-%d).json
+python -X utf8 tests/bench/bench_signatures.py --with-pqc \
+  --save results/bench_sigs_$(date +%Y-%m-%d).json
+```
+
+Benchmark results are recorded in [results/BENCHMARKS.md](results/BENCHMARKS.md).
+The `cov_pct` (coefficient of variation) column is the key metric for
+timing side-channel analysis — values ≤ 2% indicate constant-time behaviour.
+
+### Statistical analysis
+
+`tests/bench/bench_stats.py` provides research-grade statistical utilities
+used to generate paper-quality numbers from raw benchmark samples:
+
+```python
+from tests.bench.bench_stats import bootstrap_ci, welch_t_test, cohens_d, latex_table
+
+lo, median, hi = bootstrap_ci(samples_us, confidence=0.95)
+result = welch_t_test(classical_samples, hybrid_samples)
+print(f"p={result.p_value:.4f}, d={cohens_d(classical_samples, hybrid_samples):.2f}")
 ```
 
 ### Code quality

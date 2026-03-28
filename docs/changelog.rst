@@ -1,6 +1,62 @@
 Changelog
 =========
 
+0.2.0 — unreleased
+-------------------
+
+Added
+~~~~~
+
+**Test suite — CLI integration (45 tests)**
+
+- ``tests/unit/test_cli.py`` — full Click CliRunner test suite for both CLI tools
+- Covers ``qs-audit scan``: clean→exit 0, classical→exit 1, ``--fail-on`` thresholds,
+  JSON/SARIF/GitHub output formats, preset policies, ``--min-severity`` filtering,
+  ``--exclude`` patterns, ``--output`` to file, ``--metadata`` key/value pairs,
+  ``qs-audit compliance``, ``qs-audit requirements``, ``qs-audit sbom``
+- Covers ``qs-migrate scan``: directory scan, exclude patterns, SARIF output,
+  ``qs-migrate upgrade-key``, ``qs-migrate status``
+
+**Test suite — statistical benchmark utilities (58 tests)**
+
+- ``tests/unit/test_bench_stats.py`` — tests for all statistical analysis functions
+- Covers bootstrap CI monotonicity and containment, Welch's t-test significance,
+  Cohen's d sign/magnitude, throughput curve formula, CoV threshold logic,
+  LaTeX booktabs structure, ``describe_samples`` unit conversion
+
+**Benchmark harnesses — signatures**
+
+- ``tests/bench/bench_signatures.py`` — signature benchmark harness with identical
+  methodology to ``bench_kem.py`` (1000 iterations, 100 warmup, 1% trim)
+- Ed25519 sign/verify baselines, ML-DSA-65 standalone (liboqs), HybridSign
+  (Ed25519+ML-DSA-65), X.509 hybrid certificate build and cosignature verify
+
+**Benchmark harnesses — KEM extensions**
+
+- ``bench_hybrid_decomposition()`` — isolates X25519-only, ML-KEM-768-only, and
+  combined HybridKEM costs to measure combiner overhead (HKDF + serialisation)
+- ``bench_concurrent_load_extended()`` — 1000 and 5000 simultaneous users added
+  to the throughput curve (extends the 100/500-user baseline)
+
+**Statistical analysis utilities**
+
+- ``tests/bench/bench_stats.py`` — research-grade statistical library (pure Python,
+  no scipy dependency)
+- ``bootstrap_ci`` — Efron (1979) percentile bootstrap, 2000 resamples, seeded
+- ``welch_t_test`` — Welch's t-test from scratch via regularised incomplete beta
+  (Abramowitz & Stegun 26.5.27, Lentz continued fraction)
+- ``cohens_d`` — pooled standard deviation effect size
+- ``throughput_curve`` — ops/s per concurrency tier with scaling efficiency
+- ``cov_stability_report`` — CoV proxy summary for side-channel analysis
+- ``latex_table`` — ready-to-paste ``booktabs`` table generator for ACM/IEEE/USENIX
+
+**Bug fixes**
+
+- ``audit/cli.py``: ``--fail-on never`` now suppresses all process exits, including
+  policy-level failures (``report.passed`` check was unconditionally executed before)
+- ``migrate/scanner.py``: ``--exclude`` patterns now match individual filenames via
+  ``fnmatch``, not only directory names
+
 0.1.0 — unreleased
 -------------------
 
