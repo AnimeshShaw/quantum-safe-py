@@ -35,6 +35,8 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+sys.path.insert(0, os.path.dirname(__file__))
+import _oqs_path  # noqa: F401 — registers oqs.dll dir on Windows
 
 
 @dataclass

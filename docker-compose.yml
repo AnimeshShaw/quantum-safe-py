@@ -1,0 +1,16 @@
+services:
+  bench:
+    build: .
+    volumes:
+      # Benchmark JSON snapshots are written here — persisted to the host
+      - ./results:/app/results
+    environment:
+      # Override if your oqs.dll lives elsewhere (Windows host — irrelevant inside container)
+      - OQS_DLL_DIR=${OQS_DLL_DIR:-}
+    command: >
+      sh -c "
+        python -X utf8 tests/bench/bench_kem.py --with-pqc
+          --save results/bench_kem_$(date +%Y-%m-%d).json &&
+        python -X utf8 tests/bench/bench_signatures.py --with-pqc
+          --save results/bench_sigs_$(date +%Y-%m-%d).json
+      "
