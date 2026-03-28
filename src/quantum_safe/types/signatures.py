@@ -167,7 +167,8 @@ class HybridSignature:
     combined into a SignedMessage. This is an intermediate type used inside
     HybridSign; callers don't normally deal with it directly.
 
-    Wire format (CBOR-encoded):
+    Wire format (CBOR-encoded)::
+
         {
             "classical_sig": bytes,
             "pqc_sig": bytes,

@@ -366,7 +366,8 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         FIPS 204 §5.2 specifies that the context is prepended to the message
         before hashing. liboqs-python's Signature.sign() doesn't directly
         expose the context parameter in older versions, so we prepend it
-        manually using the format:
+        manually using the format::
+
             context_len (1 byte) || context || message
 
         This is consistent with the HashML-DSA construction in FIPS 204 §5.4.
