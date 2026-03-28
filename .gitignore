@@ -9,6 +9,12 @@ docs/CLAUDE_CONTEXT.md
 .claude/
 
 # ---------------------------------------------------------------------------
+# Research notes and paper drafts — local working files, not for source control
+# Keep docs/ for Sphinx sources only.
+# ---------------------------------------------------------------------------
+notes/
+
+# ---------------------------------------------------------------------------
 # Python bytecode and caches
 # ---------------------------------------------------------------------------
 __pycache__/
