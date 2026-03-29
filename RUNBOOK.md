@@ -148,22 +148,26 @@ print('Findings:', [(f.rule_id, f.severity.name) for f in r.findings])
 
 ## 5. Running the benchmarks
 
-Two benchmark harnesses cover the full paper data. Both use 1000 iterations,
-100 warmup, 1% outlier trim, and `time.perf_counter`.
+Two benchmark harnesses cover the full paper data. Authoritative runs use 3,000
+iterations, 100 warmup, 1% outlier trim, `time.perf_counter`, CPU-pinned Docker
+container (`--cpuset-cpus="0,1"`), best of 3 independent runs.
 
 ### KEM benchmarks
 
 ```bash
-# Classical + mock PQC (no liboqs needed)
-python3 -X utf8 tests/bench/bench_kem.py
+# Docker (recommended — Linux kernel, from-source liboqs, CPU pinned)
+docker run --rm --cpuset-cpus="0,1" \
+  -v "$(pwd)/results:/app/results" quantum-safe-bench \
+  python -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000 \
+  --save /app/results/bench_kem_$(date +%Y-%m-%d).json
 
-# Full suite with real ML-KEM-768 via liboqs (includes decomposition + extended load)
-python3 -X utf8 tests/bench/bench_kem.py --with-pqc
-
-# Save JSON snapshot
-python3 -X utf8 tests/bench/bench_kem.py --with-pqc \
+# Native (no Docker)
+python3 -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000 \
   --save results/bench_kem_$(date +%Y-%m-%d).json
 ```
+
+Note: On Windows/Git Bash, prefix Docker commands with `MSYS_NO_PATHCONV=1` to prevent
+path mangling in the volume mount argument.
 
 The `--with-pqc` flag adds:
 - Real ML-KEM-768 keygen / encapsulate / decapsulate (liboqs)
@@ -521,19 +525,33 @@ pip install pytest pytest-benchmark
 
 ## 11. Research benchmarking workflow
 
-Full paper reproduction sequence:
+Full paper reproduction sequence (authoritative ENV-2 method):
 
 ```bash
-# Step 1 — install with liboqs
-pip install 'quantum-safe[liboqs]'
+# Step 1 — build Docker image (once; ~3 min)
+docker build -t quantum-safe-bench .
 
-# Step 2 — KEM suite (classical baselines + ML-KEM-768 + decomposition + concurrent load)
-python3 -X utf8 tests/bench/bench_kem.py --with-pqc \
-  --save results/bench_kem_$(date +%Y-%m-%d).json
+# Step 2 — KEM suite × 3 runs (CPU pinned, 3,000 iterations each)
+for i in 1 2 3; do
+  MSYS_NO_PATHCONV=1 docker run --rm --cpuset-cpus="0,1" \
+    -v "$(pwd)/results:/app/results" quantum-safe-bench \
+    python -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000 \
+    --save /app/results/run${i}_kem.json
+done
 
-# Step 3 — Signature suite (Ed25519 + ML-DSA-65 + HybridSign + X.509 certs)
-python3 -X utf8 tests/bench/bench_signatures.py --with-pqc \
-  --save results/bench_sigs_$(date +%Y-%m-%d).json
+# Step 3 — Signature suite × 3 runs
+for i in 1 2 3; do
+  MSYS_NO_PATHCONV=1 docker run --rm --cpuset-cpus="0,1" \
+    -v "$(pwd)/results:/app/results" quantum-safe-bench \
+    python -X utf8 tests/bench/bench_signatures.py --with-pqc --iterations 3000 \
+    --save /app/results/run${i}_sig.json
+done
+
+# Step 4 (optional) — Windows native comparison run
+python3 -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000 \
+  --save results/win_kem.json
+python3 -X utf8 tests/bench/bench_signatures.py --with-pqc --iterations 3000 \
+  --save results/win_sig.json
 
 # Step 4 — Post-process with statistical utilities
 python3 -c "

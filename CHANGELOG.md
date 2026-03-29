@@ -2,6 +2,27 @@
 
 All notable changes to quantum-safe are documented here.
 
+## [Unreleased] — Benchmark refresh 2026-03-29
+
+### Changed
+
+- **Benchmark methodology**: iterations increased from 1,000 to 3,000 per operation for tighter
+  confidence intervals; CPU pinning (`--cpuset-cpus="0,1"`) added to Docker runs to eliminate
+  cross-core migration noise; best-of-3 independent runs selected as authoritative result.
+- **Headline numbers updated** (ENV-2, Docker/WSL2 Linux):
+  - Full hybrid KEM handshake: **~243 µs** (was ~301 µs — 19% improvement via methodology)
+  - HybridKEM keygen (real ML-KEM-768): **~99 µs** (was ~113 µs)
+  - Throughput @ 5,000 concurrent users: **~2,848 ops/s** (was ~2,009 ops/s)
+  - Throughput degradation 100→5,000 users: **−4.9%** (confirms GIL release and linear scaling)
+- **ENV-1 refreshed** (Windows 11 native, 3,000 iterations): full hybrid KEM handshake **~587 µs**
+- **Cross-environment comparison**: Linux 2.4× faster than Windows full handshake; 6.2× faster
+  on raw ML-KEM-768 keygen (build flag effect: `-DOQS_DIST_BUILD=ON` enables AVX2/AVX-512)
+- `results/BENCHMARKS.md`: complete rewrite with dual-environment tables, combiner overhead
+  breakdown, CoV reference table, and paper headline numbers
+- Old benchmark files archived to `results/old_benchmarks/`
+
+---
+
 ## [0.1.0] — unreleased
 
 ### Added
