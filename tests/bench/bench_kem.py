@@ -26,13 +26,12 @@ in the first ~100 iterations. We discard them.
 from __future__ import annotations
 
 import gc
-import json
 import os
 import statistics
 import sys
 import time
-from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
@@ -151,7 +150,6 @@ def bench_x25519_keygen() -> list[BenchResult]:
 
 def bench_x25519_dh() -> list[BenchResult]:
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
     alice_priv = X25519PrivateKey.generate()
     bob_priv = X25519PrivateKey.generate()
@@ -180,9 +178,8 @@ def bench_ed25519_sign_verify() -> list[BenchResult]:
 
 def bench_hybrid_kem_classical_only() -> list[BenchResult]:
     """Benchmark the X25519 half of HybridKEM in isolation."""
-    from quantum_safe.kem.hybrid import HybridKEM
-
     from quantum_safe.backends.base import AbstractKEMBackend
+    from quantum_safe.kem.hybrid import HybridKEM
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
@@ -242,10 +239,9 @@ def bench_hkdf() -> list[BenchResult]:
 
 def bench_envelope_seal_open() -> list[BenchResult]:
     """Full Envelope.seal() / open() cycle including HKDF + AES-GCM."""
-    from quantum_safe.protocols.envelope import Envelope
-    from quantum_safe.kem.hybrid import HybridKEM
-
     from quantum_safe.backends.base import AbstractKEMBackend
+    from quantum_safe.kem.hybrid import HybridKEM
+    from quantum_safe.protocols.envelope import Envelope
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
@@ -273,9 +269,8 @@ def bench_envelope_seal_open() -> list[BenchResult]:
 
 def bench_serialization() -> list[BenchResult]:
     """Key serialization / deserialization."""
-    from quantum_safe.kem.hybrid import HybridKEM
-
     from quantum_safe.backends.base import AbstractKEMBackend
+    from quantum_safe.kem.hybrid import HybridKEM
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
@@ -310,7 +305,7 @@ def bench_serialization() -> list[BenchResult]:
 def bench_hybrid_kem_real() -> list[BenchResult]:
     """Benchmark the full HybridKEM with real ML-KEM math via liboqs."""
     from quantum_safe.kem.hybrid import HybridKEM
-    
+
     # This will use the real liboqs backend automatically if installed
     kem = HybridKEM()
     kp = kem.generate_keypair()
@@ -326,8 +321,9 @@ def bench_hybrid_kem_real() -> list[BenchResult]:
 
 def bench_concurrent_load() -> list[BenchResult]:
     """Simulate heavy concurrent network load (100 and 500 simultaneous users)."""
-    from quantum_safe.kem.hybrid import HybridKEM
     import concurrent.futures
+
+    from quantum_safe.kem.hybrid import HybridKEM
 
     # This will automatically use liboqs if you pass --with-pqc, or mock if not
     kem = HybridKEM()
@@ -389,8 +385,9 @@ def bench_concurrent_load_extended() -> list[BenchResult]:
     because each iteration is a full 1000/5000-user burst.  The warmup phase
     prevents the first burst from being penalised by OS thread pool warm-up.
     """
-    from quantum_safe.kem.hybrid import HybridKEM
     import concurrent.futures
+
+    from quantum_safe.kem.hybrid import HybridKEM
 
     kem = HybridKEM()
     kp = kem.generate_keypair()
@@ -445,8 +442,9 @@ def bench_hybrid_decomposition() -> list[BenchResult]:
     hybrid handshake time, giving Table 2 of the paper a concrete number.
     """
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-    from quantum_safe.kem.hybrid import HybridKEM
+
     from quantum_safe.backends.base import AbstractKEMBackend
+    from quantum_safe.kem.hybrid import HybridKEM
 
     results: list[BenchResult] = []
 
@@ -551,13 +549,13 @@ def run_all(save_json: str | None = None, iterations: int = 1000, with_pqc: bool
     print()
 
     if save_json:
-        import pathlib
         import json
-        
+        import pathlib
+
         # Ensure the parent directory exists
         out_path = pathlib.Path(save_json)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(out_path, "w") as f:
             json.dump({"results": [r.to_dict() for r in all_results]}, f, indent=2)
         print(f"\nSaved results to {save_json}")

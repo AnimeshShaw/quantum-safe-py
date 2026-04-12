@@ -13,9 +13,9 @@ stats so that every bench_stats function can be demonstrated end-to-end.
 from __future__ import annotations
 
 import json
+import os
 import random
 import sys
-import os
 
 # Allow running from project root or from tests/bench/
 ROOT = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -23,14 +23,13 @@ sys.path.insert(0, ROOT)
 
 from tests.bench.bench_stats import (
     bootstrap_ci,
-    welch_t_test,
     cohens_d,
-    throughput_curve,
     cov_stability_report,
-    latex_table,
     describe_samples,
+    latex_table,
+    throughput_curve,
+    welch_t_test,
 )
-
 
 # ---------------------------------------------------------------------------
 # helpers

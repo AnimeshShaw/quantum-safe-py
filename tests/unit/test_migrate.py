@@ -13,20 +13,18 @@ import warnings
 
 import pytest
 
-from quantum_safe.exceptions import UnsupportedAlgorithm
 from quantum_safe.migrate.scanner import (
     Finding,
-    ScanReport,
     Scanner,
+    ScanReport,
     Severity,
 )
 from quantum_safe.migrate.state import (
     MigrationRecord,
     MigrationStateManager,
 )
-from quantum_safe.migrate.upgrader import UpgradeResult, Upgrader
+from quantum_safe.migrate.upgrader import Upgrader, UpgradeResult
 from quantum_safe.types import KeyPair, MigrationState, PublicKey, SecretKey
-
 
 # ---------------------------------------------------------------------------
 # Scanner: rule matching against source strings
@@ -457,7 +455,6 @@ class MockSigBackend:
 
 class TestUpgrader:
     def test_upgrade_kem_key(self, monkeypatch):
-        from quantum_safe.backends import _load_liboqs_kem
         monkeypatch.setattr(
             "quantum_safe.backends._load_liboqs_kem",
             lambda: MockKEMBackend()
@@ -554,7 +551,6 @@ class TestUpgrader:
 class TestFernetShim:
     def test_warns_on_creation(self):
         from quantum_safe.migrate.shims import FernetShim
-        from quantum_safe.kem.hybrid import HybridKEM
 
         class MockPQCBackend:
             name = "mock"
@@ -562,8 +558,9 @@ class TestFernetShim:
             def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
             def decapsulate(self, a, s, c): return b"\xDD" * 32
             def is_available(self): return True
-            def supported_algorithms(self): 
-                class DummyAlgo: name = "ML-KEM-768"
+            def supported_algorithms(self):
+                class DummyAlgo:  # noqa: E701
+                    name = "ML-KEM-768"
                 return [DummyAlgo()]
 
         # Patch the backend resolution so FernetShim doesn't need liboqs
@@ -594,15 +591,16 @@ class TestFernetShim:
             def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
             def decapsulate(self, a, s, c): return b"\xDD" * 32
             def is_available(self): return True
-            def supported_algorithms(self): 
-                class DummyAlgo: name = "ML-KEM-768"
+            def supported_algorithms(self):
+                class DummyAlgo:  # noqa: E701
+                    name = "ML-KEM-768"
                 return [DummyAlgo()]
 
         _hybrid.get_kem_backend = lambda name="auto": FakeBackend()
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                shim = FernetShim()
+                FernetShim()
             stats = FernetShim.shim_stats()
             assert stats["call_count"] >= 1
             assert stats["shim"] == "FernetShim"

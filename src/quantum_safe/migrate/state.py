@@ -35,6 +35,7 @@ an audit log, or a file. The records are immutable once created.
 
 from __future__ import annotations
 
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -42,7 +43,6 @@ from typing import Any
 
 from quantum_safe._internal import serialization as _ser
 from quantum_safe.types.keys import MigrationState
-
 
 # Valid forward and backward transitions.
 # Forward = toward more PQC. Backward = toward less PQC (requires reason).
@@ -116,7 +116,7 @@ class MigrationRecord:
         return _ser.dumps(self.to_dict())
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "MigrationRecord":
+    def from_dict(cls, d: dict[str, Any]) -> MigrationRecord:
         return cls(
             record_id=d["record_id"],
             key_id=d["key_id"],
@@ -130,7 +130,7 @@ class MigrationRecord:
         )
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> "MigrationRecord":
+    def from_bytes(cls, data: bytes) -> MigrationRecord:
         return cls.from_dict(_ser.loads(data))
 
 
@@ -166,6 +166,19 @@ class MigrationStateManager:
 
     def __init__(self, store: dict[str, bytes]) -> None:
         self._store = store
+        # Per-key locks prevent concurrent transitions from racing past the
+        # read-then-write check. For multi-process deployments, callers must
+        # additionally hold an external distributed lock (e.g. Redis SETNX,
+        # database row-level lock) on the key_id before calling transition().
+        self._key_locks: dict[str, threading.Lock] = {}
+        self._meta_lock = threading.Lock()  # guards _key_locks dict itself
+
+    def _lock_for(self, key_id: str) -> threading.Lock:
+        """Return (creating if needed) the per-key lock for key_id."""
+        with self._meta_lock:
+            if key_id not in self._key_locks:
+                self._key_locks[key_id] = threading.Lock()
+            return self._key_locks[key_id]
 
     def transition(
         self,
@@ -218,36 +231,37 @@ class MigrationStateManager:
                 )
             if not reason:
                 raise ValueError(
-                    f"Backward transition requires a non-empty reason string"
+                    "Backward transition requires a non-empty reason string"
                 )
 
-        # Check current state matches expected from_state
-        current = self.get_current_state(key_id)
-        if current is not None and current != from_state:
-            raise ValueError(
-                f"Key '{key_id}' is in state {current.value!r} but "
-                f"transition expected {from_state.value!r}. "
-                f"Concurrent modification or stale state?"
+        with self._lock_for(key_id):
+            # Check current state matches expected from_state
+            current = self.get_current_state(key_id)
+            if current is not None and current != from_state:
+                raise ValueError(
+                    f"Key '{key_id}' is in state {current.value!r} but "
+                    f"transition expected {from_state.value!r}. "
+                    f"Concurrent modification or stale state?"
+                )
+
+            record = MigrationRecord(
+                record_id=str(uuid.uuid4()),
+                key_id=key_id,
+                from_state=from_state,
+                to_state=to_state,
+                algorithm=algorithm,
+                timestamp=time.time(),
+                actor=actor,
+                reason=reason,
+                metadata=metadata or {},
             )
 
-        record = MigrationRecord(
-            record_id=str(uuid.uuid4()),
-            key_id=key_id,
-            from_state=from_state,
-            to_state=to_state,
-            algorithm=algorithm,
-            timestamp=time.time(),
-            actor=actor,
-            reason=reason,
-            metadata=metadata or {},
-        )
-
-        # Store current state and append to history
-        self._store[f"{key_id}_current"] = record.to_bytes()
-        history_key = f"{key_id}_history"
-        history = self._load_history(key_id)
-        history.append(record.to_dict())
-        self._store[history_key] = _ser.dumps(history)
+            # Store current state and append to history
+            self._store[f"{key_id}_current"] = record.to_bytes()
+            history_key = f"{key_id}_history"
+            history = self._load_history(key_id)
+            history.append(record.to_dict())
+            self._store[history_key] = _ser.dumps(history)
 
         return record
 
@@ -279,7 +293,7 @@ class MigrationStateManager:
         for d in history_dicts:
             try:
                 records.append(MigrationRecord.from_dict(d))
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110
                 pass  # skip malformed records
         return records
 

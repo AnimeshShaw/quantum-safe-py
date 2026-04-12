@@ -197,7 +197,7 @@ if _HAS_CLICK:
                   help="Output format.")
     def sbom_cmd(sbom_file: str, output: str | None, fmt: str) -> None:
         """Enrich a CycloneDX SBOM with PQC-readiness annotations."""
-        from quantum_safe.audit.sbom import SBOMEnricher, PQCReadiness
+        from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
         with open(sbom_file, encoding="utf-8") as fh:
             sbom = json.load(fh)
@@ -236,13 +236,12 @@ if _HAS_CLICK:
     @click.argument("req_file", type=click.Path(exists=True))
     def requirements_cmd(req_file: str) -> None:
         """Check PQC readiness of packages in a requirements.txt file."""
-        from quantum_safe.audit.sbom import SBOMEnricher, PQCReadiness
+        from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
         text = Path(req_file).read_text(encoding="utf-8")
         assessments = SBOMEnricher.from_requirements(text)
 
         not_ready = [a for a in assessments if a.readiness == PQCReadiness.NOT_READY]
-        unknown = [a for a in assessments if a.readiness == PQCReadiness.UNKNOWN]
 
         click.echo(f"\nPQC readiness for {req_file}:")
         click.echo(f"  {len(assessments)} packages checked")
@@ -274,8 +273,7 @@ if _HAS_CLICK:
                   help="Output file. Default: stdout.")
     def compliance_cmd(path: str, fmt: str, output: str | None) -> None:
         """Generate a NIST SP 800-208 compliance report for PATH."""
-        from quantum_safe.audit.compliance import NISTComplianceChecker
-        from quantum_safe.audit.compliance import ComplianceLevel
+        from quantum_safe.audit.compliance import ComplianceLevel, NISTComplianceChecker
         from quantum_safe.migrate.scanner import Scanner
 
         p = Path(path)

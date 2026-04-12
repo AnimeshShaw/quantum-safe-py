@@ -28,6 +28,7 @@ new one per call rather than sharing instances.
 
 from __future__ import annotations
 
+import ctypes
 from typing import Any, ClassVar
 
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
@@ -37,7 +38,6 @@ from quantum_safe.exceptions import (
     KeyGenerationError,
     UnsupportedAlgorithm,
 )
-
 
 # ---------------------------------------------------------------------------
 # Algorithm metadata tables
@@ -190,7 +190,7 @@ _SIG_LIBOQS_NAMES: dict[str, str] = {
 }
 
 
-def _import_oqs() -> Any:
+def _import_oqs() -> Any:  # noqa: ANN401
     """Import the oqs module or raise BackendNotAvailable."""
     try:
         import oqs  # type: ignore[import]
@@ -291,8 +291,10 @@ class LiboqsKEMBackend(AbstractKEMBackend):
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
+        # Use a mutable bytearray so we can zero the local copy after use.
+        sk_buf = bytearray(secret_key)
         try:
-            kem = oqs.KeyEncapsulation(liboqs_name, secret_key=secret_key)
+            kem = oqs.KeyEncapsulation(liboqs_name, secret_key=bytes(sk_buf))
             shared_secret = kem.decap_secret(ciphertext)
             result = bytes(shared_secret)
             # 32 bytes expected for all standardized algorithms
@@ -303,6 +305,10 @@ class LiboqsKEMBackend(AbstractKEMBackend):
             raise
         except Exception as exc:
             raise DecapsulationError(algo=algorithm) from exc
+        finally:
+            n = len(sk_buf)
+            if n:
+                ctypes.memset((ctypes.c_char * n).from_buffer(sk_buf), 0, n)
 
     def is_available(self) -> bool:
         """Check if liboqs is importable and has at least ML-KEM-768."""
@@ -382,8 +388,10 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         # Prepend context using length-prefixed format
         msg_with_context = bytes([len(context)]) + context + message
 
+        # Use a mutable bytearray so we can zero the local copy after use.
+        sk_buf = bytearray(secret_key)
         try:
-            sig_obj = oqs.Signature(liboqs_name, secret_key=secret_key)
+            sig_obj = oqs.Signature(liboqs_name, secret_key=bytes(sk_buf))
             signature = sig_obj.sign(msg_with_context)
             return bytes(signature)
         except Exception as exc:
@@ -392,6 +400,10 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
                 f"liboqs signing failed for {algorithm}: {exc}",
                 algorithm=algorithm,
             ) from exc
+        finally:
+            n = len(sk_buf)
+            if n:
+                ctypes.memset((ctypes.c_char * n).from_buffer(sk_buf), 0, n)
 
     def verify(
         self,

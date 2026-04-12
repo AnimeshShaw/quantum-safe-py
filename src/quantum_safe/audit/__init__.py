@@ -33,10 +33,10 @@ Quick start::
         sys.exit(1)
 """
 
-from quantum_safe.audit.auditor import AuditReport, Auditor
-from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
-from quantum_safe.audit.sbom import SBOMEnricher, PQCReadiness
+from quantum_safe.audit.auditor import Auditor, AuditReport
 from quantum_safe.audit.compliance import ComplianceReport, NISTComplianceChecker
+from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
+from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
 __all__ = [
     "Auditor",

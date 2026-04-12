@@ -60,7 +60,10 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from quantum_safe.types import PublicKey, SecretKey
 
 _logger = logging.getLogger(__name__)
 
@@ -135,12 +138,12 @@ class FernetShim(_ShimBase):
         return Envelope.open(sealed, self._keypair.secret, kem=self._kem)
 
     @property
-    def public_key(self):  # type: ignore[return]
+    def public_key(self) -> PublicKey:  # type: ignore[return]
         """The public key used for encryption. Share this with senders."""
         return self._keypair.public
 
     @property
-    def secret_key(self):  # type: ignore[return]
+    def secret_key(self) -> SecretKey:  # type: ignore[return]
         """The secret key used for decryption. Keep this private."""
         return self._keypair.secret
 
@@ -172,9 +175,9 @@ class JWTShim(_ShimBase):
     @staticmethod
     def encode(
         payload: dict[str, Any],
-        key: Any,
+        key: Any,  # noqa: ANN401
         algorithm: str = "Ed25519+ML-DSA-65",
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> str:
         """Sign a JWT payload.
 
@@ -215,9 +218,9 @@ class JWTShim(_ShimBase):
     @staticmethod
     def decode(
         token: str,
-        key: Any,
+        key: Any,  # noqa: ANN401
         algorithms: list[str] | None = None,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> dict[str, Any]:
         """Verify and decode a JWT.
 

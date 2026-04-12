@@ -30,13 +30,12 @@ References:
 
 from __future__ import annotations
 
-import hashlib
+import ctypes
 import hmac
 import struct
 from typing import ClassVar
 
 from quantum_safe.exceptions import DecapsulationError
-
 
 # We use HKDF-SHA256 for the hybrid combiner. The info string is fixed and
 # version-pinned so that old clients can't be tricked into using a different
@@ -98,9 +97,12 @@ class SharedSecret:
 
     def __del__(self) -> None:
         try:
-            for i in range(len(self._data)):
-                self._data[i] = 0
-        except Exception:  # noqa: BLE001
+            n = len(self._data)
+            if n:
+                ctypes.memset(
+                    (ctypes.c_char * n).from_buffer(self._data), 0, n
+                )
+        except Exception:  # noqa: BLE001, S110
             pass
 
     def derive_key(
@@ -255,7 +257,7 @@ class HybridCipherText:
         return prefix + self._classical_ct + self._pqc_ct
 
     @classmethod
-    def from_bytes(cls, data: bytes, algorithm: str) -> "HybridCipherText":
+    def from_bytes(cls, data: bytes, algorithm: str) -> HybridCipherText:
         """Decode from length-prefixed wire format."""
         if len(data) < cls._LEN_PREFIX_SIZE:
             raise DecapsulationError(algo=algorithm)

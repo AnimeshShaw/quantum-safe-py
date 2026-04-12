@@ -63,10 +63,9 @@ from quantum_safe._internal import serialization as _ser
 from quantum_safe.exceptions import (
     DecapsulationError,
     KeyParseError,
-    SerializationError,
 )
 from quantum_safe.kem.hybrid import HybridKEM
-from quantum_safe.types import HybridCipherText, PublicKey, SecretKey, SharedSecret
+from quantum_safe.types import HybridCipherText, PublicKey, SecretKey
 
 # Envelope format version. Bump for backward-incompatible changes.
 _ENVELOPE_VERSION = 1
@@ -126,7 +125,7 @@ class SealedMessage:
         })
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> "SealedMessage":
+    def from_bytes(cls, data: bytes) -> SealedMessage:
         """Deserialize from bytes produced by to_bytes()."""
         try:
             d = _ser.loads(data)
@@ -152,7 +151,7 @@ class SealedMessage:
         return self.to_bytes().hex()
 
     @classmethod
-    def from_hex(cls, hex_str: str) -> "SealedMessage":
+    def from_hex(cls, hex_str: str) -> SealedMessage:
         """Deserialize from a hex string."""
         try:
             return cls.from_bytes(bytes.fromhex(hex_str))

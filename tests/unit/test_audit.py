@@ -8,20 +8,17 @@ The scanner underlying the auditor uses real AST parsing on in-memory strings.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
-from quantum_safe.audit.auditor import AuditReport, Auditor
+from quantum_safe.audit.auditor import Auditor, AuditReport
 from quantum_safe.audit.compliance import (
     ComplianceLevel,
-    ComplianceReport,
     NISTComplianceChecker,
 )
 from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
 from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher, _assess_component, _version_ge
 from quantum_safe.migrate.scanner import Finding, ScanReport, Severity
-
 
 # ---------------------------------------------------------------------------
 # AuditPolicy

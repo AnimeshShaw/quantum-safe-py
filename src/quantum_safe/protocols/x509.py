@@ -52,21 +52,19 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric.ec import (
     SECP256R1,
     SECP384R1,
-    EllipticCurvePrivateKey,
     generate_private_key,
-    ECDSA,
 )
-from cryptography.hazmat.backends import default_backend
-from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509.oid import NameOID
 
 from quantum_safe._internal import serialization as _ser
-from quantum_safe.types import KeyPair, PublicKey, SecretKey
+from quantum_safe.types import KeyPair, PublicKey
 
 # Placeholder OID for the PQC co-signature extension.
 # WARNING: This is NOT a registered OID. Register your own before production use.
@@ -227,24 +225,20 @@ class HybridCertificateBuilder:
 
         return cert_pem, cosig_bundle
 
-    def _generate_cosig(self, data: bytes, signer: Any = None) -> bytes:
+    def _generate_cosig(self, data: bytes, signer: Any = None) -> bytes:  # noqa: ANN401
         """Generate the PQC co-signature bundle."""
-        from quantum_safe.signatures.hybrid import HybridSign
         from quantum_safe.signatures.core import Sign
+        from quantum_safe.signatures.hybrid import HybridSign
 
         algo = self.pqc_keypair.algorithm
 
         if signer is None:
             if "+" in algo:
+                # Use the normal constructor so validate_hybrid_combination()
+                # runs and unapproved pairs are rejected.
                 from quantum_safe.signatures.algorithms import parse_hybrid_name
                 classical, pqc = parse_hybrid_name(algo)
-                signer = HybridSign.__new__(HybridSign)
-                signer._classical = classical
-                signer._pqc = pqc
-                signer._algorithm = algo
-                signer._hedged = True
-                from quantum_safe.backends import get_signature_backend
-                signer._backend = get_signature_backend("auto")
+                signer = HybridSign(classical=classical, pqc=pqc)
             else:
                 signer = Sign(algorithm=algo)
 
@@ -277,9 +271,9 @@ class HybridCertificateBuilder:
             VerificationError: if the co-signature is invalid.
             KeyParseError:     if the bundle is malformed.
         """
-        from quantum_safe.exceptions import KeyParseError, VerificationError
-        from quantum_safe.signatures.hybrid import HybridSign
+        from quantum_safe.exceptions import KeyParseError
         from quantum_safe.signatures.core import Sign
+        from quantum_safe.signatures.hybrid import HybridSign
         from quantum_safe.types.signatures import SignedMessage
 
         # Load the cert to get its DER bytes
@@ -302,17 +296,12 @@ class HybridCertificateBuilder:
         if not algo or not sig:
             raise KeyParseError("cbor", "cosig bundle missing algo or sig")
 
-        # Build the signer instance
+        # Build the verifier instance using the normal constructor so that
+        # validate_hybrid_combination() runs and rejects unapproved pairs.
         if "+" in algo:
             from quantum_safe.signatures.algorithms import parse_hybrid_name
-            from quantum_safe.backends import get_signature_backend
             classical, pqc = parse_hybrid_name(algo)
-            verifier = HybridSign.__new__(HybridSign)
-            verifier._classical = classical
-            verifier._pqc = pqc
-            verifier._algorithm = algo
-            verifier._hedged = True
-            verifier._backend = get_signature_backend("auto")
+            verifier = HybridSign(classical=classical, pqc=pqc)
         else:
             verifier = Sign(algorithm=algo)
 
@@ -329,7 +318,7 @@ class HybridCertificateBuilder:
 
 def generate_classical_keypair_for_cert(
     algorithm: str = "Ed25519",
-) -> Any:
+) -> Any:  # noqa: ANN401
     """Generate a classical keypair suitable for certificate signing.
 
     Args:

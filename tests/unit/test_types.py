@@ -6,17 +6,13 @@ test the type system, serialization, and memory safety behaviors.
 """
 
 import gc
-import time
 from typing import Any
 
-import cbor2
 import pytest
 
 from quantum_safe.exceptions import (
-    IncompatibleKeyVersion,
     KeyParseError,
     UnsupportedFormatError,
-    VerificationError,
 )
 from quantum_safe.types import (
     CipherText,
@@ -32,7 +28,6 @@ from quantum_safe.types import (
     generate_nonce,
 )
 from quantum_safe.types.keys import _ZeroizingBytes
-
 
 # ---------------------------------------------------------------------------
 # _ZeroizingBytes
@@ -107,9 +102,11 @@ class TestPublicKey:
         assert pk.fingerprint() == pk.fingerprint()
 
     def test_fingerprint_differs_by_algo(self):
-        raw = b"\x01" * 800
-        pk1 = PublicKey(raw=raw, algorithm="ML-KEM-768")
-        pk2 = PublicKey(raw=raw, algorithm="ML-KEM-512")
+        # Use unknown algorithm names so size validation doesn't fire.
+        # The point is: same raw bytes + different algorithm name → different fingerprint.
+        raw = b"\x01" * 64
+        pk1 = PublicKey(raw=raw, algorithm="X-TEST-ALGO-A")
+        pk2 = PublicKey(raw=raw, algorithm="X-TEST-ALGO-B")
         # Same bytes, different algorithm — fingerprints must differ
         assert pk1.fingerprint() != pk2.fingerprint()
 
@@ -383,24 +380,24 @@ class TestCombineSharedSecrets:
         assert combined.is_hybrid
 
     def test_different_inputs_different_outputs(self):
-        kwargs: dict[str, Any] = dict(
-            pqc_ss=b"\x02" * 32,
-            algorithm="X25519+ML-KEM-768",
-            classical_ct=b"\x03" * 32,
-            pqc_ct=b"\x04" * 1088,
-        )
+        kwargs: dict[str, Any] = {
+            "pqc_ss": b"\x02" * 32,
+            "algorithm": "X25519+ML-KEM-768",
+            "classical_ct": b"\x03" * 32,
+            "pqc_ct": b"\x04" * 1088,
+        }
         ss1 = combine_shared_secrets(classical_ss=b"\x01" * 32, **kwargs)
         ss2 = combine_shared_secrets(classical_ss=b"\xFF" * 32, **kwargs)
         assert ss1 != ss2
 
     def test_deterministic(self):
-        kwargs: dict[str, Any] = dict(
-            classical_ss=b"\x01" * 32,
-            pqc_ss=b"\x02" * 32,
-            algorithm="X25519+ML-KEM-768",
-            classical_ct=b"\x03" * 32,
-            pqc_ct=b"\x04" * 1088,
-        )
+        kwargs: dict[str, Any] = {
+            "classical_ss": b"\x01" * 32,
+            "pqc_ss": b"\x02" * 32,
+            "algorithm": "X25519+ML-KEM-768",
+            "classical_ct": b"\x03" * 32,
+            "pqc_ct": b"\x04" * 1088,
+        }
         ss1 = combine_shared_secrets(**kwargs)
         ss2 = combine_shared_secrets(**kwargs)
         assert ss1 == ss2

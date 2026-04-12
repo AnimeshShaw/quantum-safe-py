@@ -25,7 +25,6 @@ Usage::
 
 from __future__ import annotations
 
-import os
 import warnings
 from typing import TYPE_CHECKING
 
@@ -33,10 +32,16 @@ from quantum_safe.backends import get_kem_backend
 from quantum_safe.exceptions import InsecureOperationError, UnsupportedAlgorithm
 from quantum_safe.kem.algorithms import (
     MINIMUM_NIST_LEVEL,
-    NISTLevel,
     get_algorithm_spec,
 )
-from quantum_safe.types import CipherText, KeyPair, MigrationState, PublicKey, SecretKey, SharedSecret
+from quantum_safe.types import (
+    CipherText,
+    KeyPair,
+    MigrationState,
+    PublicKey,
+    SecretKey,
+    SharedSecret,
+)
 
 if TYPE_CHECKING:
     from quantum_safe.backends.base import AbstractKEMBackend

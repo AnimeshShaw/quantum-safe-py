@@ -43,7 +43,6 @@ from __future__ import annotations
 import os
 import struct
 import time
-import warnings
 from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -319,21 +318,17 @@ class HybridSign:
         except Exception as exc:
             raise VerificationError(algo=self._algorithm) from exc
 
-        # Verify classical sub-signature
+        # Verify BOTH sub-signatures unconditionally before checking results.
+        # Early return on classical failure would leak timing information that
+        # reveals which sub-key is compromised (an oracle for a quantum attacker
+        # who has broken the classical component).
         classical_ok = self._verify_classical(
             classical_pub_bytes,
             msg_to_verify,
             hs.classical_sig,
             signed_message.context,
         )
-        if not classical_ok:
-            raise VerificationError(
-                algo=self._algorithm,
-                # Don't say which sub-signature failed — an attacker could
-                # use that to probe which component is weak.
-            )
 
-        # Verify PQC sub-signature
         pqc_ok = self._backend.verify(
             self._pqc,
             pqc_pub_bytes,
@@ -341,7 +336,8 @@ class HybridSign:
             hs.pqc_sig,
             signed_message.context,
         )
-        if not pqc_ok:
+
+        if not (classical_ok and pqc_ok):
             raise VerificationError(algo=self._algorithm)
 
     # ------------------------------------------------------------------
@@ -363,17 +359,22 @@ class HybridSign:
             return pub_bytes, priv_bytes
 
         elif self._classical == "P-256":
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                SECP256R1, generate_private_key, ECDSA
-            )
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives.asymmetric.ec import (
+                SECP256R1,
+                generate_private_key,
+            )
             priv = generate_private_key(SECP256R1(), default_backend())
             pub = priv.public_key()
             priv_bytes = priv.private_bytes(
                 Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
             )
             # Store public key as raw 64-byte (x, y)
-            pub_nums = pub.public_key().public_numbers() if hasattr(pub, 'public_key') else pub.public_numbers()
+            pub_nums = (
+                pub.public_key().public_numbers()
+                if hasattr(pub, "public_key")
+                else pub.public_numbers()
+            )
             x_bytes = pub_nums.x.to_bytes(32, "big")
             y_bytes = pub_nums.y.to_bytes(32, "big")
             return x_bytes + y_bytes, priv_bytes
@@ -398,9 +399,9 @@ class HybridSign:
             return priv.sign(msg_with_ctx)
 
         elif self._classical == "P-256":
-            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
-            from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
             msg_with_ctx = bytes([len(context)]) + context + message
@@ -431,11 +432,13 @@ class HybridSign:
                 return False
 
         elif self._classical == "P-256":
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                ECDSA, SECP256R1, EllipticCurvePublicNumbers
-            )
-            from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric.ec import (
+                ECDSA,
+                SECP256R1,
+                EllipticCurvePublicNumbers,
+            )
             try:
                 if len(public_key_bytes) != 64:
                     return False

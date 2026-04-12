@@ -10,11 +10,11 @@ Public API:
 """
 
 from quantum_safe.signatures.algorithms import (
-    SIGNATURE_ALGORITHMS,
-    HYBRID_SIGNATURE_COMBINATIONS,
     DEFAULT_HYBRID_CLASSICAL,
     DEFAULT_HYBRID_PQC,
     DEFAULT_SINGLE_PQC,
+    HYBRID_SIGNATURE_COMBINATIONS,
+    SIGNATURE_ALGORITHMS,
     canonical_hybrid_name,
     get_algorithm_spec,
 )

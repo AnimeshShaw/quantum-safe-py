@@ -42,7 +42,7 @@ from quantum_safe.exceptions import (
     UnsupportedAlgorithm,
     VerificationError,
 )
-from quantum_safe.kem import HybridKEM, KEM
+from quantum_safe.kem import KEM, HybridKEM
 from quantum_safe.signatures import HybridSign, Sign
 from quantum_safe.types import (
     CipherText,

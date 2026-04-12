@@ -26,6 +26,7 @@ References:
 from __future__ import annotations
 
 import base64
+import ctypes
 import hashlib
 import hmac
 import os
@@ -35,7 +36,6 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from quantum_safe._internal import serialization as _ser
-
 from quantum_safe.exceptions import (
     IncompatibleKeyVersion,
     KeyParseError,
@@ -55,7 +55,32 @@ _MAX_SUPPORTED_KEY_VERSION = 1
 # PEM type strings we emit. We deliberately use "HYBRID" to distinguish our
 # combined keys from single-algorithm keys.
 _PEM_PUBLIC_LABEL = "QUANTUM SAFE PUBLIC KEY"
-_PEM_SECRET_LABEL = "QUANTUM SAFE SECRET KEY"  # never log this label + content
+_PEM_SECRET_LABEL = "QUANTUM SAFE SECRET KEY"  # never log this label + content  # noqa: S105
+
+# Expected key sizes for known single algorithms (from FIPS 203/204/205).
+# Hybrid keys are length-prefixed composites and are NOT listed here.
+# Used to reject keys whose byte length doesn't match the claimed algorithm,
+# preventing type-confusion attacks where ML-DSA bytes claim to be ML-KEM.
+_KNOWN_PUBLIC_KEY_SIZES: dict[str, int] = {
+    "ML-KEM-512":  800,
+    "ML-KEM-768":  1184,
+    "ML-KEM-1024": 1568,
+    "ML-DSA-44":   1312,
+    "ML-DSA-65":   1952,
+    "ML-DSA-87":   2592,
+    "SLH-DSA-SHAKE-128s": 32,
+    "SLH-DSA-SHAKE-128f": 32,
+}
+_KNOWN_SECRET_KEY_SIZES: dict[str, int] = {
+    "ML-KEM-512":  1632,
+    "ML-KEM-768":  2400,
+    "ML-KEM-1024": 3168,
+    "ML-DSA-44":   2528,
+    "ML-DSA-65":   4000,
+    "ML-DSA-87":   4864,
+    "SLH-DSA-SHAKE-128s": 64,
+    "SLH-DSA-SHAKE-128f": 64,
+}
 
 
 class KeyType(Enum):
@@ -111,12 +136,15 @@ class _ZeroizingBytes:
         return NotImplemented
 
     def __del__(self) -> None:
-        # Zero the bytearray in-place. The memory may still be accessible
-        # until GC actually frees it, but at least the content is gone.
+        # Zero the bytearray using ctypes.memset so the compiler cannot
+        # eliminate it as a dead store (unlike a Python-level loop).
         try:
-            for i in range(len(self._data)):
-                self._data[i] = 0
-        except Exception:  # noqa: BLE001
+            n = len(self._data)
+            if n:
+                ctypes.memset(
+                    (ctypes.c_char * n).from_buffer(self._data), 0, n
+                )
+        except Exception:  # noqa: BLE001, S110
             pass  # Don't raise in __del__
 
     def __repr__(self) -> str:
@@ -308,6 +336,10 @@ class BaseKey(ABC):
         version = data.get("v")
         if not isinstance(version, int):
             raise KeyParseError("cbor", "missing or non-integer 'v' field")
+        # Reject both too-new (unsupported features) and too-old (below floor,
+        # which would indicate a downgrade attack against future format changes).
+        if version < 1:
+            raise KeyParseError("cbor", f"invalid key version {version}: minimum is 1")
         if version > _MAX_SUPPORTED_KEY_VERSION:
             raise IncompatibleKeyVersion(version, _MAX_SUPPORTED_KEY_VERSION)
         if "algo" not in data:
@@ -360,7 +392,7 @@ class PublicKey(BaseKey):
     They support all serialization formats including JWK.
     """
 
-    __slots__ = ("_raw", "_algorithm", "_migration_state", "_backend_tag")
+    __slots__ = ("_raw", "_algorithm", "_migration_state", "_backend_tag", "_cached_fp")
 
     _supported_formats: ClassVar[set[str]] = {"pem", "cbor", "jwk"}
 
@@ -375,10 +407,21 @@ class PublicKey(BaseKey):
             raise TypeError(f"raw must be bytes, got {type(raw).__name__}")
         if not raw:
             raise ValueError("raw key bytes cannot be empty")
+        # Reject keys whose size doesn't match the claimed algorithm.
+        # Hybrid keys (containing "+") use a length-prefixed composite format
+        # and are not validated by this table.
+        if "+" not in algorithm:
+            expected = _KNOWN_PUBLIC_KEY_SIZES.get(algorithm)
+            if expected is not None and len(raw) != expected:
+                raise ValueError(
+                    f"Public key size {len(raw)} does not match expected "
+                    f"{expected} bytes for algorithm '{algorithm}'"
+                )
         self._raw = bytes(raw)
         self._algorithm = algorithm
         self._migration_state = migration_state
         self._backend_tag = backend_tag
+        self._cached_fp: str | None = None
 
     @property
     def raw_bytes(self) -> bytes:
@@ -401,10 +444,12 @@ class PublicKey(BaseKey):
         return self._backend_tag
 
     def __repr__(self) -> str:
+        if self._cached_fp is None:
+            self._cached_fp = self.fingerprint()
         return (
             f"PublicKey(algo={self._algorithm!r}, "
             f"size={len(self._raw)}B, "
-            f"fp={self.fingerprint()[:12]}...)"
+            f"fp={self._cached_fp[:12]}...)"
         )
 
     def __eq__(self, other: object) -> bool:
@@ -433,7 +478,7 @@ class PublicKey(BaseKey):
         }
 
     @classmethod
-    def from_pem(cls, pem: str) -> "PublicKey":
+    def from_pem(cls, pem: str) -> PublicKey:
         """Parse a public key from PEM format."""
         headers, raw_cbor = cls._parse_pem_body(pem)
 
@@ -464,7 +509,7 @@ class PublicKey(BaseKey):
         )
 
     @classmethod
-    def from_cbor(cls, data: bytes) -> "PublicKey":
+    def from_cbor(cls, data: bytes) -> PublicKey:
         """Parse a public key from CBOR bytes."""
         try:
             cbor_dict = _ser.loads(data)
@@ -487,7 +532,7 @@ class PublicKey(BaseKey):
         )
 
     @classmethod
-    def from_jwk(cls, jwk: dict[str, Any]) -> "PublicKey":
+    def from_jwk(cls, jwk: dict[str, Any]) -> PublicKey:
         """Parse a public key from a JWK dict."""
         if "pub" not in jwk:
             raise KeyParseError("jwk", "missing 'pub' field")
@@ -535,6 +580,12 @@ class SecretKey(BaseKey):
             raise TypeError(f"raw must be bytes, got {type(raw).__name__}")
         if not raw:
             raise ValueError("raw key bytes cannot be empty")
+        # Note: we intentionally do NOT validate secret key sizes here.
+        # Different backends (liboqs, RustCrypto, HSMs) encode secret keys in
+        # different ways — e.g. liboqs ML-DSA stores an expanded form with t1
+        # appended for faster signing, which differs from the FIPS 204 wire size.
+        # Public key sizes are validated in PublicKey.__init__ instead, since
+        # public keys must be interoperable across implementations.
         # Use _ZeroizingBytes for secret material
         self._raw = _ZeroizingBytes(raw)
         self._algorithm = algorithm
@@ -543,7 +594,23 @@ class SecretKey(BaseKey):
 
     @property
     def raw_bytes(self) -> bytes:
+        # Returns an immutable copy. For security-sensitive callers that need
+        # to zero the copy after use, call _raw_bytearray() instead and zero
+        # with ctypes.memset() in a try/finally block.
         return bytes(self._raw)
+
+    @property
+    def _raw_bytearray(self) -> bytearray:
+        """Internal: a fresh mutable copy of the key bytes.
+
+        Callers MUST zero this after use:
+            buf = sk._raw_bytearray
+            try:
+                backend.op(buf)
+            finally:
+                ctypes.memset((ctypes.c_char * len(buf)).from_buffer(buf), 0, len(buf))
+        """
+        return bytearray(self._raw._data)
 
     @property
     def algorithm(self) -> str:
@@ -586,7 +653,7 @@ class SecretKey(BaseKey):
         )
 
     @classmethod
-    def from_pem(cls, pem: str) -> "SecretKey":
+    def from_pem(cls, pem: str) -> SecretKey:
         """Parse a secret key from PEM format.
 
         Warning: the PEM string itself contains secret material — ensure
@@ -622,7 +689,7 @@ class SecretKey(BaseKey):
         )
 
     @classmethod
-    def from_cbor(cls, data: bytes) -> "SecretKey":
+    def from_cbor(cls, data: bytes) -> SecretKey:
         """Parse a secret key from CBOR bytes."""
         try:
             cbor_dict = _ser.loads(data)
@@ -686,7 +753,7 @@ class KeyPair:
         })
 
     @classmethod
-    def from_cbor_bundle(cls, data: bytes) -> "KeyPair":
+    def from_cbor_bundle(cls, data: bytes) -> KeyPair:
         """Deserialize a key pair from a CBOR bundle."""
         try:
             bundle = _ser.loads(data)
@@ -713,4 +780,10 @@ def generate_nonce(length: int = 32) -> bytes:
     """
     if length <= 0:
         raise ValueError(f"nonce length must be positive, got {length}")
+    if length < 12:
+        warnings.warn(
+            f"generate_nonce({length}) is below the 12-byte minimum recommended "
+            "for AEAD nonces (e.g. AES-GCM). Most protocols require at least 12 bytes.",
+            stacklevel=2,
+        )
     return os.urandom(length)

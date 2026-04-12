@@ -42,7 +42,7 @@ class QuantumSafeError(Exception):
 
     code: str = "QS_ERROR"
 
-    def __init__(self, message: str, **context: Any) -> None:
+    def __init__(self, message: str, **context: Any) -> None:  # noqa: ANN401
         super().__init__(message)
         self.message = message
         # Extra context (file paths, algorithm names, etc.) for structured

@@ -54,13 +54,12 @@ import os
 import statistics
 import sys
 import time
-from dataclasses import dataclass, field
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 sys.path.insert(0, os.path.dirname(__file__))
 import _oqs_path  # noqa: F401 — registers oqs.dll dir on Windows
-
 
 # ---------------------------------------------------------------------------
 # Shared BenchResult (mirrors bench_kem.py to keep harnesses consistent)
@@ -221,7 +220,7 @@ def bench_ml_dsa(message_sizes: list[int] | None = None) -> list[BenchResult]:
 
             results.append(
                 _bench(
-                    f"ML-DSA-65 keygen",
+                    "ML-DSA-65 keygen",
                     lambda: signer.generate_keypair(),
                 )
             )
@@ -265,7 +264,7 @@ def bench_hybrid_sign(message_sizes: list[int] | None = None) -> list[BenchResul
 
         results.append(
             _bench(
-                f"HybridSign keygen (Ed25519+ML-DSA-65)",
+                "HybridSign keygen (Ed25519+ML-DSA-65)",
                 lambda: signer.generate_keypair(),
             )
         )

@@ -21,7 +21,7 @@ or the `backend=` parameter on KEM/Sign constructors.
 from __future__ import annotations
 
 import os
-from functools import lru_cache
+from functools import cache
 from typing import TYPE_CHECKING
 
 from quantum_safe.exceptions import BackendNotAvailable
@@ -34,32 +34,32 @@ if TYPE_CHECKING:
 _KNOWN_BACKENDS = {"liboqs", "rustcrypto", "noble", "auto"}
 
 
-@lru_cache(maxsize=None)
-def _load_liboqs_kem() -> "AbstractKEMBackend":
+@cache
+def _load_liboqs_kem() -> AbstractKEMBackend:
     """Load and return the liboqs KEM backend. Cached after first load."""
     from quantum_safe.backends.liboqs import LiboqsKEMBackend
     return LiboqsKEMBackend()
 
 
-@lru_cache(maxsize=None)
-def _load_rustcrypto_kem() -> "AbstractKEMBackend":
+@cache
+def _load_rustcrypto_kem() -> AbstractKEMBackend:
     from quantum_safe.backends.rustcrypto import RustCryptoKEMBackend
     return RustCryptoKEMBackend()
 
 
-@lru_cache(maxsize=None)
-def _load_liboqs_sig() -> "AbstractSignatureBackend":
+@cache
+def _load_liboqs_sig() -> AbstractSignatureBackend:
     from quantum_safe.backends.liboqs import LiboqsSignatureBackend
     return LiboqsSignatureBackend()
 
 
-@lru_cache(maxsize=None)
-def _load_rustcrypto_sig() -> "AbstractSignatureBackend":
+@cache
+def _load_rustcrypto_sig() -> AbstractSignatureBackend:
     from quantum_safe.backends.rustcrypto import RustCryptoSignatureBackend
     return RustCryptoSignatureBackend()
 
 
-def get_kem_backend(name: str = "auto") -> "AbstractKEMBackend":
+def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
     """Return the KEM backend for the given name.
 
     Args:
@@ -100,7 +100,7 @@ def get_kem_backend(name: str = "auto") -> "AbstractKEMBackend":
     raise BackendNotAvailable(name)
 
 
-def get_signature_backend(name: str = "auto") -> "AbstractSignatureBackend":
+def get_signature_backend(name: str = "auto") -> AbstractSignatureBackend:
     """Return the signature backend for the given name."""
     env_override = os.environ.get("QUANTUM_SAFE_BACKEND", "").strip().lower()
     if env_override and name == "auto":
@@ -129,27 +129,27 @@ def get_signature_backend(name: str = "auto") -> "AbstractSignatureBackend":
     raise BackendNotAvailable(name)
 
 
-def _auto_select_kem_backend() -> "AbstractKEMBackend":
+def _auto_select_kem_backend() -> AbstractKEMBackend:
     """Try backends in priority order, return the first available one."""
     for loader in (_load_rustcrypto_kem, _load_liboqs_kem):
         try:
             b = loader()
             if b.is_available():
                 return b
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001, S112
             continue
 
     raise BackendNotAvailable("auto")
 
 
-def _auto_select_sig_backend() -> "AbstractSignatureBackend":
+def _auto_select_sig_backend() -> AbstractSignatureBackend:
     """Try signature backends in priority order."""
     for loader in (_load_rustcrypto_sig, _load_liboqs_sig):
         try:
             b = loader()
             if b.is_available():
                 return b
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001, S112
             continue
 
     raise BackendNotAvailable("auto")

@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
 authors = [
-    { name = "quantum-safe contributors" },
+    { name = "Animesh Shaw", email = "animeshshaw@pm.me" },
 ]
 keywords = [
     "cryptography",
@@ -48,8 +48,13 @@ dependencies = [
 
 [project.optional-dependencies]
 liboqs = [
-    "liboqs-python>=0.10.0",
+    "liboqs-python>=0.10.0,<0.12",
 ]
+# SECURITY: For production deployments, install with hash verification to prevent
+# supply-chain attacks.  Generate a pinned requirements file with:
+#   pip-compile --generate-hashes pyproject.toml -o requirements.txt
+# Then install with:
+#   pip install --require-hashes -r requirements.txt
 # pyca cryptography already pulls in cffi; this just makes the
 # dep explicit so people know what they're getting.
 rustcrypto = [
@@ -69,9 +74,9 @@ dev = [
     "pre-commit>=3.6",
 ]
 docs = [
-    "mkdocs>=1.5",
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.24",
+    "sphinx>=7.2",
+    "furo>=2024.1",
+    "sphinx-autodoc-typehints>=2.0",
 ]
 
 [project.scripts]
@@ -99,13 +104,14 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "ANN", "S", "B", "A", "C4", "T20"]
 ignore = [
-    "ANN101",  # missing type annotation for `self`
-    "ANN102",  # missing type annotation for `cls`
     "S101",    # use of assert — fine in tests
+    "T201",    # print() allowed in CLI fallback paths
+    "N818",    # exception names without Error suffix — public API, cannot rename without breaking change
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN", "S"]
+"tests/**" = ["ANN", "S", "E501", "B017", "E701", "E741", "F841", "E402", "B905"]
+"tests/bench/**" = ["B023", "N806"]  # benchmark scripts: loop-capture patterns are intentional
 
 # ---------------------------------------------------------------------------
 # Mypy

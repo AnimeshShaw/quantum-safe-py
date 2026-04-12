@@ -17,29 +17,26 @@ import ssl
 import time
 
 import pytest
-
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import (
-    Encoding, PublicFormat, PrivateFormat, NoEncryption
-)
 
+from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
 from quantum_safe.exceptions import (
     DecapsulationError,
     KeyParseError,
     UnsupportedAlgorithm,
     VerificationError,
 )
+from quantum_safe.kem.hybrid import HybridKEM
 from quantum_safe.protocols.envelope import (
+    _NONCE_LEN,
     Envelope,
     SealedMessage,
-    _ENVELOPE_VERSION,
-    _NONCE_LEN,
 )
 from quantum_safe.protocols.jwt import (
     JWTSigner,
     JWTVerifier,
-    _b64url_encode,
     _b64url_decode,
+    _b64url_encode,
     _json_b64,
 )
 from quantum_safe.protocols.tls import (
@@ -52,19 +49,11 @@ from quantum_safe.protocols.x509 import (
     HybridCertificateBuilder,
     generate_classical_keypair_for_cert,
 )
-from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
-from quantum_safe.signatures.hybrid import HybridSign
 from quantum_safe.signatures.core import Sign
+from quantum_safe.signatures.hybrid import HybridSign
 from quantum_safe.types import (
-    HybridCipherText,
     KeyPair,
-    MigrationState,
-    PublicKey,
-    SecretKey,
-    SharedSecret,
 )
-from quantum_safe.kem.hybrid import HybridKEM
-
 
 # ---------------------------------------------------------------------------
 # Minimal mock HybridKEM for envelope testing — real X25519, mock ML-KEM
@@ -146,7 +135,6 @@ class TestSealedMessageSerialization:
         assert sm2.ciphertext == sm.ciphertext
 
     def test_from_bytes_missing_field_raises(self):
-        import json
         # Manually craft a broken envelope
         broken = {"v": 1, "algo": "X25519+ML-KEM-768"}
         # Encode without required fields
@@ -600,6 +588,7 @@ class TestHybridCertificateBuilder:
     def test_cert_has_pqc_pubkey_extension(self):
         from cryptography import x509 as cx509
         from cryptography.hazmat.backends import default_backend
+
         from quantum_safe.protocols.x509 import _PQC_PUBKEY_OID
 
         classical_priv = generate_classical_keypair_for_cert("Ed25519")
@@ -642,9 +631,9 @@ class TestHybridCertificateBuilder:
         assert "www.example.com" in dns_values
 
     def test_cert_validity_period(self):
+
         from cryptography import x509 as cx509
         from cryptography.hazmat.backends import default_backend
-        import datetime
 
         classical_priv = generate_classical_keypair_for_cert("Ed25519")
         hybrid_kp = self._make_hybrid_kp()

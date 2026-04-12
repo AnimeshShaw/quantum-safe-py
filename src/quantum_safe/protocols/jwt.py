@@ -59,7 +59,7 @@ from typing import Any
 from quantum_safe.exceptions import UnsupportedAlgorithm, VerificationError
 from quantum_safe.signatures.core import Sign
 from quantum_safe.signatures.hybrid import HybridSign
-from quantum_safe.types import KeyPair, PublicKey, SecretKey
+from quantum_safe.types import KeyPair, PublicKey
 from quantum_safe.types.signatures import SignedMessage
 
 # JWT version tag embedded in the header
@@ -83,7 +83,7 @@ def _b64url_decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + pad)
 
 
-def _json_b64(obj: Any) -> str:
+def _json_b64(obj: Any) -> str:  # noqa: ANN401
     """Encode a dict as compact JSON then base64url."""
     return _b64url_encode(json.dumps(obj, separators=(",", ":")).encode("utf-8"))
 
@@ -126,17 +126,12 @@ class JWTSigner:
     ) -> Sign | HybridSign:
         """Create the right signer for the given algorithm."""
         if "+" in algorithm:
-            # Hybrid algorithm
+            # Hybrid algorithm — use the normal constructor so that
+            # validate_hybrid_combination() is called and unapproved
+            # classical+PQC combinations are rejected.
             from quantum_safe.signatures.algorithms import parse_hybrid_name
             classical, pqc = parse_hybrid_name(algorithm)
-            s = HybridSign.__new__(HybridSign)
-            s._classical = classical
-            s._pqc = pqc
-            s._algorithm = algorithm
-            s._hedged = hedged
-            from quantum_safe.backends import get_signature_backend
-            s._backend = get_signature_backend(backend)
-            return s
+            return HybridSign(classical=classical, pqc=pqc, hedged=hedged, backend=backend)
         else:
             # Single PQC algorithm
             return Sign(algorithm=algorithm, hedged=hedged, backend=backend)
@@ -226,16 +221,11 @@ class JWTVerifier:
 
     def _build_verifier(self, algorithm: str, backend: str) -> Sign | HybridSign:
         if "+" in algorithm:
+            # Use the normal constructor to ensure validate_hybrid_combination()
+            # runs and unapproved algorithm pairs are rejected.
             from quantum_safe.signatures.algorithms import parse_hybrid_name
             classical, pqc = parse_hybrid_name(algorithm)
-            s = HybridSign.__new__(HybridSign)
-            s._classical = classical
-            s._pqc = pqc
-            s._algorithm = algorithm
-            s._hedged = True   # doesn't affect verification logic
-            from quantum_safe.backends import get_signature_backend
-            s._backend = get_signature_backend(backend)
-            return s
+            return HybridSign(classical=classical, pqc=pqc, backend=backend)
         else:
             return Sign(algorithm=algorithm, backend=backend)
 

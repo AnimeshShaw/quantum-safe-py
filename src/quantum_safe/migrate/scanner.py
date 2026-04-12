@@ -45,9 +45,10 @@ import fnmatch
 import json
 import os
 import pathlib
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Iterator
+from typing import Any
 
 
 class Severity(IntEnum):
@@ -610,7 +611,8 @@ class Scanner:
             directory:          Root directory to scan.
             exclude:            Glob patterns to exclude.
                                 Default excludes: .git, __pycache__, .venv, node_modules.
-            max_file_size_kb:   Skip files larger than this (avoid scanning minified/generated code).
+            max_file_size_kb:   Skip files larger than this
+                                (avoid scanning minified/generated code).
 
         Returns:
             ScanReport with aggregated findings.

@@ -174,7 +174,7 @@ class AuditPolicy:
         }
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "AuditPolicy":
+    def from_dict(cls, d: dict[str, Any]) -> AuditPolicy:
         return cls(
             min_security_level=d.get("min_security_level", 3),
             allow_classical_only=d.get("allow_classical_only", False),
@@ -187,7 +187,7 @@ class AuditPolicy:
         )
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "AuditPolicy":
+    def from_file(cls, path: str | Path) -> AuditPolicy:
         """Load policy from a JSON or YAML file.
 
         YAML support requires PyYAML (pip install pyyaml). Falls back to
@@ -209,7 +209,7 @@ class AuditPolicy:
         return cls.from_dict(data)
 
     @classmethod
-    def strict(cls) -> "AuditPolicy":
+    def strict(cls) -> AuditPolicy:
         """Pre-built strict policy: no classical crypto at all."""
         return cls(
             min_security_level=3,
@@ -220,7 +220,7 @@ class AuditPolicy:
         )
 
     @classmethod
-    def transition(cls) -> "AuditPolicy":
+    def transition(cls) -> AuditPolicy:
         """Pre-built transition-period policy: hybrid required, classical tolerated."""
         return cls(
             min_security_level=1,
@@ -231,7 +231,7 @@ class AuditPolicy:
         )
 
     @classmethod
-    def permissive(cls) -> "AuditPolicy":
+    def permissive(cls) -> AuditPolicy:
         """Pre-built permissive policy: only critical findings fail."""
         return cls(
             min_security_level=1,

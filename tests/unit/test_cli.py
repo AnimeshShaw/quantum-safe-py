@@ -58,7 +58,6 @@ qs-migrate
 from __future__ import annotations
 
 import json
-import os
 import textwrap
 from pathlib import Path
 
@@ -70,7 +69,6 @@ from click.testing import CliRunner  # noqa: E402 — after importorskip
 
 from quantum_safe.audit.cli import _cli as audit_cli  # type: ignore[attr-defined]
 from quantum_safe.migrate.cli import _cli as migrate_cli  # type: ignore[attr-defined]
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -597,7 +595,9 @@ class TestMigrateUpgradeKey:
         """upgrade-key should accept a valid PEM key and print status messages."""
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from cryptography.hazmat.primitives.serialization import (
-            Encoding, PrivateFormat, NoEncryption
+            Encoding,
+            NoEncryption,
+            PrivateFormat,
         )
 
         # Generate a real Ed25519 key and write to PEM

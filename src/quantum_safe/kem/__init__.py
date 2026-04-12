@@ -10,10 +10,10 @@ Public API:
 """
 
 from quantum_safe.kem.algorithms import (
-    HYBRID_COMBINATIONS,
-    KEM_ALGORITHMS,
     DEFAULT_HYBRID_CLASSICAL,
     DEFAULT_HYBRID_PQC,
+    HYBRID_COMBINATIONS,
+    KEM_ALGORITHMS,
     canonical_hybrid_name,
     get_algorithm_spec,
 )

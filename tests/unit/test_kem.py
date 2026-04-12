@@ -13,10 +13,10 @@ key serialization paths in isolation.
 from __future__ import annotations
 
 import struct
-from unittest.mock import MagicMock, patch
 
 import pytest
 
+from quantum_safe.backends.base import AbstractKEMBackend
 from quantum_safe.exceptions import (
     DecapsulationError,
     UnsupportedAlgorithm,
@@ -29,7 +29,6 @@ from quantum_safe.kem.algorithms import (
     parse_hybrid_name,
     validate_hybrid_combination,
 )
-from quantum_safe.backends.base import AbstractKEMBackend
 from quantum_safe.kem.core import KEM
 from quantum_safe.kem.hybrid import HybridKEM, _pack_components, _unpack_components
 from quantum_safe.types import (
@@ -40,7 +39,6 @@ from quantum_safe.types import (
     SecretKey,
     SharedSecret,
 )
-
 
 # ---------------------------------------------------------------------------
 # Mock backend for unit testing KEM logic without liboqs

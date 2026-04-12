@@ -40,9 +40,8 @@ from __future__ import annotations
 
 import ssl
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
-
 
 # IANA-registered TLS group names for hybrid key exchange
 # These are the standard names used in OpenSSL's set_groups() call
@@ -167,7 +166,7 @@ def check_hybrid_support() -> dict[str, Any]:
             "OpenSSL 3.x detected. Install oqs-provider for hybrid TLS. "
             "See: https://github.com/open-quantum-safe/oqs-provider"
         )
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001, S110
         pass
 
     return info
@@ -219,7 +218,7 @@ def configure_hybrid_context(
     if hasattr(ctx, "set_groups"):
         # PyOpenSSL or OQS-patched ssl
         try:
-            getattr(ctx, "set_groups")(groups)
+            ctx.set_groups(groups)
             set_groups_succeeded = True
         except ssl.SSLError as exc:
             warnings.warn(

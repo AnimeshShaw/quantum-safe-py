@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
-from quantum_safe.migrate.scanner import Finding, ScanReport, Scanner, Severity
+from quantum_safe.migrate.scanner import Scanner, ScanReport
 
 
 @dataclass
@@ -122,8 +122,8 @@ class AuditReport:
         lines = [
             f"## {icon} PQC Audit — {'PASSED' if self.passed else 'FAILED'}",
             "",
-            f"| Metric | Value |",
-            f"|--------|-------|",
+            "| Metric | Value |",
+            "|--------|-------|",
             f"| Files scanned | {self.files_scanned} |",
             f"| Critical findings | {self.critical_count} |",
             f"| High findings | {self.high_count} |",
@@ -238,7 +238,9 @@ class Auditor:
 
         return AuditReport(
             audit_id=str(uuid.uuid4()),
-            timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
             target=filename,
             scan_report=scan_report,
             policy=policy,

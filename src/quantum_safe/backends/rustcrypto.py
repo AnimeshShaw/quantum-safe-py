@@ -34,7 +34,7 @@ from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBack
 from quantum_safe.exceptions import BackendNotAvailable
 
 
-def _import_qs_py() -> Any:
+def _import_qs_py() -> Any:  # noqa: ANN401
     """Import the quantum_safe_py native extension or raise BackendNotAvailable."""
     try:
         import quantum_safe_py as _qs_py  # type: ignore[import]

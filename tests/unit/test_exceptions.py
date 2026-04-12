@@ -1,6 +1,5 @@
 """Unit tests for quantum_safe.exceptions"""
 
-import pytest
 
 from quantum_safe.exceptions import (
     BackendNotAvailable,

@@ -19,8 +19,6 @@ used in the research paper's Contributions 2 and 4:
 from __future__ import annotations
 
 import math
-import statistics
-from typing import Sequence
 
 import pytest
 
@@ -37,7 +35,6 @@ from tests.bench.bench_stats import (
     throughput_curve,
     welch_t_test,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

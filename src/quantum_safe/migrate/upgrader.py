@@ -41,10 +41,6 @@ import warnings
 from dataclasses import dataclass
 from typing import Any
 
-from quantum_safe.exceptions import (
-    ClassicalKeyDetected,
-    UnsupportedAlgorithm,
-)
 from quantum_safe.types import KeyPair, MigrationState, PublicKey, SecretKey
 
 
@@ -262,8 +258,8 @@ class Upgrader:
                 f"Nothing to strip."
             )
 
-        from quantum_safe.kem.hybrid import _unpack_components
         from quantum_safe.exceptions import DecapsulationError
+        from quantum_safe.kem.hybrid import _unpack_components
 
         # Determine if this is a KEM or signature key based on algorithm name
         algo = hybrid_keypair.algorithm
@@ -331,7 +327,10 @@ class Upgrader:
     @staticmethod
     def _recommend(state: MigrationState, is_hybrid: bool) -> str:
         if state == MigrationState.CLASSICAL_ONLY:
-            return "Upgrade to HYBRID_TRANSITION using Upgrader.upgrade_kem_key() or upgrade_signing_key()"
+            return (
+                "Upgrade to HYBRID_TRANSITION using "
+                "Upgrader.upgrade_kem_key() or upgrade_signing_key()"
+            )
         if state == MigrationState.HYBRID_TRANSITION:
             return "Transition complete. Advance to PQC_PREFERRED when all clients support hybrid."
         if state == MigrationState.PQC_PREFERRED:

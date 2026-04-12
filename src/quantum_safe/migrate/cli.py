@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import json
 import sys
-from typing import Any
 
 try:
     import click
@@ -35,7 +34,10 @@ except ImportError:
 def main() -> None:
     """Entry point for qs-migrate CLI."""
     if not _HAS_CLICK:
-        print("Error: click is required for the CLI. Install with: pip install click", file=sys.stderr)
+        print(  # noqa: T201
+            "Error: click is required for the CLI. Install with: pip install click",
+            file=sys.stderr,
+        )
         sys.exit(1)
     _cli()
 
@@ -60,8 +62,9 @@ if _HAS_CLICK:
                   help="Exit with code 1 if findings at this severity or above exist")
     def scan_cmd(path: str, fmt: str, output: str | None, min_severity: str, fail_on: str) -> None:
         """Scan PATH for classical cryptography usage."""
-        from quantum_safe.migrate.scanner import Scanner, Severity
         import pathlib
+
+        from quantum_safe.migrate.scanner import Scanner, Severity
 
         p = pathlib.Path(path)
         if p.is_file():
@@ -114,8 +117,9 @@ if _HAS_CLICK:
         input_path: str, output: str, target: str, key_type: str
     ) -> None:
         """Upgrade a classical key to a hybrid PQC key."""
-        from quantum_safe.types import PublicKey, SecretKey
         import pathlib
+
+        from quantum_safe.types import PublicKey, SecretKey
 
         pem_data = pathlib.Path(input_path).read_text()
 

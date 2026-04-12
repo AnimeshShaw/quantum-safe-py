@@ -61,9 +61,7 @@ This is the same framing as HybridCipherText.
 
 from __future__ import annotations
 
-import os
 import struct
-import warnings
 from typing import TYPE_CHECKING, cast
 
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
@@ -80,7 +78,6 @@ from cryptography.hazmat.primitives.serialization import (
 from quantum_safe.backends import get_kem_backend
 from quantum_safe.exceptions import (
     DecapsulationError,
-    InsecureOperationError,
     UnsupportedAlgorithm,
 )
 from quantum_safe.kem.algorithms import (
@@ -360,12 +357,11 @@ class HybridKEM:
             pub_bytes = pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return priv_bytes, pub_bytes
         elif self._classical == "P-256":
+            from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 SECP256R1,
                 generate_private_key,
-                ECDH,
             )
-            from cryptography.hazmat.backends import default_backend
             priv = generate_private_key(SECP256R1(), default_backend())
             pub = priv.public_key()
             priv_bytes = priv.private_bytes(
@@ -407,15 +403,12 @@ class HybridKEM:
             return ct, shared
 
         elif self._classical == "P-256":
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                SECP256R1,
-                generate_private_key,
-                EllipticCurvePublicKey,
-                ECDH,
-            )
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives.asymmetric.ec import (
+                ECDH,
+                SECP256R1,
                 EllipticCurvePublicNumbers,
+                generate_private_key,
             )
 
             ephem_priv = generate_private_key(SECP256R1(), default_backend())
@@ -424,9 +417,6 @@ class HybridKEM:
             # Load recipient's public key from uncompressed point
             # cryptography doesn't have a direct from_encoded_point in all versions
             # so we use the longer form
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                EllipticCurvePublicNumbers,
-            )
             if len(recipient_pub_bytes) != 65 or recipient_pub_bytes[0] != 0x04:
                 raise DecapsulationError(algo=self._classical)
             x = int.from_bytes(recipient_pub_bytes[1:33], "big")
@@ -436,6 +426,8 @@ class HybridKEM:
             )
 
             shared_key = ephem_priv.exchange(ECDH(), recipient_pub)
+            if len(shared_key) < 32:
+                raise DecapsulationError(algo=self._classical)
             ct = ephem_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
             return ct, shared_key[:32]
         else:
@@ -463,13 +455,13 @@ class HybridKEM:
 
         elif self._classical == "P-256":
             try:
+                from cryptography.hazmat.backends import default_backend
                 from cryptography.hazmat.primitives.asymmetric.ec import (
+                    ECDH,
                     SECP256R1,
                     EllipticCurvePrivateKey,
                     EllipticCurvePublicNumbers,
-                    ECDH,
                 )
-                from cryptography.hazmat.backends import default_backend
                 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
                 our_priv = cast(
@@ -485,6 +477,8 @@ class HybridKEM:
                     default_backend()
                 )
                 shared = our_priv.exchange(ECDH(), sender_pub)
+                if len(shared) < 32:
+                    raise DecapsulationError(algo=self._algorithm)
                 return shared[:32]
             except DecapsulationError:
                 raise

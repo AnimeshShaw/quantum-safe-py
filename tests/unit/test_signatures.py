@@ -12,14 +12,13 @@ are genuine signatures, not mocked.
 
 from __future__ import annotations
 
-import hmac
 import hashlib
+import hmac
 import os
-import time
-from unittest.mock import patch
 
 import pytest
 
+from quantum_safe.backends.base import AbstractSignatureBackend
 from quantum_safe.exceptions import UnsupportedAlgorithm, VerificationError
 from quantum_safe.signatures.algorithms import (
     DEFAULT_HYBRID_CLASSICAL,
@@ -28,7 +27,6 @@ from quantum_safe.signatures.algorithms import (
     get_algorithm_spec,
     validate_hybrid_combination,
 )
-from quantum_safe.backends.base import AbstractSignatureBackend
 from quantum_safe.signatures.core import Sign
 from quantum_safe.signatures.hybrid import HybridSign, _pack_components, _unpack_components
 from quantum_safe.types import (
@@ -38,7 +36,6 @@ from quantum_safe.types import (
     SecretKey,
 )
 from quantum_safe.types.signatures import HybridSignature, SignedMessage
-
 
 # ---------------------------------------------------------------------------
 # Mock PQC signature backend
@@ -249,7 +246,7 @@ class TestSign:
 
     def test_wrong_algorithm_key_raises(self):
         s = make_sign()
-        wrong_sk = SecretKey(raw=b"\x00" * 4000, algorithm="ML-DSA-44")
+        wrong_sk = SecretKey(raw=b"\x00" * 2528, algorithm="ML-DSA-44")
         with pytest.raises(UnsupportedAlgorithm):
             s.sign(b"msg", wrong_sk)
 

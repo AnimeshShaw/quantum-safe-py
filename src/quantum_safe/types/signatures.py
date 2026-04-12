@@ -26,17 +26,12 @@ References:
 from __future__ import annotations
 
 import base64
-import hashlib
-import hmac
-import struct
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
 from quantum_safe._internal import serialization as _ser
-
 from quantum_safe.exceptions import KeyParseError, VerificationError
-
 
 # Maximum context length (FIPS 204 §5.2 allows up to 255 bytes)
 _MAX_CONTEXT_LEN = 255
@@ -116,7 +111,7 @@ class SignedMessage:
         })
 
     @classmethod
-    def from_cbor(cls, data: bytes) -> "SignedMessage":
+    def from_cbor(cls, data: bytes) -> SignedMessage:
         """Deserialize from CBOR bytes."""
         try:
             d = _ser.loads(data)
@@ -196,13 +191,13 @@ class HybridSignature:
         })
 
     @classmethod
-    def from_bytes(cls, data: bytes) -> "HybridSignature":
+    def from_bytes(cls, data: bytes) -> HybridSignature:
         """Decode from CBOR bytes."""
         try:
             d = _ser.loads(data)
         except Exception as exc:
             raise VerificationError() from exc
-        
+
         if not isinstance(d, dict):
             raise VerificationError()
 

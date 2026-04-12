@@ -108,10 +108,14 @@ class ComplianceReport:
             "controls":       [c.to_dict() for c in self.controls],
             "summary": {
                 "total":           len(self.controls),
-                "compliant":       sum(1 for c in self.controls if c.level == ComplianceLevel.COMPLIANT),
-                "partial":         len(self.partial_controls),
-                "non_compliant":   len(self.non_compliant_controls),
-                "not_applicable":  sum(1 for c in self.controls if c.level == ComplianceLevel.NOT_APPLICABLE),
+                "compliant":      sum(
+                    1 for c in self.controls if c.level == ComplianceLevel.COMPLIANT
+                ),
+                "partial":        len(self.partial_controls),
+                "non_compliant":  len(self.non_compliant_controls),
+                "not_applicable": sum(
+                    1 for c in self.controls if c.level == ComplianceLevel.NOT_APPLICABLE
+                ),
             },
             "metadata": self.metadata,
         }
@@ -122,7 +126,7 @@ class ComplianceReport:
     def summary_lines(self) -> list[str]:
         """Human-readable summary for terminal output."""
         lines = [
-            f"NIST PQC Compliance Report",
+            "NIST PQC Compliance Report",
             f"Target:   {self.target}",
             f"Generated: {self.generated_at}",
             f"Overall:  {self.overall_level.value}",
@@ -165,7 +169,7 @@ class NISTComplianceChecker:
             "standard":    "FIPS 203",
             "title":       "ML-KEM key encapsulation",
             "description": "Key encapsulation shall use ML-KEM-512, ML-KEM-768, or ML-KEM-1024 "
-                           "as specified in FIPS 203. RSA and ECDH key exchange are not quantum-safe.",
+                           "as specified in FIPS 203. RSA and ECDH are not quantum-safe.",
             "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016"},
             "remediation":  "Replace RSA/ECDH key exchange with HybridKEM() "
                             "(X25519+ML-KEM-768 by default).",
@@ -175,7 +179,7 @@ class NISTComplianceChecker:
             "standard":    "FIPS 204",
             "title":       "ML-DSA digital signatures",
             "description": "Digital signatures shall use ML-DSA-44, ML-DSA-65, or ML-DSA-87 "
-                           "as specified in FIPS 204. RSA-PSS, ECDSA, and DSA are not quantum-safe.",
+                           "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
             "check_rule_ids": {"QS001", "QS010", "QS015"},
             "remediation":  "Replace ECDSA/RSA/DSA signatures with HybridSign() "
                             "(Ed25519+ML-DSA-65 by default).",
@@ -310,15 +314,17 @@ class NISTComplianceChecker:
 
         # Roll up overall level
         levels = [c.level for c in controls]
-        if any(l == ComplianceLevel.NON_COMPLIANT for l in levels):
+        if any(lvl == ComplianceLevel.NON_COMPLIANT for lvl in levels):
             overall = ComplianceLevel.NON_COMPLIANT
-        elif any(l == ComplianceLevel.PARTIAL for l in levels):
+        elif any(lvl == ComplianceLevel.PARTIAL for lvl in levels):
             overall = ComplianceLevel.PARTIAL
         else:
             overall = ComplianceLevel.COMPLIANT
 
         return ComplianceReport(
-            generated_at=datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
+            generated_at=datetime.datetime.now(datetime.timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
             target=target or scan_report.root,
             controls=controls,
             overall_level=overall,

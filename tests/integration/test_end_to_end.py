@@ -17,27 +17,27 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import warnings
 
 import pytest
 
-from quantum_safe.audit import AuditPolicy, Auditor, NISTComplianceChecker, SBOMEnricher
-from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
+from quantum_safe.audit import Auditor, AuditPolicy, NISTComplianceChecker, SBOMEnricher
 from quantum_safe.audit.sbom import PQCReadiness
+from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend
+from quantum_safe.exceptions import VerificationError
 from quantum_safe.kem.hybrid import HybridKEM
 from quantum_safe.migrate import MigrationStateManager, Scanner, Upgrader
-from quantum_safe.migrate.scanner import Severity
 from quantum_safe.protocols.envelope import Envelope, SealedMessage
 from quantum_safe.protocols.jwt import JWTSigner, JWTVerifier
 from quantum_safe.protocols.tls import HybridTLSConfig, configure_hybrid_context
 from quantum_safe.signatures.hybrid import HybridSign
-from quantum_safe.signatures.core import Sign
 from quantum_safe.types import (
-    HybridCipherText, KeyPair, MigrationState, PublicKey, SecretKey, SharedSecret
+    KeyPair,
+    MigrationState,
+    PublicKey,
+    SecretKey,
+    SharedSecret,
 )
-from quantum_safe.exceptions import VerificationError, UnsupportedAlgorithm
-
 
 # ---------------------------------------------------------------------------
 # Helpers — mock backends for classical-only path
@@ -279,11 +279,13 @@ class TestJWTWorkflow:
 
 class TestX509Workflow:
     def test_cert_generation_and_inspection(self):
-        from quantum_safe.protocols.x509 import (
-            HybridCertificateBuilder, generate_classical_keypair_for_cert
-        )
         from cryptography import x509 as cx509
         from cryptography.hazmat.backends import default_backend
+
+        from quantum_safe.protocols.x509 import (
+            HybridCertificateBuilder,
+            generate_classical_keypair_for_cert,
+        )
 
         classical_key = generate_classical_keypair_for_cert("Ed25519")
         signer = _mock_sign()
@@ -463,7 +465,6 @@ class TestTLSWorkflow:
 
 class TestSharedSecretWorkflow:
     def test_two_keys_from_same_secret(self):
-        from quantum_safe.types import SharedSecret
         ss = SharedSecret(os.urandom(32), "X25519+ML-KEM-768", is_hybrid=True)
         enc_key = ss.derive_key(32, info=b"encryption")
         mac_key = ss.derive_key(32, info=b"authentication")
@@ -472,7 +473,6 @@ class TestSharedSecretWorkflow:
         assert len(mac_key) == 32
 
     def test_derive_key_deterministic(self):
-        from quantum_safe.types import SharedSecret
         raw = os.urandom(32)
         ss1 = SharedSecret(raw, "test")
         ss2 = SharedSecret(raw, "test")

@@ -33,10 +33,9 @@ CycloneDX spec: https://cyclonedx.org/docs/1.4/json/
 
 from __future__ import annotations
 
-import json
+import re
 from dataclasses import dataclass
 from enum import Enum
-import re
 from typing import Any
 
 
@@ -283,7 +282,10 @@ class SBOMEnricher:
             # Remove any existing qs properties (idempotent enrichment)
             props[:] = [p for p in props if not p.get("name", "").startswith("quantum-safe:")]
 
-            props.append({"name": "quantum-safe:pqc-readiness", "value": assessment.readiness.value})
+            props.append({
+                "name": "quantum-safe:pqc-readiness",
+                "value": assessment.readiness.value,
+            })
             props.append({"name": "quantum-safe:reason",        "value": assessment.reason})
             props.append({"name": "quantum-safe:action",        "value": assessment.action})
             if assessment.since_version:

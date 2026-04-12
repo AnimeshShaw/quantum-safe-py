@@ -29,6 +29,10 @@ from typing import Any
 # Try to use cbor2 first
 # ---------------------------------------------------------------------------
 
+# Maximum bytes accepted by loads() — guards against memory-exhaustion
+# attacks via deeply nested or padded CBOR / JSON payloads.
+_MAX_PAYLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
 try:
     import cbor2 as _cbor2
 
@@ -36,6 +40,11 @@ try:
         return _cbor2.dumps(obj)
 
     def loads(data: bytes) -> Any:  # noqa: ANN401
+        if len(data) > _MAX_PAYLOAD_BYTES:
+            raise ValueError(
+                f"Payload size {len(data)} exceeds maximum allowed "
+                f"{_MAX_PAYLOAD_BYTES} bytes"
+            )
         return _cbor2.loads(data)
 
     BACKEND = "cbor2"
@@ -81,6 +90,11 @@ except ImportError:
 
     def loads(data: bytes) -> Any:  # noqa: ANN401
         """Deserialize bytes produced by dumps()."""
+        if len(data) > _MAX_PAYLOAD_BYTES:
+            raise ValueError(
+                f"Payload size {len(data)} exceeds maximum allowed "
+                f"{_MAX_PAYLOAD_BYTES} bytes"
+            )
         wrapper = json.loads(data.decode("utf-8"))
         if isinstance(wrapper, dict) and wrapper.get("_qs_fmt") == "json-b64-v1":
             return _decode(wrapper["d"])
