@@ -403,24 +403,49 @@ qs-migrate status
 
 ### Memory safety
 
-`SecretKey` and `SharedSecret` attempt to zero their memory on deletion.
-Python's garbage collector makes hard guarantees impossible, but we reduce
-the window during which secret material is visible in heap dumps.
+`SecretKey` and `SharedSecret` zero their memory on deletion using
+`ctypes.memset` against the live `bytearray` buffer.  A Python byte-loop
+is subject to dead-store elimination by the optimizer; `ctypes.memset`
+operates at the C level and cannot be elided.
+
+Python's garbage collector still makes hard guarantees impossible, but this
+approach minimises the window during which secret material is visible in
+heap dumps.  Callers that need to zero a copy immediately after use should
+call `SecretKey._raw_bytearray` (returns a fresh `bytearray`) and zero it
+with `ctypes.memset` in a `try/finally` block.
 
 For high-security deployments, use an HSM — see `docs/hsm.md`.
 
 ### Constant-time operations
 
-We use `hmac.compare_digest()` for all secret comparisons. The underlying
-liboqs implementations are designed for constant-time operation. ENV-2 benchmarks
-(Docker/WSL2, 3,000 iterations) show ML-KEM-768 decapsulate CoV ~3.9% — within
-the AES-256-GCM noise floor band of 2.1%, confirming timing stability in practice.
+We use `hmac.compare_digest()` for all secret comparisons.  Hybrid signature
+verification evaluates **both** sub-signatures unconditionally before combining
+the result, preventing timing oracles that would reveal which component failed.
+The underlying liboqs implementations are designed for constant-time operation.
+ENV-2 benchmarks (Docker/WSL2, 3,000 iterations) show ML-KEM-768 decapsulate
+CoV ~3.9% — within the AES-256-GCM noise floor band of 2.1%, confirming timing
+stability in practice.
+
+### Serialization safety
+
+The `_internal.serialization` layer caps all incoming payloads at **10 MB**
+before parsing, guarding against memory-exhaustion via deeply nested or padded
+CBOR / JSON structures.  Deserialised key payloads with `version < 1` are
+rejected immediately to prevent version-rollback attacks.
+
+### Thread safety
+
+`MigrationStateManager.transition()` holds a per-key `threading.Lock` across
+the read-check-write critical section.  For multi-process deployments (e.g.
+multiple Gunicorn workers sharing a Redis store) you must additionally acquire
+an external distributed lock (Redis `SETNX`, database row-level lock) on the
+`key_id` before calling `transition()`.
 
 ### Hedged signing
 
 `HybridSign` and `Sign` default to hedged mode: a 32-byte random prefix
-is prepended before signing. This prevents fault injection attacks that have
-been demonstrated on lattice signatures in lab conditions. Opt out with
+is prepended before signing.  This prevents fault-injection attacks that have
+been demonstrated on lattice signatures in lab conditions.  Opt out with
 `hedged=False` only if you have a specific need for deterministic signatures.
 
 ### Hybrid mode rationale

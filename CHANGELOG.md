@@ -2,6 +2,90 @@
 
 All notable changes to quantum-safe are documented here.
 
+## [Unreleased] — Security hardening 2026-04-12
+
+### Security
+
+A comprehensive cryptographic security audit (14 findings) was performed against
+v0.1.0 source.  All findings have been remediated in this release.
+
+#### HIGH severity
+
+- **Memory zeroization hardened** (`types/keys.py`, `types/kem.py`):
+  `_ZeroizingBytes.__del__` and `SharedSecret.__del__` now use `ctypes.memset`
+  against the live `bytearray` buffer instead of a Python byte-loop.  The Python
+  optimizer can elide dead stores; `ctypes.memset` operates at the C level and
+  cannot be optimized away.
+
+- **`SecretKey._raw_bytearray` property added** (`types/keys.py`):
+  Callers that need a mutable copy they can zero after use (e.g. backends passing
+  key material to C libraries) now have a first-class way to obtain one.  The
+  property documents the zero-after-use pattern with `ctypes.memset`.
+
+- **Version rollback rejected** (`types/keys.py`):
+  Deserialized CBOR key payloads with `version < 1` are now rejected with
+  `KeyParseError`.  Previously an attacker who could tamper with stored key
+  material could downgrade the version field to bypass future format hardening.
+
+#### MEDIUM severity
+
+- **Serialization payload size cap** (`_internal/serialization.py`):
+  `loads()` now rejects payloads larger than 10 MB in both the cbor2 and JSON
+  fallback paths, guarding against memory-exhaustion via deeply nested or padded
+  structures.
+
+- **P-256 ECDH output length guard** (`kem/hybrid.py`):
+  `_encapsulate_classical` and `_decapsulate_classical` now assert the P-256 ECDH
+  output is at least 32 bytes before passing it to the HKDF combiner.
+
+- **liboqs secret key local copy zeroed** (`backends/liboqs.py`):
+  `LiboqsKEMBackend.decapsulate` and `LiboqsSignatureBackend.sign` convert the
+  incoming `bytes` to a `bytearray`, pass the bytes view to the C library, and
+  zero the local copy in a `finally` block via `ctypes.memset`.
+
+- **Public key size validation** (`types/keys.py`):
+  `PublicKey.__init__` now validates the raw byte length against known FIPS sizes
+  for all non-hybrid algorithms (ML-KEM-512/768/1024, ML-DSA-44/65/87,
+  SLH-DSA variants).  This prevents key-type confusion attacks where, for example,
+  ML-DSA bytes are accepted as an ML-KEM public key.
+
+- **Migration state manager is thread-safe** (`migrate/state.py`):
+  `MigrationStateManager.transition()` now holds a per-key `threading.Lock` across
+  the read-check-write critical section, eliminating the TOCTOU race that could
+  allow two concurrent callers to both observe the same current state and both
+  commit conflicting transitions.
+
+- **Hybrid signature verification is timing-safe** (`signatures/hybrid.py`):
+  `HybridSign.verify()` previously returned early after the classical sub-signature
+  failed, creating a timing oracle that revealed which component was invalid.
+  Both sub-signatures are now verified unconditionally before the combined result
+  is checked.
+
+- **`HybridSign` constructor bypass removed** (`protocols/jwt.py`, `protocols/x509.py`):
+  `JWTSigner`, `JWTVerifier`, and `HybridCertificateBuilder` were constructing
+  `HybridSign` via `__new__` plus manual attribute assignment, bypassing
+  `validate_hybrid_combination()`.  All three now use the normal constructor.
+
+#### LOW severity
+
+- **`PublicKey.__repr__` fingerprint cached** (`types/keys.py`):
+  `_cached_fp` slot added; SHA-256 is computed once and cached, preventing
+  repeated full-key hashing on every repr call (e.g. in log-heavy environments).
+
+- **`generate_nonce()` warns on short nonces** (`types/keys.py`):
+  Nonces shorter than 12 bytes now emit a `UserWarning` pointing to the 12-byte
+  AEAD minimum (e.g. AES-GCM).
+
+- **Hash-pinning documentation added** (`pyproject.toml`):
+  A comment block above the liboqs optional dependency explains how to generate
+  a hash-pinned `requirements.txt` for production installs.
+
+- **liboqs-python upper version bound** (`pyproject.toml`):
+  `liboqs-python` is now pinned to `>=0.10.0,<0.12` to prevent silent breakage
+  if the upstream package makes incompatible API changes in a future minor release.
+
+---
+
 ## [Unreleased] — Benchmark refresh 2026-03-29
 
 ### Changed

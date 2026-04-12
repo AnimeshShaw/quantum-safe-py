@@ -72,7 +72,16 @@ Tracking migration progress
 :class:`~quantum_safe.migrate.state.MigrationStateManager` maintains
 a per-key state machine tracking where each key sits in the migration path:
 
-- ``CLASSICAL_ONLY`` → ``HYBRID_TRANSITION`` → ``PQC_ONLY``
+- ``CLASSICAL_ONLY`` → ``HYBRID_TRANSITION`` → ``PQC_PREFERRED`` → ``PQC_ONLY``
+
+.. note::
+
+   **Thread safety**: ``transition()`` holds a per-key ``threading.Lock`` across
+   the read-check-write critical section, so concurrent in-process calls for the
+   same ``key_id`` are safe.  For multi-process deployments (multiple workers
+   sharing a Redis or database store) you must additionally hold an external
+   distributed lock (e.g. Redis ``SETNX``, a ``SELECT … FOR UPDATE`` row lock)
+   on the ``key_id`` before calling ``transition()``.
 
 .. code-block:: python
 

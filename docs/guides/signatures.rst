@@ -44,6 +44,13 @@ HybridSign
 hybrid signer.  It produces a combined Ed25519 + ML-DSA signature.
 Both sub-signatures must verify for the overall verification to pass.
 
+.. note::
+
+   Verification is **timing-safe**: both the classical and PQC sub-signatures
+   are always verified unconditionally before the combined result is checked.
+   Early-return on first failure would create a timing oracle revealing which
+   component was invalid — this implementation avoids that.
+
 .. code-block:: python
 
    from quantum_safe import HybridSign

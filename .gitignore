@@ -76,6 +76,12 @@ results/bench_stats_*.txt
 *.json.bak
 
 # ---------------------------------------------------------------------------
+# Paper — self-contained LaTeX manuscript and generated figures
+# Add to gitignore; will be made public separately (arXiv / IACR ePrint)
+# ---------------------------------------------------------------------------
+paper/
+
+# ---------------------------------------------------------------------------
 # Type checker
 # ---------------------------------------------------------------------------
 .mypy_cache/

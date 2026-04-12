@@ -118,6 +118,11 @@ The payload is a CBOR-encoded struct:
      "v":     1,
    }
 
+Payloads larger than **10 MB** are rejected by the serialization layer before
+parsing, guarding against memory-exhaustion via deeply nested or padded
+structures.  Payloads with ``v < 1`` are also rejected to prevent
+version-rollback attacks on stored key material.
+
 Classical and PQC material is packed as:
 ``<2-byte big-endian length of classical bytes> + <classical bytes> + <PQC bytes>``
 

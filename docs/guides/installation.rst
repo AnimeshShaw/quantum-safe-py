@@ -29,9 +29,15 @@ With liboqs backend (full ML-KEM / ML-DSA)
 
    pip install 'quantum-safe[liboqs]'
 
-This installs ``liboqs-python``, which vendors a pre-built liboqs binary
-for Linux x86-64, macOS ARM/x86, and Windows x86-64.
+This installs ``liboqs-python >= 0.10.0, < 0.12``, which vendors a pre-built
+liboqs binary for Linux x86-64, macOS ARM/x86, and Windows x86-64.
 On other architectures, build liboqs from source first.
+
+.. note::
+
+   The ``liboqs-python`` dependency is capped at ``< 0.12`` to prevent silent
+   breakage if the upstream package makes incompatible API changes.  If you need
+   a newer version, install it manually after verifying compatibility.
 
 Verify the install:
 

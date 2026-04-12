@@ -153,6 +153,11 @@ Key serialization
 
 .. note::
 
-   ``SecretKey`` attempts to zero its memory buffer on deletion.
-   Python's garbage collector makes hard guarantees impossible, but this
-   reduces the window during which secret material is visible in heap dumps.
+   ``SecretKey`` zeros its memory buffer on deletion using ``ctypes.memset``
+   against the live ``bytearray`` — a Python byte-loop is subject to
+   dead-store elimination by the optimizer and is not used here.
+   Python's garbage collector still makes hard guarantees impossible, but
+   this reduces the window during which secret material is visible in heap
+   dumps.  Callers that need to zero a copy immediately after use should
+   call ``secret_key._raw_bytearray`` and zero it with ``ctypes.memset``
+   in a ``try/finally`` block.
