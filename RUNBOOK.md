@@ -1,4 +1,4 @@
-# quantum-safe — Manual Runbook
+# quantum-safe-py — Manual Runbook
 
 Complete step-by-step guide for setting up, running, testing, and extending
 the library without any CI/CD. Every command is runnable from scratch.
@@ -27,7 +27,7 @@ run with only the `cryptography` package (already installed on most systems).
 
 ```bash
 # Clone or unzip the package
-cd quantum-safe   # this directory
+cd quantum-safe-py   # this directory
 
 # Install in editable mode with development tools
 pip install -e '.[dev]'
@@ -80,7 +80,7 @@ Import: OK
 ### Unit tests (no liboqs needed)
 
 ```bash
-# From the quantum-safe directory
+# From the quantum-safe-py directory
 python3 -m pytest tests/unit/ -v
 ```
 
@@ -454,7 +454,7 @@ print(b.name)  # "liboqs"
 
 ## 9. Running with liboqs
 
-After `pip install 'quantum-safe[liboqs]'`:
+After `pip install 'quantum-safe-py[liboqs]'`:
 
 ```python
 import sys; sys.path.insert(0, 'src')
@@ -484,9 +484,9 @@ print("HybridSign round-trip: OK")
 
 ### `ModuleNotFoundError: No module named 'quantum_safe'`
 
-Make sure you're running from the `quantum-safe` directory and have `src` in your path:
+Make sure you're running from the `quantum-safe-py` directory and have `src` in your path:
 ```bash
-cd quantum-safe
+cd quantum-safe-py
 python3 -c "import sys; sys.path.insert(0,'src'); from quantum_safe import HybridKEM"
 ```
 
@@ -497,7 +497,7 @@ Or install the package: `pip install -e .`
 Neither liboqs nor rustcrypto is installed. The library still works for
 classical operations. For ML-KEM/ML-DSA, install liboqs:
 ```bash
-pip install 'quantum-safe[liboqs]'
+pip install 'quantum-safe-py[liboqs]'
 ```
 
 ### `ModuleNotFoundError: No module named 'cbor2'`

@@ -3,7 +3,7 @@
 ## Development setup
 
 ```bash
-git clone https://github.com/quantum-safe/quantum-safe-py
+git clone https://github.com/AnimeshShaw/quantum-safe-py
 cd quantum-safe-py
 pip install -e '.[dev]'
 pre-commit install

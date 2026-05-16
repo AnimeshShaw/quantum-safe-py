@@ -5,7 +5,8 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![FIPS 203/204/205](https://img.shields.io/badge/NIST-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
-[![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io)
+[![CI](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml/badge.svg)](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
 
 ---
@@ -77,8 +78,8 @@ python -c "from quantum_safe.backends import list_available_backends; print(list
 ### Development install
 
 ```bash
-git clone https://github.com/AnimeshShaw/quantum-safe
-cd quantum-safe
+git clone https://github.com/AnimeshShaw/quantum-safe-py
+cd quantum-safe-py
 pip install -e '.[dev]'
 pre-commit install
 ```
@@ -415,7 +416,7 @@ heap dumps.  Callers that need to zero a copy immediately after use should
 call `SecretKey._raw_bytearray` (returns a fresh `bytearray`) and zero it
 with `ctypes.memset` in a `try/finally` block.
 
-For high-security deployments, use an HSM — see `docs/hsm.md`.
+For high-security deployments, use an HSM or a secrets manager with key isolation.
 
 ### Constant-time operations
 
