@@ -8,6 +8,7 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 [![CI](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml/badge.svg)](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
+[![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/ARXIV_ID_PLACEHOLDER)
 
 ---
 
@@ -556,6 +557,26 @@ ruff check src/ tests/
 # Formatting
 black src/ tests/
 ```
+
+---
+
+## Cite this work
+
+If you use quantum-safe-py in research or build on the methodology, please cite the accompanying paper:
+
+```bibtex
+@article{shaw2026quantumsafe,
+  title     = {quantum-safe: Bridging the Post-Quantum Production Gap with a
+               Hybrid-by-Default Python Cryptography Library},
+  author    = {Shaw, Animesh},
+  journal   = {arXiv preprint arXiv:ARXIV_ID_PLACEHOLDER},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/ARXIV_ID_PLACEHOLDER}
+}
+```
+
+A machine-readable [CITATION.cff](CITATION.cff) is also provided for GitHub's
+"Cite this repository" button.
 
 ---
 

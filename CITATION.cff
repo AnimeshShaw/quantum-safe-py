@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software or build on this research, please cite it as below."
+type: software
+title: "quantum-safe-py"
+abstract: >
+  Production-grade post-quantum cryptography for Python. Hybrid KEM
+  (X25519 + ML-KEM-768), hybrid signatures (Ed25519 + ML-DSA-65),
+  migration tooling, protocol helpers, and a CI-ready audit scanner.
+authors:
+  - family-names: Shaw
+    given-names: Animesh
+    email: animeshshaw@pm.me
+version: "0.1.0"
+date-released: "2026-05-16"
+url: "https://pypi.org/project/quantum-safe-py/"
+repository-code: "https://github.com/AnimeshShaw/quantum-safe-py"
+license: Apache-2.0
+keywords:
+  - post-quantum cryptography
+  - hybrid key encapsulation
+  - ML-KEM
+  - ML-DSA
+  - FIPS 203
+  - FIPS 204
+  - Python cryptography
+  - timing side-channel
+
+preferred-citation:
+  type: article
+  title: >
+    quantum-safe: Bridging the Post-Quantum Production Gap with a
+    Hybrid-by-Default Python Cryptography Library
+  authors:
+    - family-names: Shaw
+      given-names: Animesh
+  year: 2026
+  url: "https://arxiv.org/abs/ARXIV_ID_PLACEHOLDER"
+  journal: "arXiv preprint arXiv:ARXIV_ID_PLACEHOLDER"
+  # TODO: replace ARXIV_ID_PLACEHOLDER with the assigned arXiv ID (e.g. 2505.12345)
