@@ -35,9 +35,9 @@ On other architectures, build liboqs from source first.
 
 .. note::
 
-   The ``liboqs-python`` dependency is capped at ``< 0.12`` to prevent silent
-   breakage if the upstream package makes incompatible API changes.  If you need
-   a newer version, install it manually after verifying compatibility.
+   Tested against ``liboqs-python`` 0.10.x – 0.15.x.  The library emits a
+   version-mismatch warning at import time if the native liboqs binary version
+   differs from the Python wrapper; this is informational only.
 
 Verify the install:
 
