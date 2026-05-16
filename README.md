@@ -5,7 +5,8 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![FIPS 203/204/205](https://img.shields.io/badge/NIST-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
-[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://animeshshaw.github.io/quantum-safe/)
+[![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io)
+[![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
 
 ---
 
