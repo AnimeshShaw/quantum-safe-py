@@ -3,7 +3,7 @@ requires = ["hatchling>=1.21"]
 build-backend = "hatchling.build"
 
 [project]
-name = "quantum-safe"
+name = "quantum-safe-py"
 version = "0.1.0"
 description = "Production-grade post-quantum cryptography with hybrid KEM, migration tooling, and protocol helpers"
 readme = "README.md"
@@ -84,9 +84,9 @@ qs-audit = "quantum_safe.audit.cli:main"
 qs-migrate = "quantum_safe.migrate.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/quantum-safe/quantum-safe-py"
+Homepage = "https://github.com/AnimeshShaw/quantum-safe"
 Documentation = "https://quantum-safe.readthedocs.io"
-"Bug Tracker" = "https://github.com/quantum-safe/quantum-safe-py/issues"
+"Bug Tracker" = "https://github.com/AnimeshShaw/quantum-safe/issues"
 
 # ---------------------------------------------------------------------------
 # Hatch build config

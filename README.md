@@ -50,7 +50,7 @@ signer.verify(sm, kp.public)  # raises VerificationError if invalid
 ### Core (classical crypto only, no PQC backend required)
 
 ```bash
-pip install quantum-safe
+pip install quantum-safe-py
 ```
 
 The core package works without liboqs. Key generation, serialization, hybrid
@@ -60,7 +60,7 @@ all work with the classical (X25519/Ed25519) components.
 ### With liboqs backend (full ML-KEM / ML-DSA support)
 
 ```bash
-pip install 'quantum-safe[liboqs]'
+pip install 'quantum-safe-py[liboqs]'
 ```
 
 Installs `liboqs-python` which vendors a pre-built liboqs binary for common
@@ -76,8 +76,8 @@ python -c "from quantum_safe.backends import list_available_backends; print(list
 ### Development install
 
 ```bash
-git clone https://github.com/quantum-safe/quantum-safe-py
-cd quantum-safe-py
+git clone https://github.com/AnimeshShaw/quantum-safe
+cd quantum-safe
 pip install -e '.[dev]'
 pre-commit install
 ```

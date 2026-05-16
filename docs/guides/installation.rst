@@ -20,14 +20,14 @@ SBOM enrichment all work using the classical (X25519/Ed25519) components.
 
 .. code-block:: bash
 
-   pip install quantum-safe
+   pip install quantum-safe-py
 
 With liboqs backend (full ML-KEM / ML-DSA)
 -------------------------------------------
 
 .. code-block:: bash
 
-   pip install 'quantum-safe[liboqs]'
+   pip install 'quantum-safe-py[liboqs]'
 
 This installs ``liboqs-python >= 0.10.0, < 0.12``, which vendors a pre-built
 liboqs binary for Linux x86-64, macOS ARM/x86, and Windows x86-64.
@@ -51,8 +51,8 @@ Development install
 
 .. code-block:: bash
 
-   git clone https://github.com/quantum-safe/quantum-safe-py
-   cd quantum-safe-py
+   git clone https://github.com/AnimeshShaw/quantum-safe
+   cd quantum-safe
    pip install -e '.[dev]'
    pre-commit install
 
