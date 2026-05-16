@@ -85,7 +85,7 @@ qs-migrate = "quantum_safe.migrate.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/AnimeshShaw/quantum-safe"
-Documentation = "https://quantum-safe.readthedocs.io"
+Documentation = "https://quantum-safe-py.readthedocs.io/en/latest/"
 "Bug Tracker" = "https://github.com/AnimeshShaw/quantum-safe/issues"
 
 # ---------------------------------------------------------------------------

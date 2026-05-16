@@ -199,7 +199,7 @@ class ScanReport:
                 "defaultConfiguration": {
                     "level": _sarif_level(f.severity)
                 },
-                "helpUri": "https://quantum-safe.readthedocs.io/audit",
+                "helpUri": "https://quantum-safe-py.readthedocs.io/en/latest/guides/audit.html",
             }
             for rule_id, f in seen_rules.items()
         ]

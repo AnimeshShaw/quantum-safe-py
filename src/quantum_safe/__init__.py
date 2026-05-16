@@ -21,7 +21,7 @@ Quick start::
     sm      = signer.sign(b"hello world", sig_kp.secret, context=b"myapp-v1")
     signer.verify(sm, sig_kp.public)
 
-See the full documentation at https://quantum-safe.readthedocs.io/
+See the full documentation at https://quantum-safe-py.readthedocs.io/en/latest/
 """
 
 from quantum_safe._version import __version__, __version_info__
