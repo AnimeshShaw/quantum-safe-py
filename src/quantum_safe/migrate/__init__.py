@@ -23,7 +23,7 @@ Quick start::
     from quantum_safe.migrate import Scanner
     report = Scanner.scan_directory("./src")
     for finding in report.findings:
-        print(f"{finding.file}:{finding.line} — {finding.severity}: {finding.message}")
+        print(f"{finding.file}:{finding.line} - {finding.severity}: {finding.message}")
 
     # Upgrade an existing X25519 key to hybrid
     from quantum_safe.migrate import Upgrader

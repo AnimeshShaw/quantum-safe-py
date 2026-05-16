@@ -143,7 +143,7 @@ if _HAS_CLICK:
             for f in filtered_findings:
                 lines.append(str(f))
                 if f.fix_hint:
-                    lines.append(f"  → {f.fix_hint}")
+                    lines.append(f"  -> {f.fix_hint}")
             if report.policy_violations:
                 lines.append("\nPolicy violations:")
                 for v in report.policy_violations:
@@ -208,13 +208,13 @@ if _HAS_CLICK:
             click.echo(f"\nSBOM PQC Readiness Summary for: {sbom_file}")
             click.echo("-" * 50)
             for a in assessments:
-                icon = {"READY": "✓", "PARTIAL": "~", "NOT_READY": "✗", "UNKNOWN": "?"}.get(
+                icon = {"READY": "+", "PARTIAL": "~", "NOT_READY": "x", "UNKNOWN": "?"}.get(
                     a.readiness.value, "?"
                 )
                 ver = f" {a.version}" if a.version else ""
                 click.echo(f"  {icon} {a.name}{ver}: {a.readiness.value}")
                 if a.readiness != PQCReadiness.READY:
-                    click.echo(f"    → {a.action}")
+                    click.echo(f"    -> {a.action}")
             click.echo()
             return
 
@@ -247,7 +247,7 @@ if _HAS_CLICK:
         click.echo(f"  {len(assessments)} packages checked")
 
         for a in assessments:
-            icon = {"READY": "✓", "PARTIAL": "~", "NOT_READY": "✗", "UNKNOWN": "?"}.get(
+            icon = {"READY": "+", "PARTIAL": "~", "NOT_READY": "x", "UNKNOWN": "?"}.get(
                 a.readiness.value, "?"
             )
             ver = f" {a.version}" if a.version else ""

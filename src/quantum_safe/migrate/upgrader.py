@@ -68,7 +68,7 @@ class UpgradeResult:
     def __repr__(self) -> str:
         return (
             f"UpgradeResult("
-            f"{self.old_algorithm!r} → {self.new_algorithm!r}, "
+            f"{self.old_algorithm!r} -> {self.new_algorithm!r}, "
             f"compat={self.backward_compat})"
         )
 

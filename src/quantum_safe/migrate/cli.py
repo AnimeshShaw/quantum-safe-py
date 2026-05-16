@@ -83,7 +83,7 @@ if _HAS_CLICK:
             for f in report.findings:
                 out += str(f) + "\n"
                 if f.fix_hint:
-                    out += f"  → {f.fix_hint}\n"
+                    out += f"  -> {f.fix_hint}\n"
         elif fmt == "json":
             out = report.to_json()
         else:  # sarif

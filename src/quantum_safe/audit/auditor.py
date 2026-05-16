@@ -120,7 +120,7 @@ class AuditReport:
         """Markdown summary suitable for GitHub Actions $GITHUB_STEP_SUMMARY."""
         icon = "✅" if self.passed else "❌"
         lines = [
-            f"## {icon} PQC Audit — {'PASSED' if self.passed else 'FAILED'}",
+            f"## {icon} PQC Audit - {'PASSED' if self.passed else 'FAILED'}",
             "",
             "| Metric | Value |",
             "|--------|-------|",

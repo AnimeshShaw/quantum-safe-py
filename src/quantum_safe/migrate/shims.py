@@ -82,7 +82,7 @@ class _ShimBase:
             cls._shim_name,
             method,
             cls._call_count,
-            f" — {note}" if note else "",
+            f" - {note}" if note else "",
         )
 
     @classmethod

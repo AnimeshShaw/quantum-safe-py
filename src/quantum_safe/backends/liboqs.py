@@ -383,7 +383,7 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         liboqs_name = self._liboqs_name(algorithm)
 
         if len(context) > 255:
-            raise ValueError(f"context must be ≤255 bytes, got {len(context)}")
+            raise ValueError(f"context must be <=255 bytes, got {len(context)}")
 
         # Prepend context using length-prefixed format
         msg_with_context = bytes([len(context)]) + context + message

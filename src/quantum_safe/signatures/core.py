@@ -178,7 +178,7 @@ class Sign:
                 available=[self._algorithm],
             )
         if len(context) > 255:
-            raise ValueError(f"context must be ≤255 bytes, got {len(context)}")
+            raise ValueError(f"context must be <=255 bytes, got {len(context)}")
 
         # Hedged mode: prepend random bytes so two signings of the same message
         # with the same key produce different signatures AND resist fault attacks.

@@ -206,7 +206,7 @@ def _assess_component(name: str, version: str | None) -> ComponentAssessment:
             name=name,
             version=None,
             readiness=PQCReadiness.UNKNOWN,
-            reason=f"Version unknown — cannot determine PQC readiness for '{name}'",
+            reason=f"Version unknown - cannot determine PQC readiness for '{name}'",
             since_version=info["pqc_since"],
             action=f"Pin to a specific version and check if >= {info['pqc_since']}",
         )
@@ -246,7 +246,7 @@ class SBOMEnricher:
 
         for a in assessments:
             if a.readiness == PQCReadiness.NOT_READY:
-                print(f"NOT READY: {a.name} {a.version} — {a.action}")
+                print(f"NOT READY: {a.name} {a.version} - {a.action}")
     """
 
     @classmethod

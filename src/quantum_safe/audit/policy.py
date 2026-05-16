@@ -147,14 +147,14 @@ class AuditPolicy:
                 if not self.allow_classical_only and finding.severity >= Severity.HIGH:
                     violations.append(PolicyViolation(
                         rule="classical_crypto_detected",
-                        detail=f"{finding.file}:{finding.line} — {finding.message}",
+                        detail=f"{finding.file}:{finding.line} - {finding.message}",
                         severity=finding.severity,
                         finding=finding,
                     ))
                 elif finding.severity >= Severity.CRITICAL:
                     violations.append(PolicyViolation(
                         rule="critical_vulnerability",
-                        detail=f"{finding.file}:{finding.line} — {finding.message}",
+                        detail=f"{finding.file}:{finding.line} - {finding.message}",
                         severity=finding.severity,
                         finding=finding,
                     ))

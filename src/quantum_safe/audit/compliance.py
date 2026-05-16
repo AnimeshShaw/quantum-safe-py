@@ -141,7 +141,7 @@ class ComplianceReport:
             lines.append("Non-compliant controls:")
             for c in self.non_compliant_controls:
                 lines.append(f"  [{c.control_id}] {c.title}")
-                lines.append(f"    → {c.remediation}")
+                lines.append(f"    -> {c.remediation}")
         return lines
 
 
@@ -276,7 +276,7 @@ class NISTComplianceChecker:
             # Determine compliance level
             if is_info and not triggered_findings:
                 level = ComplianceLevel.NOT_APPLICABLE
-                evidence = ["Informational control — no specific check performed"]
+                evidence = ["Informational control - no specific check performed"]
             elif not rule_ids:
                 # No rules to check — mark as informational
                 level = ComplianceLevel.NOT_APPLICABLE

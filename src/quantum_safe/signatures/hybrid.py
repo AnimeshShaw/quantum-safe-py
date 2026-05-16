@@ -215,7 +215,7 @@ class HybridSign:
                 secret_key.algorithm, available=[self._algorithm]
             )
         if len(context) > 255:
-            raise ValueError(f"context must be ≤255 bytes, got {len(context)}")
+            raise ValueError(f"context must be <=255 bytes, got {len(context)}")
 
         classical_sec_bytes, pqc_sec_bytes = _unpack_components(
             secret_key.raw_bytes, context=self._algorithm
