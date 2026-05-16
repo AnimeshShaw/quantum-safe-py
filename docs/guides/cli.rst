@@ -118,28 +118,32 @@ Scan for classical crypto and output a migration-focused report.
    qs-migrate scan <path> [OPTIONS]
 
    Options:
-     --format {text,json,sarif}   Output format (default: text)
-     --output PATH                Write output to file
-     --exclude PATTERN            Glob pattern for paths/files to skip (repeatable)
+     --format {text,json,sarif}              Output format (default: text)
+     --output PATH                           Write output to file
+     --min-severity {info,medium,high,critical}
+                                             Minimum severity to report
+     --fail-on {info,medium,high,critical,never}
+                                             Exit 1 at this severity or above
 
    Examples:
      qs-migrate scan ./src
      qs-migrate scan ./src --format sarif --output migrate.sarif
-     qs-migrate scan ./src --exclude "vendor/**"
+     qs-migrate scan ./src --min-severity high
 
 ``qs-migrate upgrade-key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Upgrade an existing classical key to a hybrid key.
+Upgrade an existing classical key to a hybrid PQC key.
 
 .. code-block:: bash
 
    qs-migrate upgrade-key [OPTIONS]
 
    Options:
-     --algorithm TEXT    Target hybrid algorithm (default: X25519+ML-KEM-768)
-     --input PATH        Path to existing classical public key (PEM/CBOR)
-     --output PATH       Write upgraded public key to file
+     -i, --input PATH          Input PEM key file (required)
+     -o, --output PATH         Output PEM file for the upgraded hybrid key (required)
+     --target TEXT             Target hybrid algorithm (default: X25519+ML-KEM-768)
+     --key-type {kem,sign}     Whether to upgrade a KEM or signing key
 
 ``qs-migrate status``
 ~~~~~~~~~~~~~~~~~~~~~

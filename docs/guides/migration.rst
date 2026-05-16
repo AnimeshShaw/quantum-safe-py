@@ -11,12 +11,19 @@ Scanning for classical crypto
 to detect classical-only cryptographic usage.  It ships 14 built-in rules
 covering:
 
-- RSA and ECDSA key generation and signing
-- AES-ECB usage
-- MD5 and SHA-1 digest usage
-- ``secrets.token_bytes`` used as a key without KDF
+- RSA and ECDSA key generation and signing (``cryptography``, ``pycryptodome``)
+- AES-ECB and 3DES usage
+- MD5 and SHA-1 digest usage — via both the ``cryptography`` library
+  (``hashes.MD5``, ``hashes.SHA1``) and the stdlib ``hashlib`` module
+  (``hashlib.md5()``, ``hashlib.sha1()``, ``hashlib.sha224()``)
+- Classical JWT algorithm identifiers (``RS256``, ``ES256``, etc.)
 - Hard-coded cryptographic constants
-- Fernet (symmetric encryption without forward secrecy)
+
+.. note::
+
+   The scanner is **Python-only**: it walks ``.py`` source files using the
+   ``ast`` module.  JavaScript, Go, Java, and configuration files (nginx,
+   openssl.cnf) are not yet supported.
 
 .. code-block:: python
 

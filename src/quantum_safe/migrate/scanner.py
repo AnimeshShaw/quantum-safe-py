@@ -307,7 +307,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS001",
         "severity": Severity.HIGH,
-        "message":  "RSA key generation detected — RSA is not quantum-safe",
+        "message":  "RSA key generation detected - RSA is not quantum-safe",
         "fix_hint": "Replace with HybridKEM() for key exchange or HybridSign() for signatures",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.rsa"},
         "calls":    {("rsa", "generate_private_key")},
@@ -315,7 +315,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS002",
         "severity": Severity.HIGH,
-        "message":  "RSA PKCS1v15 padding detected — not quantum-safe",
+        "message":  "RSA PKCS1v15 padding detected - not quantum-safe",
         "fix_hint": "Replace RSA encryption with Envelope.seal() / Envelope.open()",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.padding"},
         "calls":    {("padding", "PKCS1v15")},
@@ -323,7 +323,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS003",
         "severity": Severity.HIGH,
-        "message":  "RSA-OAEP encryption detected — not quantum-safe",
+        "message":  "RSA-OAEP encryption detected - not quantum-safe",
         "fix_hint": "Replace with Envelope.seal() which uses HybridKEM + AES-256-GCM",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.padding"},
         "calls":    {("padding", "OAEP")},
@@ -332,7 +332,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS010",
         "severity": Severity.HIGH,
-        "message":  "ECDSA key generation detected — not quantum-safe",
+        "message":  "ECDSA key generation detected - not quantum-safe",
         "fix_hint": "Replace with HybridSign() for signatures",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.ec"},
         "calls":    {("ec", "generate_private_key")},
@@ -340,7 +340,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS011",
         "severity": Severity.HIGH,
-        "message":  "ECDH key exchange detected — not quantum-safe",
+        "message":  "ECDH key exchange detected - not quantum-safe",
         "fix_hint": "Replace with HybridKEM() for key exchange",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.ec"},
         "calls":    {("ec", "ECDH")},
@@ -349,7 +349,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS015",
         "severity": Severity.CRITICAL,
-        "message":  "DSA key generation detected — not quantum-safe and deprecated",
+        "message":  "DSA key generation detected - not quantum-safe and deprecated",
         "fix_hint": "Replace with HybridSign() (ML-DSA-65 + Ed25519)",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.dsa"},
         "calls":    {("dsa", "generate_private_key")},
@@ -358,7 +358,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS016",
         "severity": Severity.HIGH,
-        "message":  "Classical DH key generation detected — not quantum-safe",
+        "message":  "Classical DH key generation detected - not quantum-safe",
         "fix_hint": "Replace with HybridKEM()",
         "imports":  {"cryptography.hazmat.primitives.asymmetric.dh"},
         "calls":    {("dh", "generate_parameters")},
@@ -367,7 +367,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS020",
         "severity": Severity.MEDIUM,
-        "message":  "AES-128 detected — consider upgrading to AES-256",
+        "message":  "AES-128 detected - consider upgrading to AES-256",
         "fix_hint": "Use AES-256-GCM. Envelope.seal() uses AES-256-GCM by default.",
         "imports":  set(),
         "string_patterns": {"AES-128", "AES128"},
@@ -375,7 +375,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS021",
         "severity": Severity.MEDIUM,
-        "message":  "3DES / TripleDES detected — deprecated and not quantum-safe",
+        "message":  "3DES / TripleDES detected - deprecated and not quantum-safe",
         "fix_hint": "Replace with AES-256-GCM",
         "imports":  {"cryptography.hazmat.primitives.ciphers.algorithms"},
         "calls":    {("algorithms", "TripleDES")},
@@ -385,21 +385,23 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS030",
         "severity": Severity.MEDIUM,
-        "message":  "SHA-1 detected — cryptographically broken",
+        "message":  "SHA-1 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or SHA-3",
-        "imports":  {"cryptography.hazmat.primitives.hashes"},
-        "calls":    {("hashes", "SHA1")},
+        "imports":  {"cryptography.hazmat.primitives.hashes", "hashlib"},
+        "calls":    {("hashes", "SHA1"), ("hashlib", "sha1"), ("hashlib", "sha224")},
         "string_patterns": {"SHA1", "SHA-1"},
     },
     {
         "id":       "QS031",
         "severity": Severity.CRITICAL,
-        "message":  "MD5 detected — cryptographically broken",
+        "message":  "MD5 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or BLAKE2b",
-        "imports":  {"cryptography.hazmat.primitives.hashes"},
-        "calls":    {("hashes", "MD5")},
+        "imports":  {"cryptography.hazmat.primitives.hashes", "hashlib"},
+        "calls":    {("hashes", "MD5"), ("hashlib", "md5")},
         "string_patterns": {"MD5"},
     },
+    # hashlib.new("sha1") / hashlib.new("md5") are caught by string_patterns above
+    # since the algorithm name is a string literal passed to hashlib.new().
     # ---- JWT algorithm identifiers --------------------------------
     {
         "id":       "QS040",
@@ -414,7 +416,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS050",
         "severity": Severity.HIGH,
-        "message":  "pycryptodome RSA usage detected — not quantum-safe",
+        "message":  "pycryptodome RSA usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridKEM or HybridSign",
         "imports":  {"Crypto.PublicKey.RSA", "Cryptodome.PublicKey.RSA"},
         "calls":    set(),
@@ -422,7 +424,7 @@ _RULES: list[dict[str, Any]] = [
     {
         "id":       "QS051",
         "severity": Severity.HIGH,
-        "message":  "pycryptodome ECC usage detected — not quantum-safe",
+        "message":  "pycryptodome ECC usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridSign",
         "imports":  {"Crypto.PublicKey.ECC", "Cryptodome.PublicKey.ECC"},
         "calls":    set(),

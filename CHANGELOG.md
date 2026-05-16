@@ -152,7 +152,7 @@ v0.1.0 source.  All findings have been remediated in this release.
 
 #### Migration tooling
 
-- `Scanner` — AST-based classical crypto detector (14 rules, SARIF output)
+- `Scanner` — AST-based classical crypto detector (14 rules covering `cryptography`, `pycryptodome`, and stdlib `hashlib`; SARIF output)
 - `MigrationStateManager` — state machine for per-key migration tracking
 - `Upgrader` — upgrades classical keys to hybrid while preserving backward compat
 - `FernetShim`, `JWTShim` — drop-in shims with usage logging
