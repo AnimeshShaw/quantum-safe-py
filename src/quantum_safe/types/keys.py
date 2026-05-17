@@ -223,7 +223,8 @@ class BaseKey(ABC):
         h.update(self.algorithm.encode("ascii"))
         h.update(b"\x00")  # separator — prevents length extension issues
         h.update(self.raw_bytes)
-        return cast(str, h.hexdigest())
+        digest: str = h.hexdigest()
+        return digest
 
     def fingerprint_colon(self, hash_algo: str = "sha256") -> str:
         """Return fingerprint as colon-separated pairs: aa:bb:cc:..."""
