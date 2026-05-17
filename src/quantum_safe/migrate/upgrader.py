@@ -254,8 +254,7 @@ class Upgrader:
         """
         if "+" not in hybrid_keypair.algorithm:
             raise ValueError(
-                f"Key '{hybrid_keypair.algorithm}' is not a hybrid key. "
-                f"Nothing to strip."
+                f"Key '{hybrid_keypair.algorithm}' is not a hybrid key. Nothing to strip."
             )
 
         from quantum_safe.exceptions import DecapsulationError
@@ -315,13 +314,13 @@ class Upgrader:
         is_hybrid = "+" in keypair.algorithm
 
         return {
-            "algorithm":        keypair.algorithm,
-            "migration_state":  pub.migration_state.value,
-            "is_hybrid":        is_hybrid,
-            "needs_upgrade":    cls.check_needs_upgrade(keypair),
-            "fingerprint":      pub.fingerprint()[:16] + "...",
-            "public_key_size":  len(pub.raw_bytes),
-            "recommendation":   cls._recommend(pub.migration_state, is_hybrid),
+            "algorithm": keypair.algorithm,
+            "migration_state": pub.migration_state.value,
+            "is_hybrid": is_hybrid,
+            "needs_upgrade": cls.check_needs_upgrade(keypair),
+            "fingerprint": pub.fingerprint()[:16] + "...",
+            "public_key_size": len(pub.raw_bytes),
+            "recommendation": cls._recommend(pub.migration_state, is_hybrid),
         }
 
     @staticmethod

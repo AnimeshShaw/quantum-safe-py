@@ -121,15 +121,14 @@ class JWTSigner:
         self._algorithm = keypair.algorithm
         self._signer = self._build_signer(keypair.algorithm, hedged, backend)
 
-    def _build_signer(
-        self, algorithm: str, hedged: bool, backend: str
-    ) -> Sign | HybridSign:
+    def _build_signer(self, algorithm: str, hedged: bool, backend: str) -> Sign | HybridSign:
         """Create the right signer for the given algorithm."""
         if "+" in algorithm:
             # Hybrid algorithm — use the normal constructor so that
             # validate_hybrid_combination() is called and unapproved
             # classical+PQC combinations are rejected.
             from quantum_safe.signatures.algorithms import parse_hybrid_name
+
             classical, pqc = parse_hybrid_name(algorithm)
             return HybridSign(classical=classical, pqc=pqc, hedged=hedged, backend=backend)
         else:
@@ -224,6 +223,7 @@ class JWTVerifier:
             # Use the normal constructor to ensure validate_hybrid_combination()
             # runs and unapproved algorithm pairs are rejected.
             from quantum_safe.signatures.algorithms import parse_hybrid_name
+
             classical, pqc = parse_hybrid_name(algorithm)
             return HybridSign(classical=classical, pqc=pqc, backend=backend)
         else:
@@ -253,9 +253,7 @@ class JWTVerifier:
         """
         parts = token.split(_JWT_SEP)
         if len(parts) != 3:
-            raise ValueError(
-                f"Malformed JWT: expected 3 parts, got {len(parts)}"
-            )
+            raise ValueError(f"Malformed JWT: expected 3 parts, got {len(parts)}")
 
         header_b64, payload_b64, sig_b64 = parts
 

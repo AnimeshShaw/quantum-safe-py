@@ -156,9 +156,7 @@ class KEM:
                 available=[self._algorithm],
             )
 
-        ct_bytes, ss_bytes = self._backend.encapsulate(
-            self._algorithm, public_key.raw_bytes
-        )
+        ct_bytes, ss_bytes = self._backend.encapsulate(self._algorithm, public_key.raw_bytes)
 
         ct = CipherText(data=ct_bytes, algorithm=self._algorithm)
         # SS must be exactly 32 bytes for NIST-standard algorithms

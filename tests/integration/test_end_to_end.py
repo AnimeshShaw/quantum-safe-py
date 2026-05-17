@@ -46,20 +46,40 @@ from quantum_safe.types import (
 
 class _MockKEMBackend(AbstractKEMBackend):
     name = "mock"
-    def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-    def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-    def decapsulate(self, a, s, c): return b"\xDD" * 32
-    def is_available(self): return True
-    def supported_algorithms(self): return []
+
+    def keygen(self, a):
+        return b"\xaa" * 1184, b"\xbb" * 2400
+
+    def encapsulate(self, a, p):
+        return b"\xcc" * 1088, b"\xdd" * 32
+
+    def decapsulate(self, a, s, c):
+        return b"\xdd" * 32
+
+    def is_available(self):
+        return True
+
+    def supported_algorithms(self):
+        return []
 
 
 class _MockSigBackend(AbstractSignatureBackend):
     name = "mock"
-    def keygen(self, a): return b"\xAA" * 1952, b"\xBB" * 4000
-    def sign(self, a, sk, msg, ctx=b""): return b"\xCC" * 3293
-    def verify(self, a, pk, msg, sig, ctx=b""): return len(sig) == 3293
-    def is_available(self): return True
-    def supported_algorithms(self): return []
+
+    def keygen(self, a):
+        return b"\xaa" * 1952, b"\xbb" * 4000
+
+    def sign(self, a, sk, msg, ctx=b""):
+        return b"\xcc" * 3293
+
+    def verify(self, a, pk, msg, sig, ctx=b""):
+        return len(sig) == 3293
+
+    def is_available(self):
+        return True
+
+    def supported_algorithms(self):
+        return []
 
 
 def _mock_kem():
@@ -244,19 +264,24 @@ class TestJWTWorkflow:
 
     def test_tampered_payload_rejected(self):
         import base64
+
         signer, verifier = self._make_pair()
         token = signer.sign({"sub": "user"})
         header, _, sig = token.split(".")
-        fake_payload = base64.urlsafe_b64encode(
-            json.dumps({"sub": "admin", "iss": "test.example.com",
-                        "iat": 9999999999}).encode()
-        ).rstrip(b"=").decode()
+        fake_payload = (
+            base64.urlsafe_b64encode(
+                json.dumps({"sub": "admin", "iss": "test.example.com", "iat": 9999999999}).encode()
+            )
+            .rstrip(b"=")
+            .decode()
+        )
         tampered = f"{header}.{fake_payload}.{sig}"
         with pytest.raises(VerificationError):
             verifier.verify(tampered)
 
     def test_expired_token_rejected(self):
         import time
+
         signer, verifier = self._make_pair()
         token = signer.sign({"sub": "u", "exp": int(time.time()) - 200})
         with pytest.raises(VerificationError):
@@ -268,6 +293,7 @@ class TestJWTWorkflow:
         payload_b64 = token.split(".")[1]
         padding = "=" * (-len(payload_b64) % 4)
         import base64
+
         claims_raw = json.loads(base64.urlsafe_b64decode(payload_b64 + padding))
         assert "exp" not in claims_raw
 
@@ -304,9 +330,7 @@ class TestX509Workflow:
         assert len(cosig) > 0
 
         cert = cx509.load_pem_x509_certificate(cert_pem, default_backend())
-        cn = cert.subject.get_attributes_for_oid(
-            cx509.oid.NameOID.COMMON_NAME
-        )[0].value
+        cn = cert.subject.get_attributes_for_oid(cx509.oid.NameOID.COMMON_NAME)[0].value
         assert cn == "integration.test.internal"
 
 
@@ -338,6 +362,7 @@ class TestAuditPipeline:
         # Step 3: NIST compliance
         compliance = NISTComplianceChecker.check(scan, target="app.py")
         from quantum_safe.audit.compliance import ComplianceLevel
+
         assert compliance.overall_level == ComplianceLevel.NON_COMPLIANT
         assert compliance.non_compliant_controls
 
@@ -386,6 +411,7 @@ class TestMigrationWorkflow:
         classical_sec = os.urandom(32)
 
         import quantum_safe.backends as _bk
+
         orig = _bk.get_kem_backend
         _bk.get_kem_backend = lambda name="auto": _MockKEMBackend()
 
@@ -447,6 +473,7 @@ class TestMigrationWorkflow:
 class TestTLSWorkflow:
     def test_configure_tls_context(self):
         import ssl
+
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

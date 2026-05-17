@@ -26,6 +26,7 @@ import sys
 
 try:
     import click
+
     _HAS_CLICK = True
 except ImportError:
     _HAS_CLICK = False
@@ -43,23 +44,33 @@ def main() -> None:
 
 
 if _HAS_CLICK:
-    @click.group()
+
+    @click.group(no_args_is_help=True)
     def _cli() -> None:
         """quantum-safe migration tools."""
 
     @_cli.command("scan")
     @click.argument("path", default=".", type=click.Path(exists=True))
-    @click.option("--format", "fmt", default="text",
-                  type=click.Choice(["text", "json", "sarif"]),
-                  help="Output format")
-    @click.option("--output", "-o", default=None,
-                  help="Output file (default: stdout)")
-    @click.option("--min-severity", default="info",
-                  type=click.Choice(["info", "medium", "high", "critical"]),
-                  help="Minimum severity to report")
-    @click.option("--fail-on", default="high",
-                  type=click.Choice(["info", "medium", "high", "critical", "never"]),
-                  help="Exit with code 1 if findings at this severity or above exist")
+    @click.option(
+        "--format",
+        "fmt",
+        default="text",
+        type=click.Choice(["text", "json", "sarif"]),
+        help="Output format",
+    )
+    @click.option("--output", "-o", default=None, help="Output file (default: stdout)")
+    @click.option(
+        "--min-severity",
+        default="info",
+        type=click.Choice(["info", "medium", "high", "critical"]),
+        help="Minimum severity to report",
+    )
+    @click.option(
+        "--fail-on",
+        default="high",
+        type=click.Choice(["info", "medium", "high", "critical", "never"]),
+        help="Exit with code 1 if findings at this severity or above exist",
+    )
     def scan_cmd(path: str, fmt: str, output: str | None, min_severity: str, fail_on: str) -> None:
         """Scan PATH for classical cryptography usage."""
         import pathlib
@@ -103,19 +114,29 @@ if _HAS_CLICK:
                 sys.exit(1)
 
     @_cli.command("upgrade-key")
-    @click.option("--input", "-i", "input_path", required=True,
-                  type=click.Path(exists=True),
-                  help="Input PEM key file")
-    @click.option("--output", "-o", required=True,
-                  help="Output PEM file for the upgraded hybrid key")
-    @click.option("--target", default="X25519+ML-KEM-768",
-                  help="Target hybrid algorithm (default: X25519+ML-KEM-768)")
-    @click.option("--key-type", default="kem",
-                  type=click.Choice(["kem", "sign"]),
-                  help="Whether to upgrade a KEM or signing key")
-    def upgrade_key_cmd(
-        input_path: str, output: str, target: str, key_type: str
-    ) -> None:
+    @click.option(
+        "--input",
+        "-i",
+        "input_path",
+        required=True,
+        type=click.Path(exists=True),
+        help="Input PEM key file",
+    )
+    @click.option(
+        "--output", "-o", required=True, help="Output PEM file for the upgraded hybrid key"
+    )
+    @click.option(
+        "--target",
+        default="X25519+ML-KEM-768",
+        help="Target hybrid algorithm (default: X25519+ML-KEM-768)",
+    )
+    @click.option(
+        "--key-type",
+        default="kem",
+        type=click.Choice(["kem", "sign"]),
+        help="Whether to upgrade a KEM or signing key",
+    )
+    def upgrade_key_cmd(input_path: str, output: str, target: str, key_type: str) -> None:
         """Upgrade a classical key to a hybrid PQC key."""
         import pathlib
 

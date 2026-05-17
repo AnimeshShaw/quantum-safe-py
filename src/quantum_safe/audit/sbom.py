@@ -41,15 +41,17 @@ from typing import Any
 
 class PQCReadiness(str, Enum):
     """PQC readiness assessment for a software component."""
-    READY   = "READY"      # Component is PQC-ready
-    PARTIAL = "PARTIAL"    # Component has some PQC support (hybrid, etc.)
+
+    READY = "READY"  # Component is PQC-ready
+    PARTIAL = "PARTIAL"  # Component has some PQC support (hybrid, etc.)
     NOT_READY = "NOT_READY"  # Component uses only classical crypto
-    UNKNOWN = "UNKNOWN"    # Cannot determine
+    UNKNOWN = "UNKNOWN"  # Cannot determine
 
 
 @dataclass
 class ComponentAssessment:
     """PQC readiness assessment for a single SBOM component."""
+
     name: str
     version: str | None
     readiness: PQCReadiness
@@ -168,12 +170,14 @@ def _version_ge(v1: str, v2: str) -> bool:
     Handles semver-ish strings (major.minor.patch). Not robust for
     pre-release tags — good enough for the SBOM use case.
     """
+
     def parts(v: str) -> tuple[int, ...]:
         cleaned = v.strip().lstrip("v")
         try:
             return tuple(int(x) for x in cleaned.split(".")[:3])
         except ValueError:
             return (0, 0, 0)
+
     return parts(v1) >= parts(v2)
 
 
@@ -265,6 +269,7 @@ class SBOMEnricher:
                 assessments:    One ComponentAssessment per component.
         """
         import copy
+
         enriched = copy.deepcopy(sbom)
         assessments: list[ComponentAssessment] = []
 
@@ -282,31 +287,37 @@ class SBOMEnricher:
             # Remove any existing qs properties (idempotent enrichment)
             props[:] = [p for p in props if not p.get("name", "").startswith("quantum-safe:")]
 
-            props.append({
-                "name": "quantum-safe:pqc-readiness",
-                "value": assessment.readiness.value,
-            })
-            props.append({"name": "quantum-safe:reason",        "value": assessment.reason})
-            props.append({"name": "quantum-safe:action",        "value": assessment.action})
+            props.append(
+                {
+                    "name": "quantum-safe:pqc-readiness",
+                    "value": assessment.readiness.value,
+                }
+            )
+            props.append({"name": "quantum-safe:reason", "value": assessment.reason})
+            props.append({"name": "quantum-safe:action", "value": assessment.action})
             if assessment.since_version:
-                props.append({"name": "quantum-safe:since",    "value": assessment.since_version})
+                props.append({"name": "quantum-safe:since", "value": assessment.since_version})
 
         # Add a top-level metadata note
         meta = enriched.setdefault("metadata", {})
         meta_props = meta.setdefault("properties", [])
         meta_props[:] = [p for p in meta_props if not p.get("name", "").startswith("quantum-safe:")]
-        meta_props.append({
-            "name":  "quantum-safe:enriched-by",
-            "value": "quantum-safe v0.1.0",
-        })
+        meta_props.append(
+            {
+                "name": "quantum-safe:enriched-by",
+                "value": "quantum-safe v0.1.0",
+            }
+        )
 
         ready_count = sum(1 for a in assessments if a.readiness == PQCReadiness.READY)
         partial_count = sum(1 for a in assessments if a.readiness == PQCReadiness.PARTIAL)
         not_ready_count = sum(1 for a in assessments if a.readiness == PQCReadiness.NOT_READY)
-        meta_props.append({
-            "name":  "quantum-safe:summary",
-            "value": f"READY={ready_count},PARTIAL={partial_count},NOT_READY={not_ready_count}",
-        })
+        meta_props.append(
+            {
+                "name": "quantum-safe:summary",
+                "value": f"READY={ready_count},PARTIAL={partial_count},NOT_READY={not_ready_count}",
+            }
+        )
 
         return enriched, assessments
 
@@ -338,7 +349,7 @@ class SBOMEnricher:
 
             # Strip extras like [crypto] and environment markers
             line = line.split(";")[0].strip()
-            line = re.sub(r'\[.*?\]', '', line).strip()
+            line = re.sub(r"\[.*?\]", "", line).strip()
 
             # Parse name and version
             for sep in ("==", ">=", "<=", "~=", "!=", ">", "<"):

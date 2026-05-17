@@ -117,8 +117,8 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
     (a_len,) = struct.unpack_from(_LEN_FMT, data, 0)
     if len(data) < _LEN_SIZE + a_len:
         raise DecapsulationError(algo=context)
-    a = data[_LEN_SIZE: _LEN_SIZE + a_len]
-    b = data[_LEN_SIZE + a_len:]
+    a = data[_LEN_SIZE : _LEN_SIZE + a_len]
+    b = data[_LEN_SIZE + a_len :]
     return a, b
 
 
@@ -262,9 +262,7 @@ class HybridKEM:
         classical_ct, classical_ss = self._encapsulate_classical(classical_pub_bytes)
 
         # --- PQC half ---
-        pqc_ct_bytes, pqc_ss_bytes = self._backend.encapsulate(
-            self._pqc, pqc_pub_bytes
-        )
+        pqc_ct_bytes, pqc_ss_bytes = self._backend.encapsulate(self._pqc, pqc_pub_bytes)
 
         # --- Combine ---
         hct = HybridCipherText(
@@ -287,9 +285,7 @@ class HybridKEM:
     # Decapsulate
     # ------------------------------------------------------------------
 
-    def decapsulate(
-        self, secret_key: SecretKey, ciphertext: HybridCipherText
-    ) -> SharedSecret:
+    def decapsulate(self, secret_key: SecretKey, ciphertext: HybridCipherText) -> SharedSecret:
         """Decapsulate: recover the shared secret from a hybrid ciphertext.
 
         Args:
@@ -316,14 +312,10 @@ class HybridKEM:
         )
 
         # --- Classical half ---
-        classical_ss = self._decapsulate_classical(
-            classical_sec_bytes, ciphertext.classical_ct
-        )
+        classical_ss = self._decapsulate_classical(classical_sec_bytes, ciphertext.classical_ct)
 
         # --- PQC half ---
-        pqc_ss_bytes = self._backend.decapsulate(
-            self._pqc, pqc_sec_bytes, ciphertext.pqc_ct
-        )
+        pqc_ss_bytes = self._backend.decapsulate(self._pqc, pqc_sec_bytes, ciphertext.pqc_ct)
 
         # --- Combine (same construction as encapsulate) ---
         return combine_shared_secrets(
@@ -351,9 +343,7 @@ class HybridKEM:
         if self._classical == "X25519":
             priv = X25519PrivateKey.generate()
             pub = priv.public_key()
-            priv_bytes = priv.private_bytes(
-                Encoding.Raw, PrivateFormat.Raw, NoEncryption()
-            )
+            priv_bytes = priv.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
             pub_bytes = pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return priv_bytes, pub_bytes
         elif self._classical == "P-256":
@@ -362,14 +352,11 @@ class HybridKEM:
                 SECP256R1,
                 generate_private_key,
             )
+
             priv = generate_private_key(SECP256R1(), default_backend())
             pub = priv.public_key()
-            priv_bytes = priv.private_bytes(
-                Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
-            )
-            pub_bytes = pub.public_bytes(
-                Encoding.X962, PublicFormat.UncompressedPoint
-            )
+            priv_bytes = priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+            pub_bytes = pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
             return priv_bytes, pub_bytes
         else:
             raise UnsupportedAlgorithm(
@@ -377,9 +364,7 @@ class HybridKEM:
                 available=["X25519", "P-256"],
             )
 
-    def _encapsulate_classical(
-        self, recipient_pub_bytes: bytes
-    ) -> tuple[bytes, bytes]:
+    def _encapsulate_classical(self, recipient_pub_bytes: bytes) -> tuple[bytes, bytes]:
         """Perform classical key encapsulation.
 
         For X25519, encapsulation = generate ephemeral keypair, compute DH.
@@ -433,9 +418,7 @@ class HybridKEM:
         else:
             raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256"])
 
-    def _decapsulate_classical(
-        self, secret_key_bytes: bytes, ciphertext_bytes: bytes
-    ) -> bytes:
+    def _decapsulate_classical(self, secret_key_bytes: bytes, ciphertext_bytes: bytes) -> bytes:
         """Recover the classical shared secret.
 
         For X25519, the ciphertext is the sender's ephemeral public key.
@@ -466,8 +449,9 @@ class HybridKEM:
 
                 our_priv = cast(
                     EllipticCurvePrivateKey,
-                    load_pem_private_key(secret_key_bytes, password=None,
-                                         backend=default_backend()),
+                    load_pem_private_key(
+                        secret_key_bytes, password=None, backend=default_backend()
+                    ),
                 )
                 if len(ciphertext_bytes) != 65 or ciphertext_bytes[0] != 0x04:
                     raise DecapsulationError(algo=self._algorithm)

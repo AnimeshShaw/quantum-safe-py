@@ -308,6 +308,7 @@ class TestHybridCipherText:
 
     def test_truncated_wire_raises(self):
         from quantum_safe.exceptions import DecapsulationError
+
         with pytest.raises(DecapsulationError):
             HybridCipherText.from_bytes(b"\x00", algorithm="X25519+ML-KEM-768")
 
@@ -387,7 +388,7 @@ class TestCombineSharedSecrets:
             "pqc_ct": b"\x04" * 1088,
         }
         ss1 = combine_shared_secrets(classical_ss=b"\x01" * 32, **kwargs)
-        ss2 = combine_shared_secrets(classical_ss=b"\xFF" * 32, **kwargs)
+        ss2 = combine_shared_secrets(classical_ss=b"\xff" * 32, **kwargs)
         assert ss1 != ss2
 
     def test_deterministic(self):

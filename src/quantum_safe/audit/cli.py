@@ -33,6 +33,7 @@ from pathlib import Path
 
 try:
     import click
+
     _HAS_CLICK = True
 except ImportError:
     _HAS_CLICK = False
@@ -42,8 +43,7 @@ def main() -> None:
     """Entry point for qs-audit CLI."""
     if not _HAS_CLICK:
         print(
-            "Error: click is required for the CLI. "
-            "Install with: pip install 'quantum-safe[dev]'",
+            "Error: click is required for the CLI. Install with: pip install 'quantum-safe[dev]'",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -51,7 +51,8 @@ def main() -> None:
 
 
 if _HAS_CLICK:
-    @click.group()
+
+    @click.group(no_args_is_help=True)
     @click.version_option(version="0.1.0", prog_name="qs-audit")
     def _cli() -> None:
         """quantum-safe PQC audit tools."""
@@ -62,31 +63,46 @@ if _HAS_CLICK:
 
     @_cli.command("scan")
     @click.argument("path", default=".", type=click.Path(exists=True))
-    @click.option("--format", "fmt",
-                  default="text",
-                  type=click.Choice(["text", "json", "sarif", "github"]),
-                  help="Output format.")
-    @click.option("--output", "-o", default=None,
-                  help="Output file. Default: stdout.")
-    @click.option("--policy", "policy_file", default=None,
-                  type=click.Path(exists=True),
-                  help="Path to a policy JSON/YAML file (quantum-safe.yaml).")
-    @click.option("--preset-policy",
-                  type=click.Choice(["standard", "strict", "transition", "permissive"]),
-                  default="standard",
-                  help="Use a built-in policy preset.")
-    @click.option("--min-severity",
-                  default="info",
-                  type=click.Choice(["info", "medium", "high", "critical"]),
-                  help="Minimum severity to include in output.")
-    @click.option("--fail-on",
-                  default="high",
-                  type=click.Choice(["info", "medium", "high", "critical", "never"]),
-                  help="Exit code 1 if findings at this severity or above exist.")
-    @click.option("--exclude", "-e", multiple=True,
-                  help="Path pattern to exclude (repeatable).")
-    @click.option("--metadata", "-m", multiple=True,
-                  help="key=value metadata pairs for the report (repeatable).")
+    @click.option(
+        "--format",
+        "fmt",
+        default="text",
+        type=click.Choice(["text", "json", "sarif", "github"]),
+        help="Output format.",
+    )
+    @click.option("--output", "-o", default=None, help="Output file. Default: stdout.")
+    @click.option(
+        "--policy",
+        "policy_file",
+        default=None,
+        type=click.Path(exists=True),
+        help="Path to a policy JSON/YAML file (quantum-safe.yaml).",
+    )
+    @click.option(
+        "--preset-policy",
+        type=click.Choice(["standard", "strict", "transition", "permissive"]),
+        default="standard",
+        help="Use a built-in policy preset.",
+    )
+    @click.option(
+        "--min-severity",
+        default="info",
+        type=click.Choice(["info", "medium", "high", "critical"]),
+        help="Minimum severity to include in output.",
+    )
+    @click.option(
+        "--fail-on",
+        default="high",
+        type=click.Choice(["info", "medium", "high", "critical", "never"]),
+        help="Exit code 1 if findings at this severity or above exist.",
+    )
+    @click.option("--exclude", "-e", multiple=True, help="Path pattern to exclude (repeatable).")
+    @click.option(
+        "--metadata",
+        "-m",
+        multiple=True,
+        help="key=value metadata pairs for the report (repeatable).",
+    )
     def scan_cmd(
         path: str,
         fmt: str,
@@ -131,10 +147,7 @@ if _HAS_CLICK:
 
         # Filter by min_severity for output
         min_sev = Severity[min_severity.upper()]
-        filtered_findings = [
-            f for f in report.scan_report.findings
-            if f.severity >= min_sev
-        ]
+        filtered_findings = [f for f in report.scan_report.findings if f.severity >= min_sev]
         report.scan_report.findings = filtered_findings
 
         # Produce output
@@ -189,12 +202,14 @@ if _HAS_CLICK:
 
     @_cli.command("sbom")
     @click.argument("sbom_file", type=click.Path(exists=True))
-    @click.option("--output", "-o", default=None,
-                  help="Output file. Default: <input>-pqc.json")
-    @click.option("--format", "fmt",
-                  default="json",
-                  type=click.Choice(["json", "summary"]),
-                  help="Output format.")
+    @click.option("--output", "-o", default=None, help="Output file. Default: <input>-pqc.json")
+    @click.option(
+        "--format",
+        "fmt",
+        default="json",
+        type=click.Choice(["json", "summary"]),
+        help="Output format.",
+    )
     def sbom_cmd(sbom_file: str, output: str | None, fmt: str) -> None:
         """Enrich a CycloneDX SBOM with PQC-readiness annotations."""
         from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
@@ -265,12 +280,14 @@ if _HAS_CLICK:
 
     @_cli.command("compliance")
     @click.argument("path", default=".", type=click.Path(exists=True))
-    @click.option("--format", "fmt",
-                  default="text",
-                  type=click.Choice(["text", "json"]),
-                  help="Output format.")
-    @click.option("--output", "-o", default=None,
-                  help="Output file. Default: stdout.")
+    @click.option(
+        "--format",
+        "fmt",
+        default="text",
+        type=click.Choice(["text", "json"]),
+        help="Output format.",
+    )
+    @click.option("--output", "-o", default=None, help="Output file. Default: stdout.")
     def compliance_cmd(path: str, fmt: str, output: str | None) -> None:
         """Generate a NIST SP 800-208 compliance report for PATH."""
         from quantum_safe.audit.compliance import ComplianceLevel, NISTComplianceChecker

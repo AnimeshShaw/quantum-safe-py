@@ -47,15 +47,15 @@ from quantum_safe.types.keys import MigrationState
 # Valid forward and backward transitions.
 # Forward = toward more PQC. Backward = toward less PQC (requires reason).
 _FORWARD_TRANSITIONS: dict[MigrationState, set[MigrationState]] = {
-    MigrationState.CLASSICAL_ONLY:    {MigrationState.HYBRID_TRANSITION},
+    MigrationState.CLASSICAL_ONLY: {MigrationState.HYBRID_TRANSITION},
     MigrationState.HYBRID_TRANSITION: {MigrationState.PQC_PREFERRED},
-    MigrationState.PQC_PREFERRED:     {MigrationState.PQC_ONLY},
-    MigrationState.PQC_ONLY:          set(),  # terminal state
+    MigrationState.PQC_PREFERRED: {MigrationState.PQC_ONLY},
+    MigrationState.PQC_ONLY: set(),  # terminal state
 }
 
 _BACKWARD_TRANSITIONS: dict[MigrationState, set[MigrationState]] = {
     MigrationState.HYBRID_TRANSITION: {MigrationState.CLASSICAL_ONLY},
-    MigrationState.PQC_PREFERRED:     {MigrationState.HYBRID_TRANSITION},
+    MigrationState.PQC_PREFERRED: {MigrationState.HYBRID_TRANSITION},
     # PQC_ONLY → anything is intentionally not allowed without a manual override
 }
 
@@ -100,15 +100,15 @@ class MigrationRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "record_id":  self.record_id,
-            "key_id":     self.key_id,
+            "record_id": self.record_id,
+            "key_id": self.key_id,
             "from_state": self.from_state.value,
-            "to_state":   self.to_state.value,
-            "algorithm":  self.algorithm,
-            "timestamp":  self.timestamp,
-            "actor":      self.actor,
-            "reason":     self.reason,
-            "metadata":   self.metadata,
+            "to_state": self.to_state.value,
+            "algorithm": self.algorithm,
+            "timestamp": self.timestamp,
+            "actor": self.actor,
+            "reason": self.reason,
+            "metadata": self.metadata,
             "is_forward": self.is_forward,
         }
 
@@ -230,9 +230,7 @@ class MigrationStateManager:
                     f"{to_state.value!r} requires allow_backward=True"
                 )
             if not reason:
-                raise ValueError(
-                    "Backward transition requires a non-empty reason string"
-                )
+                raise ValueError("Backward transition requires a non-empty reason string")
 
         with self._lock_for(key_id):
             # Check current state matches expected from_state

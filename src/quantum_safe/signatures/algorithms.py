@@ -46,11 +46,11 @@ class SignatureAlgorithmSpec:
     nist_level: NISTLevel
     public_key_bytes: int
     secret_key_bytes: int
-    signature_bytes: int          # maximum signature size
-    is_nist_standard: bool        # True = FIPS 204 or FIPS 205
-    is_lattice_based: bool        # ML-DSA = True, SLH-DSA = False
-    supports_context: bool        # True if context param is part of the standard
-    sign_speed: str               # "fast", "medium", "slow" — indicative only
+    signature_bytes: int  # maximum signature size
+    is_nist_standard: bool  # True = FIPS 204 or FIPS 205
+    is_lattice_based: bool  # ML-DSA = True, SLH-DSA = False
+    supports_context: bool  # True if context param is part of the standard
+    sign_speed: str  # "fast", "medium", "slow" — indicative only
     notes: str = ""
 
 
@@ -133,8 +133,7 @@ SIGNATURE_ALGORITHMS: dict[str, SignatureAlgorithmSpec] = {
         supports_context=True,
         sign_speed="medium",
         notes=(
-            "FIPS 205, fast variant, level 1. Faster signing than -128s "
-            "but ~2× larger signatures."
+            "FIPS 205, fast variant, level 1. Faster signing than -128s but ~2× larger signatures."
         ),
     ),
     "SLH-DSA-SHAKE-256s": SignatureAlgorithmSpec(
@@ -161,16 +160,16 @@ CLASSICAL_SIGNATURE_ALGORITHMS: dict[str, ClassicalSignatureSpec] = {
     ),
     "P-256": ClassicalSignatureSpec(
         name="P-256",
-        public_key_bytes=64,   # raw (x, y) coordinates
+        public_key_bytes=64,  # raw (x, y) coordinates
         secret_key_bytes=32,
-        signature_bytes=72,    # DER-encoded ECDSA, max
+        signature_bytes=72,  # DER-encoded ECDSA, max
     ),
 }
 
 # Valid hybrid combinations: classical -> [pqc, ...]
 HYBRID_SIGNATURE_COMBINATIONS: dict[str, list[str]] = {
     "Ed25519": ["ML-DSA-65", "ML-DSA-44", "ML-DSA-87"],
-    "P-256":   ["ML-DSA-44", "ML-DSA-65"],
+    "P-256": ["ML-DSA-44", "ML-DSA-65"],
 }
 
 DEFAULT_HYBRID_CLASSICAL = "Ed25519"
@@ -189,8 +188,7 @@ def canonical_hybrid_name(classical: str, pqc: str) -> str:
 def parse_hybrid_name(name: str) -> tuple[str, str]:
     if "+" not in name:
         raise ValueError(
-            f"'{name}' is not a hybrid signature algorithm name "
-            f"(expected 'Classical+PQC')"
+            f"'{name}' is not a hybrid signature algorithm name (expected 'Classical+PQC')"
         )
     parts = name.split("+", 1)
     return parts[0], parts[1]
@@ -220,5 +218,6 @@ def get_algorithm_spec(name: str) -> SignatureAlgorithmSpec:
     spec = SIGNATURE_ALGORITHMS.get(name)
     if spec is None:
         from quantum_safe.exceptions import UnsupportedAlgorithm
+
         raise UnsupportedAlgorithm(name, available=list(SIGNATURE_ALGORITHMS))
     return spec

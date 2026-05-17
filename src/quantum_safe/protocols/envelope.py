@@ -71,9 +71,9 @@ from quantum_safe.types import HybridCipherText, PublicKey, SecretKey
 _ENVELOPE_VERSION = 1
 
 # AES-GCM parameters
-_NONCE_LEN = 12        # bytes — GCM standard nonce
-_KEY_LEN = 32          # bytes — AES-256
-_GCM_TAG_LEN = 16      # bytes — appended to ciphertext by AESGCM
+_NONCE_LEN = 12  # bytes — GCM standard nonce
+_KEY_LEN = 32  # bytes — AES-256
+_GCM_TAG_LEN = 16  # bytes — appended to ciphertext by AESGCM
 
 # HKDF info strings for key derivation — version-pinned for domain separation
 _ENC_KEY_INFO = b"qs-envelope-enc-v1"
@@ -105,9 +105,7 @@ class SealedMessage:
 
     def __post_init__(self) -> None:
         if len(self.nonce) != _NONCE_LEN:
-            raise ValueError(
-                f"nonce must be exactly {_NONCE_LEN} bytes, got {len(self.nonce)}"
-            )
+            raise ValueError(f"nonce must be exactly {_NONCE_LEN} bytes, got {len(self.nonce)}")
 
     # ------------------------------------------------------------------
     # Serialization
@@ -115,14 +113,16 @@ class SealedMessage:
 
     def to_bytes(self) -> bytes:
         """Serialize to CBOR (or JSON-b64 fallback) bytes."""
-        return _ser.dumps({
-            "v":    self.version,
-            "algo": self.algorithm,
-            "kct":  self.kem_ct,
-            "n":    self.nonce,
-            "ct":   self.ciphertext,
-            "aad":  self.aad,
-        })
+        return _ser.dumps(
+            {
+                "v": self.version,
+                "algo": self.algorithm,
+                "kct": self.kem_ct,
+                "n": self.nonce,
+                "ct": self.ciphertext,
+                "aad": self.aad,
+            }
+        )
 
     @classmethod
     def from_bytes(cls, data: bytes) -> SealedMessage:
@@ -293,9 +293,7 @@ class Envelope:
 
         # Reconstruct the HybridCipherText from wire bytes
         try:
-            kem_ct = HybridCipherText.from_bytes(
-                sealed.kem_ct, algorithm=sealed.algorithm
-            )
+            kem_ct = HybridCipherText.from_bytes(sealed.kem_ct, algorithm=sealed.algorithm)
         except Exception as exc:
             raise DecapsulationError(algo=sealed.algorithm) from exc
 
@@ -343,10 +341,12 @@ class Envelope:
     def _kem_for_algorithm(algorithm: str) -> HybridKEM:
         """Parse a hybrid algorithm string and create a matching HybridKEM."""
         from quantum_safe.kem.algorithms import parse_hybrid_name
+
         try:
             classical, pqc = parse_hybrid_name(algorithm)
         except ValueError as exc:
             from quantum_safe.exceptions import UnsupportedAlgorithm
+
             raise UnsupportedAlgorithm(
                 algorithm,
                 available=["X25519+ML-KEM-768", "X25519+ML-KEM-1024"],

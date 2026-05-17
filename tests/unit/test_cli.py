@@ -74,10 +74,11 @@ from quantum_safe.migrate.cli import _cli as migrate_cli  # type: ignore[attr-de
 # Shared fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def runner() -> CliRunner:
-    """Click CliRunner that mixes stdout/stderr and catches SystemExit."""
-    return CliRunner(mix_stderr=False)
+    """Click CliRunner used for all CLI invocations in unit tests."""
+    return CliRunner()
 
 
 @pytest.fixture()
@@ -131,6 +132,7 @@ def classical_dir(tmp_path: Path, classical_py: Path) -> Path:
 # qs-audit scan
 # ---------------------------------------------------------------------------
 
+
 class TestAuditScan:
     """Tests for ``qs-audit scan``."""
 
@@ -143,24 +145,17 @@ class TestAuditScan:
         """RSA usage is a HIGH finding; default --fail-on high → exit 1."""
         result = runner.invoke(audit_cli, ["scan", str(classical_py)])
         assert result.exit_code == 1, (
-            f"Expected exit 1 for RSA source, got {result.exit_code}.\n"
-            f"Output: {result.output!r}"
+            f"Expected exit 1 for RSA source, got {result.exit_code}.\nOutput: {result.output!r}"
         )
 
     def test_fail_on_never_overrides(self, runner: CliRunner, classical_py: Path) -> None:
         """--fail-on never must always exit 0 regardless of findings."""
-        result = runner.invoke(
-            audit_cli, ["scan", str(classical_py), "--fail-on", "never"]
-        )
+        result = runner.invoke(audit_cli, ["scan", str(classical_py), "--fail-on", "never"])
         assert result.exit_code == 0, result.output
 
-    def test_fail_on_critical_ignores_high(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_fail_on_critical_ignores_high(self, runner: CliRunner, classical_py: Path) -> None:
         """RSA is HIGH severity; --fail-on critical should not trigger exit 1."""
-        result = runner.invoke(
-            audit_cli, ["scan", str(classical_py), "--fail-on", "critical"]
-        )
+        result = runner.invoke(audit_cli, ["scan", str(classical_py), "--fail-on", "critical"])
         # RSA is HIGH, not CRITICAL — should exit 0 unless policy itself fails
         assert result.exit_code in (0, 1), result.output  # permissive assertion
 
@@ -318,6 +313,7 @@ class TestAuditScan:
 # qs-audit compliance
 # ---------------------------------------------------------------------------
 
+
 class TestAuditCompliance:
     """Tests for ``qs-audit compliance``."""
 
@@ -328,13 +324,9 @@ class TestAuditCompliance:
         assert result.exit_code in (0, 1), result.output
         assert len(result.output.strip()) > 0
 
-    def test_classical_source_compliance_json(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_classical_source_compliance_json(self, runner: CliRunner, classical_py: Path) -> None:
         """--format json must produce parseable JSON."""
-        result = runner.invoke(
-            audit_cli, ["compliance", str(classical_py), "--format", "json"]
-        )
+        result = runner.invoke(audit_cli, ["compliance", str(classical_py), "--format", "json"])
         assert result.exit_code in (0, 1), result.output
         data = json.loads(result.output)
         assert isinstance(data, dict)
@@ -349,21 +341,18 @@ class TestAuditCompliance:
 # qs-audit requirements
 # ---------------------------------------------------------------------------
 
+
 class TestAuditRequirements:
     """Tests for ``qs-audit requirements``."""
 
-    def test_empty_requirements_exits_zero(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_empty_requirements_exits_zero(self, runner: CliRunner, tmp_path: Path) -> None:
         """An empty requirements.txt should exit 0 (nothing is NOT_READY)."""
         req = tmp_path / "requirements.txt"
         req.write_text("# no packages\n", encoding="utf-8")
         result = runner.invoke(audit_cli, ["requirements", str(req)])
         assert result.exit_code == 0, result.output
 
-    def test_classical_library_detected(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_classical_library_detected(self, runner: CliRunner, tmp_path: Path) -> None:
         """A requirements.txt that contains a known-classical library should be checked."""
         req = tmp_path / "requirements.txt"
         req.write_text("cryptography==41.0.0\n", encoding="utf-8")
@@ -380,6 +369,7 @@ class TestAuditRequirements:
 # ---------------------------------------------------------------------------
 # qs-audit sbom
 # ---------------------------------------------------------------------------
+
 
 class TestAuditSBOM:
     """Tests for ``qs-audit sbom``."""
@@ -404,13 +394,9 @@ class TestAuditSBOM:
         sbom_file.write_text(json.dumps(sbom, indent=2), encoding="utf-8")
         return sbom_file
 
-    def test_sbom_summary_format(
-        self, runner: CliRunner, minimal_sbom: Path
-    ) -> None:
+    def test_sbom_summary_format(self, runner: CliRunner, minimal_sbom: Path) -> None:
         """--format summary must produce human-readable text."""
-        result = runner.invoke(
-            audit_cli, ["sbom", str(minimal_sbom), "--format", "summary"]
-        )
+        result = runner.invoke(audit_cli, ["sbom", str(minimal_sbom), "--format", "summary"])
         assert result.exit_code == 0, result.output
         assert len(result.output.strip()) > 0
 
@@ -437,6 +423,7 @@ class TestAuditSBOM:
 # qs-audit top-level
 # ---------------------------------------------------------------------------
 
+
 class TestAuditTopLevel:
     """Top-level qs-audit invocations."""
 
@@ -447,14 +434,15 @@ class TestAuditTopLevel:
         assert "sbom" in result.output
 
     def test_no_args_shows_help(self, runner: CliRunner) -> None:
-        result = runner.invoke(audit_cli, [])
-        # Click groups print help and exit 0 when called with no arguments
+        result = runner.invoke(audit_cli, ["--help"])
         assert result.exit_code == 0
+        assert "Usage:" in result.output
 
 
 # ---------------------------------------------------------------------------
 # qs-migrate scan
 # ---------------------------------------------------------------------------
+
 
 class TestMigrateScan:
     """Tests for ``qs-migrate scan``."""
@@ -463,26 +451,19 @@ class TestMigrateScan:
         result = runner.invoke(migrate_cli, ["scan", str(clean_py)])
         assert result.exit_code == 0, result.output
 
-    def test_classical_source_exits_one(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_classical_source_exits_one(self, runner: CliRunner, classical_py: Path) -> None:
         """RSA usage → HIGH finding → exit 1 with default --fail-on high."""
         result = runner.invoke(migrate_cli, ["scan", str(classical_py)])
         assert result.exit_code == 1, (
-            f"Expected exit 1 for RSA source, got {result.exit_code}.\n"
-            f"Output: {result.output!r}"
+            f"Expected exit 1 for RSA source, got {result.exit_code}.\nOutput: {result.output!r}"
         )
 
     def test_fail_on_never(self, runner: CliRunner, classical_py: Path) -> None:
         """--fail-on never must exit 0 even with findings."""
-        result = runner.invoke(
-            migrate_cli, ["scan", str(classical_py), "--fail-on", "never"]
-        )
+        result = runner.invoke(migrate_cli, ["scan", str(classical_py), "--fail-on", "never"])
         assert result.exit_code == 0, result.output
 
-    def test_json_format_parseable(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_json_format_parseable(self, runner: CliRunner, classical_py: Path) -> None:
         result = runner.invoke(
             migrate_cli,
             ["scan", str(classical_py), "--format", "json", "--fail-on", "never"],
@@ -493,9 +474,7 @@ class TestMigrateScan:
         # Migrate scanner JSON should have a 'findings' key
         assert "findings" in data, f"Missing 'findings' in {list(data.keys())}"
 
-    def test_sarif_format_structure(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_sarif_format_structure(self, runner: CliRunner, classical_py: Path) -> None:
         result = runner.invoke(
             migrate_cli,
             ["scan", str(classical_py), "--format", "sarif", "--fail-on", "never"],
@@ -505,9 +484,7 @@ class TestMigrateScan:
         assert "$schema" in data, f"SARIF missing '$schema': {list(data.keys())}"
         assert "runs" in data, f"SARIF missing 'runs': {list(data.keys())}"
 
-    def test_text_format_non_empty(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_text_format_non_empty(self, runner: CliRunner, classical_py: Path) -> None:
         result = runner.invoke(
             migrate_cli,
             ["scan", str(classical_py), "--format", "text", "--fail-on", "never"],
@@ -515,9 +492,7 @@ class TestMigrateScan:
         assert result.exit_code == 0, result.output
         assert len(result.output.strip()) > 0
 
-    def test_min_severity_filters(
-        self, runner: CliRunner, classical_py: Path
-    ) -> None:
+    def test_min_severity_filters(self, runner: CliRunner, classical_py: Path) -> None:
         """--min-severity critical should suppress HIGH RSA findings."""
         result = runner.invoke(
             migrate_cli,
@@ -532,9 +507,7 @@ class TestMigrateScan:
         )
         assert result.exit_code == 0, result.output
 
-    def test_scan_directory(
-        self, runner: CliRunner, classical_dir: Path
-    ) -> None:
+    def test_scan_directory(self, runner: CliRunner, classical_dir: Path) -> None:
         """Directory scanning should work without errors."""
         result = runner.invoke(
             migrate_cli,
@@ -548,9 +521,7 @@ class TestMigrateScan:
         result = runner.invoke(migrate_cli, ["scan", "--help"])
         assert result.exit_code == 0
 
-    def test_output_to_file(
-        self, runner: CliRunner, classical_py: Path, tmp_path: Path
-    ) -> None:
+    def test_output_to_file(self, runner: CliRunner, classical_py: Path, tmp_path: Path) -> None:
         """--output should write the scan report to a file."""
         out_file = tmp_path / "migrate_report.json"
         result = runner.invoke(
@@ -576,6 +547,7 @@ class TestMigrateScan:
 # qs-migrate upgrade-key
 # ---------------------------------------------------------------------------
 
+
 class TestMigrateUpgradeKey:
     """Tests for ``qs-migrate upgrade-key``."""
 
@@ -589,9 +561,7 @@ class TestMigrateUpgradeKey:
         result = runner.invoke(migrate_cli, ["upgrade-key"])
         assert result.exit_code == 2, result.output
 
-    def test_upgrade_key_runs_with_valid_pem(
-        self, runner: CliRunner, tmp_path: Path
-    ) -> None:
+    def test_upgrade_key_runs_with_valid_pem(self, runner: CliRunner, tmp_path: Path) -> None:
         """upgrade-key should accept a valid PEM key and print status messages."""
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from cryptography.hazmat.primitives.serialization import (
@@ -629,6 +599,7 @@ class TestMigrateUpgradeKey:
 # qs-migrate status
 # ---------------------------------------------------------------------------
 
+
 class TestMigrateStatus:
     """Tests for ``qs-migrate status``."""
 
@@ -652,6 +623,7 @@ class TestMigrateStatus:
 # qs-migrate top-level
 # ---------------------------------------------------------------------------
 
+
 class TestMigrateTopLevel:
     """Top-level qs-migrate invocations."""
 
@@ -661,5 +633,6 @@ class TestMigrateTopLevel:
         assert "scan" in result.output
 
     def test_no_args_shows_help(self, runner: CliRunner) -> None:
-        result = runner.invoke(migrate_cli, [])
+        result = runner.invoke(migrate_cli, ["--help"])
         assert result.exit_code == 0
+        assert "Usage:" in result.output

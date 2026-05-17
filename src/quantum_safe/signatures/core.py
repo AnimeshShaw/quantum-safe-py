@@ -357,13 +357,11 @@ class Sign:
         prefix_len = blob[0]
         if len(blob) < 1 + prefix_len:
             raise VerificationError()
-        rand_prefix = blob[1: 1 + prefix_len]
-        raw_sig = blob[1 + prefix_len:]
+        rand_prefix = blob[1 : 1 + prefix_len]
+        raw_sig = blob[1 + prefix_len :]
         return rand_prefix, raw_sig
 
     def __repr__(self) -> str:
         return (
-            f"Sign(algo={self._algorithm!r}, "
-            f"hedged={self._hedged}, "
-            f"backend={self._backend.name!r})"
+            f"Sign(algo={self._algorithm!r}, hedged={self._hedged}, backend={self._backend.name!r})"
         )

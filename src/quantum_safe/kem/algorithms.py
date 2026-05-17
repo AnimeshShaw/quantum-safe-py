@@ -30,6 +30,7 @@ class NISTLevel(IntEnum):
       L4 → SHA-384 / SHA3-384 collision search
       L5 → AES-256 key search
     """
+
     L1 = 1
     L2 = 2
     L3 = 3
@@ -40,14 +41,15 @@ class NISTLevel(IntEnum):
 @dataclass(frozen=True)
 class KEMAlgorithmSpec:
     """Everything the library needs to know about a KEM algorithm."""
+
     name: str
     nist_level: NISTLevel
     public_key_bytes: int
     secret_key_bytes: int
     ciphertext_bytes: int
     shared_secret_bytes: int
-    is_nist_standard: bool          # True = FIPS 203
-    suitable_for_hybrid: bool       # True = approved classical companion
+    is_nist_standard: bool  # True = FIPS 203
+    suitable_for_hybrid: bool  # True = approved classical companion
     notes: str = ""
 
 
@@ -59,9 +61,10 @@ class ClassicalKEMSpec:
     deliberately excluded — it's larger and slower and provides no meaningful
     additional security in the hybrid context.
     """
+
     name: str
-    public_key_bytes: int       # ephemeral public key sent in ciphertext
-    shared_secret_bytes: int    # X25519 and ECDH both produce 32 bytes
+    public_key_bytes: int  # ephemeral public key sent in ciphertext
+    shared_secret_bytes: int  # X25519 and ECDH both produce 32 bytes
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +143,7 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
     ),
     "P-256": ClassicalKEMSpec(
         name="P-256",
-        public_key_bytes=65,   # uncompressed point
+        public_key_bytes=65,  # uncompressed point
         shared_secret_bytes=32,
     ),
 }
@@ -149,7 +152,7 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
 # The IETF hybrid-design draft specifies exactly these combinations.
 HYBRID_COMBINATIONS: dict[str, list[str]] = {
     "X25519": ["ML-KEM-768", "ML-KEM-512", "ML-KEM-1024"],
-    "P-256":  ["ML-KEM-512", "ML-KEM-768"],
+    "P-256": ["ML-KEM-512", "ML-KEM-768"],
 }
 
 # The default hybrid: X25519 + ML-KEM-768, as recommended by
@@ -176,9 +179,7 @@ def parse_hybrid_name(name: str) -> tuple[str, str]:
     Raises ValueError if the name doesn't look like a hybrid name.
     """
     if "+" not in name:
-        raise ValueError(
-            f"'{name}' is not a hybrid algorithm name (expected 'Classical+PQC')"
-        )
+        raise ValueError(f"'{name}' is not a hybrid algorithm name (expected 'Classical+PQC')")
     parts = name.split("+", 1)
     return parts[0], parts[1]
 
@@ -214,5 +215,6 @@ def get_algorithm_spec(name: str) -> KEMAlgorithmSpec:
     spec = KEM_ALGORITHMS.get(name)
     if spec is None:
         from quantum_safe.exceptions import UnsupportedAlgorithm
+
         raise UnsupportedAlgorithm(name, available=list(KEM_ALGORITHMS))
     return spec

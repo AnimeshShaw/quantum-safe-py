@@ -62,22 +62,44 @@ from quantum_safe.types import (
 
 class MockPQCBackend(AbstractKEMBackend):
     """Fake PQC KEM for envelope/JWT tests."""
+
     name = "mock"
-    def keygen(self, a):    return b"\xAA" * 1184, b"\xBB" * 2400
-    def encapsulate(self, a, pub): return b"\xCC" * 1088, b"\xDD" * 32
-    def decapsulate(self, a, sec, ct): return b"\xDD" * 32
-    def is_available(self): return True
-    def supported_algorithms(self): return []
+
+    def keygen(self, a):
+        return b"\xaa" * 1184, b"\xbb" * 2400
+
+    def encapsulate(self, a, pub):
+        return b"\xcc" * 1088, b"\xdd" * 32
+
+    def decapsulate(self, a, sec, ct):
+        return b"\xdd" * 32
+
+    def is_available(self):
+        return True
+
+    def supported_algorithms(self):
+        return []
 
 
 class MockSigBackend(AbstractSignatureBackend):
     """Fake PQC signature backend for JWT/x509 tests."""
+
     name = "mock"
-    def keygen(self, a):    return b"\xAA" * 1952, b"\xBB" * 4000
-    def sign(self, a, sk, msg, ctx=b""):   return b"\xCC" * 3293
-    def verify(self, a, pk, msg, sig, ctx=b""): return len(sig) == 3293
-    def is_available(self): return True
-    def supported_algorithms(self): return []
+
+    def keygen(self, a):
+        return b"\xaa" * 1952, b"\xbb" * 4000
+
+    def sign(self, a, sk, msg, ctx=b""):
+        return b"\xcc" * 3293
+
+    def verify(self, a, pk, msg, sig, ctx=b""):
+        return len(sig) == 3293
+
+    def is_available(self):
+        return True
+
+    def supported_algorithms(self):
+        return []
 
 
 def make_hybrid_kem() -> HybridKEM:
@@ -109,9 +131,9 @@ class TestSealedMessageSerialization:
         return SealedMessage(
             version=1,
             algorithm=algo,
-            kem_ct=b"\xAA" * 64,
+            kem_ct=b"\xaa" * 64,
             nonce=os.urandom(_NONCE_LEN),
-            ciphertext=b"\xBB" * 48,
+            ciphertext=b"\xbb" * 48,
             aad=b"metadata",
         )
 
@@ -139,6 +161,7 @@ class TestSealedMessageSerialization:
         broken = {"v": 1, "algo": "X25519+ML-KEM-768"}
         # Encode without required fields
         from quantum_safe._internal import serialization as _ser
+
         data = _ser.dumps(broken)
         with pytest.raises(KeyParseError, match="missing field"):
             SealedMessage.from_bytes(data)
@@ -146,7 +169,8 @@ class TestSealedMessageSerialization:
     def test_nonce_wrong_length_raises(self):
         with pytest.raises(ValueError, match="nonce"):
             SealedMessage(
-                version=1, algorithm="X25519+ML-KEM-768",
+                version=1,
+                algorithm="X25519+ML-KEM-768",
                 kem_ct=b"\x00" * 64,
                 nonce=b"\x00" * 11,  # wrong: should be 12
                 ciphertext=b"\x00" * 48,
@@ -165,7 +189,7 @@ class TestSealedMessageSerialization:
         sm = self._make_sealed()
         r = repr(sm)
         assert "X25519+ML-KEM-768" in r
-        assert "\xBB" not in r
+        assert "\xbb" not in r
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +202,7 @@ class TestEnvelopeAAD:
         aad = Envelope._build_aad(1, "X25519+ML-KEM-768", b"")
         assert aad[0] == 1  # version byte
         algo_len = aad[1]
-        algo_bytes = aad[2: 2 + algo_len]
+        algo_bytes = aad[2 : 2 + algo_len]
         assert algo_bytes == b"X25519+ML-KEM-768"
 
     def test_aad_includes_extra(self):
@@ -222,6 +246,7 @@ class TestEnvelopeSealOpen:
     def test_aad_authenticated(self):
         """Modifying aad should cause decryption to fail."""
         from cryptography.exceptions import InvalidTag
+
         kem = make_hybrid_kem()
         kp = kem.generate_keypair()
 
@@ -233,13 +258,14 @@ class TestEnvelopeSealOpen:
             kem_ct=sealed.kem_ct,
             nonce=sealed.nonce,
             ciphertext=sealed.ciphertext,
-            aad=b"tampered",   # different aad
+            aad=b"tampered",  # different aad
         )
         with pytest.raises(InvalidTag):
             Envelope.open(tampered, kp.secret, kem=kem)
 
     def test_tampered_ciphertext_fails(self):
         from cryptography.exceptions import InvalidTag
+
         kem = make_hybrid_kem()
         kp = kem.generate_keypair()
 
@@ -279,6 +305,7 @@ class TestEnvelopeSealOpen:
 
     def test_wrong_key_fails(self):
         from cryptography.exceptions import InvalidTag
+
         kem = make_hybrid_kem()
         kp1 = kem.generate_keypair()
         kp2 = kem.generate_keypair()
@@ -299,7 +326,7 @@ class TestJWTUtils:
     def test_b64url_round_trip(self):
         data = os.urandom(64)
         encoded = _b64url_encode(data)
-        assert "=" not in encoded   # no padding
+        assert "=" not in encoded  # no padding
         decoded = _b64url_decode(encoded)
         assert decoded == data
 
@@ -402,8 +429,10 @@ class TestJWTSignerVerifier:
         header, payload, sig = token.split(".")
         # Encode a tampered payload
         tampered_payload = _b64url_encode(
-            json.dumps({"sub": "admin", "iss": "test-issuer", "iat": int(time.time())},
-                       separators=(",", ":")).encode()
+            json.dumps(
+                {"sub": "admin", "iss": "test-issuer", "iat": int(time.time())},
+                separators=(",", ":"),
+            ).encode()
         )
         tampered_token = f"{header}.{tampered_payload}.{sig}"
         with pytest.raises(VerificationError):
@@ -529,6 +558,7 @@ class TestConfigureHybridContext:
 # X.509 certificate builder — classical-only path (no PQC backend)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.requires_liboqs
 class TestHybridCertificateBuilder:
     def _make_hybrid_kp(self) -> KeyPair:
@@ -541,6 +571,7 @@ class TestHybridCertificateBuilder:
 
     def test_generate_classical_keypair_p256(self):
         from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
+
         priv = generate_classical_keypair_for_cert("P-256")
         assert isinstance(priv, EllipticCurvePrivateKey)
 
@@ -580,9 +611,7 @@ class TestHybridCertificateBuilder:
         cert_pem, _ = builder.build()
 
         cert = cx509.load_pem_x509_certificate(cert_pem, default_backend())
-        cn = cert.subject.get_attributes_for_oid(
-            cx509.NameOID.COMMON_NAME
-        )[0].value
+        cn = cert.subject.get_attributes_for_oid(cx509.NameOID.COMMON_NAME)[0].value
         assert cn == "myservice.example.com"
 
     def test_cert_has_pqc_pubkey_extension(self):
@@ -663,6 +692,7 @@ class TestProtocolsWithRealBackend:
 
     def test_jwt_full_with_real_pqc(self):
         from quantum_safe.signatures import HybridSign
+
         signer = HybridSign()
         kp = signer.generate_keypair()
         jwt_signer = JWTSigner(kp, issuer="real-test")

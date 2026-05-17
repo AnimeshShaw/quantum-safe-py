@@ -40,6 +40,7 @@ from tests.bench.bench_stats import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _const(value: float, n: int = 100) -> list[float]:
     """Return n copies of value — a constant sample."""
     return [value] * n
@@ -56,6 +57,7 @@ def _linspace(start: float, stop: float, n: int) -> list[float]:
 def _normal_samples(mean: float, std: float, n: int, seed: int = 0) -> list[float]:
     """Reproducible pseudo-normal sample via Box-Muller."""
     import random
+
     rng = random.Random(seed)
     result = []
     while len(result) < n:
@@ -70,6 +72,7 @@ def _normal_samples(mean: float, std: float, n: int, seed: int = 0) -> list[floa
 # ---------------------------------------------------------------------------
 # bootstrap_ci
 # ---------------------------------------------------------------------------
+
 
 class TestBootstrapCI:
     def test_single_value_returns_that_value(self) -> None:
@@ -140,6 +143,7 @@ class TestBootstrapCI:
 # ---------------------------------------------------------------------------
 # welch_t_test
 # ---------------------------------------------------------------------------
+
 
 class TestWelchTTest:
     def test_identical_samples_high_p_value(self) -> None:
@@ -213,6 +217,7 @@ class TestWelchTTest:
 # cohens_d
 # ---------------------------------------------------------------------------
 
+
 class TestCohensD:
     def test_same_distribution_near_zero(self) -> None:
         a = _normal_samples(100.0, 5.0, 200, seed=1)
@@ -245,7 +250,7 @@ class TestCohensD:
 
     def test_known_value(self) -> None:
         """For samples with std=10 and mean difference 10, d should be 1.0."""
-        a = _linspace(90.0, 110.0, 100)   # mean=100, std≈5.8
+        a = _linspace(90.0, 110.0, 100)  # mean=100, std≈5.8
         b = _linspace(100.0, 120.0, 100)  # mean=110, std≈5.8
         d = cohens_d(a, b)
         # Pooled std ≈ std, mean diff = 10 → d ≈ 10/5.8 ≈ 1.72
@@ -259,6 +264,7 @@ class TestCohensD:
 # ---------------------------------------------------------------------------
 # throughput_curve
 # ---------------------------------------------------------------------------
+
 
 class TestThroughputCurve:
     def test_empty_input_returns_empty(self) -> None:
@@ -283,10 +289,12 @@ class TestThroughputCurve:
         When throughput stays constant but users increase 5×, that is 20%
         of linear-ideal efficiency (linear-ideal would be throughput × 5).
         """
-        pts = throughput_curve([
-            (100, 0.040, 100),
-            (500, 0.200, 500),  # latency 5× → ops/s same → efficiency = 20%
-        ])
+        pts = throughput_curve(
+            [
+                (100, 0.040, 100),
+                (500, 0.200, 500),  # latency 5× → ops/s same → efficiency = 20%
+            ]
+        )
         assert len(pts) == 2
         assert pts[0].efficiency_pct == pytest.approx(100.0)
         # ops/s at 500: 500/0.200=2500; expected_linear=2500*(500/100)=12500
@@ -295,10 +303,12 @@ class TestThroughputCurve:
 
     def test_sub_linear_efficiency(self) -> None:
         """Better-than-linear scaling (super-linear throughput) → efficiency > 100%."""
-        pts = throughput_curve([
-            (100, 0.040, 100),
-            (500, 0.185, 500),  # latency < 5×, so ops/s > baseline
-        ])
+        pts = throughput_curve(
+            [
+                (100, 0.040, 100),
+                (500, 0.185, 500),  # latency < 5×, so ops/s > baseline
+            ]
+        )
         # ops/s at 500: 500/0.185 ≈ 2703 vs baseline 100/0.040=2500
         # expected_linear at 500 users = 2500 * 5 = 12500 (wrong — linear throughput)
         # Hmm, let me think. The efficiency is: actual_ops_per_sec / expected_linear_ops_per_sec
@@ -317,10 +327,12 @@ class TestThroughputCurve:
 
     def test_benchmark_data_from_paper(self) -> None:
         """Reproduce the 2026-03-28 benchmark data from BENCHMARKS.md."""
-        pts = throughput_curve([
-            (100, 40.7e-3, 100),
-            (500, 185.0e-3, 500),
-        ])
+        pts = throughput_curve(
+            [
+                (100, 40.7e-3, 100),
+                (500, 185.0e-3, 500),
+            ]
+        )
         # ~2460 and ~2700 ops/s from BENCHMARKS.md
         assert 2000 < pts[0].ops_per_sec < 3000
         assert 2000 < pts[1].ops_per_sec < 4000
@@ -329,6 +341,7 @@ class TestThroughputCurve:
 # ---------------------------------------------------------------------------
 # cov_stability_report
 # ---------------------------------------------------------------------------
+
 
 class TestCovStabilityReport:
     def test_constant_sample_is_stable(self) -> None:
@@ -406,23 +419,24 @@ class TestCovStabilityReport:
 # latex_table
 # ---------------------------------------------------------------------------
 
+
 class TestLatexTable:
     @pytest.fixture()
     def hybrid_rows(self) -> list[dict]:
         return [
-            {"op": "keygen",      "classical": 127.0, "hybrid": 244.4, "overhead": "+92\\%"},
-            {"op": "encapsulate", "classical":  74.7, "hybrid": 181.5, "overhead": "+143\\%"},
-            {"op": "decapsulate", "classical":  69.0, "hybrid": 127.9, "overhead": "+85\\%"},
-            {"op": "Handshake",   "classical": 270.7, "hybrid": 553.8, "overhead": "+105\\%"},
+            {"op": "keygen", "classical": 127.0, "hybrid": 244.4, "overhead": "+92\\%"},
+            {"op": "encapsulate", "classical": 74.7, "hybrid": 181.5, "overhead": "+143\\%"},
+            {"op": "decapsulate", "classical": 69.0, "hybrid": 127.9, "overhead": "+85\\%"},
+            {"op": "Handshake", "classical": 270.7, "hybrid": 553.8, "overhead": "+105\\%"},
         ]
 
     @pytest.fixture()
     def columns(self) -> list[tuple[str, str]]:
         return [
-            ("op",        "Operation"),
+            ("op", "Operation"),
             ("classical", r"Classical ($\mu$s)"),
-            ("hybrid",    r"Hybrid ($\mu$s)"),
-            ("overhead",  "Overhead"),
+            ("hybrid", r"Hybrid ($\mu$s)"),
+            ("overhead", "Overhead"),
         ]
 
     def test_produces_string(self, hybrid_rows, columns) -> None:
@@ -479,6 +493,7 @@ class TestLatexTable:
 # ---------------------------------------------------------------------------
 # describe_samples
 # ---------------------------------------------------------------------------
+
 
 class TestDescribeSamples:
     def test_basic_statistics(self) -> None:

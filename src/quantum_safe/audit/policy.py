@@ -48,6 +48,7 @@ class PolicyViolation:
         severity:   Severity level of the underlying finding.
         finding:    The Finding that triggered this violation, if any.
     """
+
     rule: str
     detail: str
     severity: Severity = Severity.HIGH
@@ -55,8 +56,8 @@ class PolicyViolation:
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
-            "rule":     self.rule,
-            "detail":   self.detail,
+            "rule": self.rule,
+            "detail": self.detail,
             "severity": self.severity.name,
         }
         if self.finding:
@@ -101,15 +102,12 @@ class AuditPolicy:
 
     def __post_init__(self) -> None:
         if not 1 <= self.min_security_level <= 5:
-            raise ValueError(
-                f"min_security_level must be 1-5, got {self.min_security_level}"
-            )
+            raise ValueError(f"min_security_level must be 1-5, got {self.min_security_level}")
         valid_severities = {s.name for s in Severity}
         for s in self.fail_on:
             if s.upper() not in valid_severities:
                 raise ValueError(
-                    f"Invalid severity in fail_on: '{s}'. "
-                    f"Valid: {sorted(valid_severities)}"
+                    f"Invalid severity in fail_on: '{s}'. Valid: {sorted(valid_severities)}"
                 )
         # Normalise to uppercase
         self.fail_on = [s.upper() for s in self.fail_on]
@@ -121,6 +119,7 @@ class AuditPolicy:
     def is_exempt(self, filepath: str) -> bool:
         """Return True if the given filepath matches any exempt pattern."""
         import fnmatch
+
         for pattern in self.exempt_paths:
             if fnmatch.fnmatch(filepath, pattern):
                 return True
@@ -145,30 +144,34 @@ class AuditPolicy:
             # Check if this finding's severity triggers a policy failure
             if finding.severity in fail_severities:
                 if not self.allow_classical_only and finding.severity >= Severity.HIGH:
-                    violations.append(PolicyViolation(
-                        rule="classical_crypto_detected",
-                        detail=f"{finding.file}:{finding.line} - {finding.message}",
-                        severity=finding.severity,
-                        finding=finding,
-                    ))
+                    violations.append(
+                        PolicyViolation(
+                            rule="classical_crypto_detected",
+                            detail=f"{finding.file}:{finding.line} - {finding.message}",
+                            severity=finding.severity,
+                            finding=finding,
+                        )
+                    )
                 elif finding.severity >= Severity.CRITICAL:
-                    violations.append(PolicyViolation(
-                        rule="critical_vulnerability",
-                        detail=f"{finding.file}:{finding.line} - {finding.message}",
-                        severity=finding.severity,
-                        finding=finding,
-                    ))
+                    violations.append(
+                        PolicyViolation(
+                            rule="critical_vulnerability",
+                            detail=f"{finding.file}:{finding.line} - {finding.message}",
+                            severity=finding.severity,
+                            finding=finding,
+                        )
+                    )
 
         return violations
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "min_security_level":     self.min_security_level,
-            "allow_classical_only":   self.allow_classical_only,
-            "hybrid_required":        self.hybrid_required,
+            "min_security_level": self.min_security_level,
+            "allow_classical_only": self.allow_classical_only,
+            "hybrid_required": self.hybrid_required,
             "allow_non_nist_standard": self.allow_non_nist_standard,
-            "fail_on":                self.fail_on,
-            "exempt_paths":           self.exempt_paths,
+            "fail_on": self.fail_on,
+            "exempt_paths": self.exempt_paths,
             "require_migration_state": self.require_migration_state,
             "max_classical_only_keys": self.max_classical_only_keys,
         }
@@ -199,6 +202,7 @@ class AuditPolicy:
         if path.suffix in (".yaml", ".yml"):
             try:
                 import yaml  # type: ignore[import]
+
                 data = yaml.safe_load(text)
             except ImportError:
                 # Try JSON anyway — YAML is a superset of JSON

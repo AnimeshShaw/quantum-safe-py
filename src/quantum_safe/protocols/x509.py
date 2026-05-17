@@ -104,7 +104,7 @@ class HybridCertificateBuilder:
     """
 
     subject_cn: str
-    classical_private_key: Any   # Ed25519PrivateKey | EllipticCurvePrivateKey
+    classical_private_key: Any  # Ed25519PrivateKey | EllipticCurvePrivateKey
     pqc_keypair: KeyPair
     validity_days: int = _DEFAULT_VALIDITY_DAYS
     is_ca: bool = False
@@ -112,8 +112,8 @@ class HybridCertificateBuilder:
     ip_addresses: list[str] = field(default_factory=list)
     organization: str = ""
     country: str = ""
-    issuer_cert: Any = None          # x509.Certificate — for non-self-signed
-    issuer_key: Any = None           # classical private key of issuer
+    issuer_cert: Any = None  # x509.Certificate — for non-self-signed
+    issuer_key: Any = None  # classical private key of issuer
     extended_key_usage: list[x509.ObjectIdentifier] = field(default_factory=list)
 
     def build(self, signer: object = None) -> tuple[bytes, bytes]:
@@ -132,13 +132,9 @@ class HybridCertificateBuilder:
         # Build subject name
         name_attrs = [x509.NameAttribute(NameOID.COMMON_NAME, self.subject_cn)]
         if self.organization:
-            name_attrs.append(
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.organization)
-            )
+            name_attrs.append(x509.NameAttribute(NameOID.ORGANIZATION_NAME, self.organization))
         if self.country:
-            name_attrs.append(
-                x509.NameAttribute(NameOID.COUNTRY_NAME, self.country)
-            )
+            name_attrs.append(x509.NameAttribute(NameOID.COUNTRY_NAME, self.country))
         subject = x509.Name(name_attrs)
 
         # Issuer: self-signed unless issuer_cert is provided
@@ -194,11 +190,13 @@ class HybridCertificateBuilder:
         # Embed PQC public key as a non-critical extension.
         # This lets post-quantum-aware verifiers find the PQC public key
         # without out-of-band distribution.
-        pqc_pub_der = _ser.dumps({
-            "algo": self.pqc_keypair.algorithm,
-            "pub":  self.pqc_keypair.public.raw_bytes,
-            "qs-version": 1,
-        })
+        pqc_pub_der = _ser.dumps(
+            {
+                "algo": self.pqc_keypair.algorithm,
+                "pub": self.pqc_keypair.public.raw_bytes,
+                "qs-version": 1,
+            }
+        )
         builder = builder.add_extension(
             x509.UnrecognizedExtension(
                 oid=_PQC_PUBKEY_OID,
@@ -237,6 +235,7 @@ class HybridCertificateBuilder:
                 # Use the normal constructor so validate_hybrid_combination()
                 # runs and unapproved pairs are rejected.
                 from quantum_safe.signatures.algorithms import parse_hybrid_name
+
                 classical, pqc = parse_hybrid_name(algo)
                 signer = HybridSign(classical=classical, pqc=pqc)
             else:
@@ -245,13 +244,15 @@ class HybridCertificateBuilder:
         sm = signer.sign(data, self.pqc_keypair.secret, context=b"qs-x509-cosig")
 
         # Package the co-signature with metadata for distribution
-        bundle = _ser.dumps({
-            "v":           1,
-            "algo":        algo,
-            "sig":         sm.signature,
-            "context":     b"qs-x509-cosig",
-            "cert_fp":     self.pqc_keypair.public.fingerprint(),
-        })
+        bundle = _ser.dumps(
+            {
+                "v": 1,
+                "algo": algo,
+                "sig": sm.signature,
+                "context": b"qs-x509-cosig",
+                "cert_fp": self.pqc_keypair.public.fingerprint(),
+            }
+        )
         return bundle
 
     @staticmethod
@@ -300,6 +301,7 @@ class HybridCertificateBuilder:
         # validate_hybrid_combination() runs and rejects unapproved pairs.
         if "+" in algo:
             from quantum_safe.signatures.algorithms import parse_hybrid_name
+
             classical, pqc = parse_hybrid_name(algo)
             verifier = HybridSign(classical=classical, pqc=pqc)
         else:

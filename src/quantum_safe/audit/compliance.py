@@ -37,10 +37,10 @@ from quantum_safe.migrate.scanner import Finding, ScanReport, Severity
 
 
 class ComplianceLevel(str, Enum):
-    COMPLIANT       = "COMPLIANT"
-    PARTIAL         = "PARTIAL"
-    NON_COMPLIANT   = "NON_COMPLIANT"
-    NOT_APPLICABLE  = "NOT_APPLICABLE"
+    COMPLIANT = "COMPLIANT"
+    PARTIAL = "PARTIAL"
+    NON_COMPLIANT = "NON_COMPLIANT"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 @dataclass
@@ -56,6 +56,7 @@ class ComplianceControl:
         evidence:       Specific evidence supporting the level assessment.
         remediation:    Steps to achieve compliance if not already compliant.
     """
+
     control_id: str
     standard: str
     title: str
@@ -66,12 +67,12 @@ class ComplianceControl:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "control_id":  self.control_id,
-            "standard":    self.standard,
-            "title":       self.title,
+            "control_id": self.control_id,
+            "standard": self.standard,
+            "title": self.title,
             "description": self.description,
-            "level":       self.level.value,
-            "evidence":    self.evidence,
+            "level": self.level.value,
+            "evidence": self.evidence,
             "remediation": self.remediation,
         }
 
@@ -86,6 +87,7 @@ class ComplianceReport:
         controls:       All evaluated controls.
         overall_level:  Rolled-up compliance level.
     """
+
     generated_at: str
     target: str
     controls: list[ComplianceControl]
@@ -102,17 +104,15 @@ class ComplianceReport:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "generated_at":   self.generated_at,
-            "target":         self.target,
-            "overall_level":  self.overall_level.value,
-            "controls":       [c.to_dict() for c in self.controls],
+            "generated_at": self.generated_at,
+            "target": self.target,
+            "overall_level": self.overall_level.value,
+            "controls": [c.to_dict() for c in self.controls],
             "summary": {
-                "total":           len(self.controls),
-                "compliant":      sum(
-                    1 for c in self.controls if c.level == ComplianceLevel.COMPLIANT
-                ),
-                "partial":        len(self.partial_controls),
-                "non_compliant":  len(self.non_compliant_controls),
+                "total": len(self.controls),
+                "compliant": sum(1 for c in self.controls if c.level == ComplianceLevel.COMPLIANT),
+                "partial": len(self.partial_controls),
+                "non_compliant": len(self.non_compliant_controls),
                 "not_applicable": sum(
                     1 for c in self.controls if c.level == ComplianceLevel.NOT_APPLICABLE
                 ),
@@ -133,8 +133,10 @@ class ComplianceReport:
             "",
         ]
         d = self.to_dict()["summary"]
-        lines.append(f"Controls: {d['total']} total, {d['compliant']} compliant, "
-                     f"{d['partial']} partial, {d['non_compliant']} non-compliant")
+        lines.append(
+            f"Controls: {d['total']} total, {d['compliant']} compliant, "
+            f"{d['partial']} partial, {d['non_compliant']} non-compliant"
+        )
         lines.append("")
 
         if self.non_compliant_controls:
@@ -165,78 +167,78 @@ class NISTComplianceChecker:
     # The structure is intentionally readable so auditors can review it.
     _CONTROLS = [
         {
-            "id":          "FIPS203-2.1",
-            "standard":    "FIPS 203",
-            "title":       "ML-KEM key encapsulation",
+            "id": "FIPS203-2.1",
+            "standard": "FIPS 203",
+            "title": "ML-KEM key encapsulation",
             "description": "Key encapsulation shall use ML-KEM-512, ML-KEM-768, or ML-KEM-1024 "
-                           "as specified in FIPS 203. RSA and ECDH are not quantum-safe.",
+            "as specified in FIPS 203. RSA and ECDH are not quantum-safe.",
             "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016"},
-            "remediation":  "Replace RSA/ECDH key exchange with HybridKEM() "
-                            "(X25519+ML-KEM-768 by default).",
+            "remediation": "Replace RSA/ECDH key exchange with HybridKEM() "
+            "(X25519+ML-KEM-768 by default).",
         },
         {
-            "id":          "FIPS204-2.1",
-            "standard":    "FIPS 204",
-            "title":       "ML-DSA digital signatures",
+            "id": "FIPS204-2.1",
+            "standard": "FIPS 204",
+            "title": "ML-DSA digital signatures",
             "description": "Digital signatures shall use ML-DSA-44, ML-DSA-65, or ML-DSA-87 "
-                           "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
+            "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
             "check_rule_ids": {"QS001", "QS010", "QS015"},
-            "remediation":  "Replace ECDSA/RSA/DSA signatures with HybridSign() "
-                            "(Ed25519+ML-DSA-65 by default).",
+            "remediation": "Replace ECDSA/RSA/DSA signatures with HybridSign() "
+            "(Ed25519+ML-DSA-65 by default).",
         },
         {
-            "id":          "FIPS205-2.1",
-            "standard":    "FIPS 205",
-            "title":       "SLH-DSA stateless hash-based signatures",
+            "id": "FIPS205-2.1",
+            "standard": "FIPS 205",
+            "title": "SLH-DSA stateless hash-based signatures",
             "description": "Where long-term signing keys with hash-based security are required, "
-                           "SLH-DSA variants from FIPS 205 should be considered as an alternative "
-                           "to ML-DSA.",
+            "SLH-DSA variants from FIPS 205 should be considered as an alternative "
+            "to ML-DSA.",
             "check_rule_ids": set(),  # No specific scanner rule for SLH-DSA absence
-            "remediation":  "Consider SLH-DSA for long-lived code-signing keys as a "
-                            "non-lattice alternative.",
+            "remediation": "Consider SLH-DSA for long-lived code-signing keys as a "
+            "non-lattice alternative.",
             "informational": True,
         },
         {
-            "id":          "SP800208-3.1",
-            "standard":    "NIST SP 800-208",
-            "title":       "Deprecated algorithm deprecation",
+            "id": "SP800208-3.1",
+            "standard": "NIST SP 800-208",
+            "title": "Deprecated algorithm deprecation",
             "description": "SHA-1 and MD5 must not be used for any cryptographic purpose. "
-                           "AES-128 should be phased out in favor of AES-256.",
+            "AES-128 should be phased out in favor of AES-256.",
             "check_rule_ids": {"QS030", "QS031", "QS020"},
-            "remediation":  "Replace SHA-1/MD5 with SHA-256 or SHA3-256. "
-                            "Replace AES-128 with AES-256.",
+            "remediation": "Replace SHA-1/MD5 with SHA-256 or SHA3-256. "
+            "Replace AES-128 with AES-256.",
         },
         {
-            "id":          "CISA-PQC-1",
-            "standard":    "CISA PQC Migration Checklist",
-            "title":       "Cryptographic inventory",
+            "id": "CISA-PQC-1",
+            "standard": "CISA PQC Migration Checklist",
+            "title": "Cryptographic inventory",
             "description": "Organizations shall maintain an inventory of all cryptographic "
-                           "assets, including algorithm, key size, and usage context.",
+            "assets, including algorithm, key size, and usage context.",
             "check_rule_ids": set(),
-            "remediation":  "Run qs-audit scan regularly and store results in your SBOM. "
-                            "Use SBOMEnricher.enrich() to annotate dependencies.",
+            "remediation": "Run qs-audit scan regularly and store results in your SBOM. "
+            "Use SBOMEnricher.enrich() to annotate dependencies.",
             "informational": True,
         },
         {
-            "id":          "CISA-PQC-2",
-            "standard":    "CISA PQC Migration Checklist",
-            "title":       "Hybrid transition",
+            "id": "CISA-PQC-2",
+            "standard": "CISA PQC Migration Checklist",
+            "title": "Hybrid transition",
             "description": "During the transition period, hybrid classical+PQC algorithms "
-                           "should be used to maintain backward compatibility while gaining "
-                           "quantum resistance.",
+            "should be used to maintain backward compatibility while gaining "
+            "quantum resistance.",
             "check_rule_ids": {"QS001", "QS010", "QS011"},
-            "remediation":  "Use HybridKEM() and HybridSign() which combine classical and "
-                            "PQC algorithms per IETF hybrid-design draft.",
+            "remediation": "Use HybridKEM() and HybridSign() which combine classical and "
+            "PQC algorithms per IETF hybrid-design draft.",
         },
         {
-            "id":          "CISA-PQC-3",
-            "standard":    "CISA PQC Migration Checklist",
-            "title":       "JWT and token security",
+            "id": "CISA-PQC-3",
+            "standard": "CISA PQC Migration Checklist",
+            "title": "JWT and token security",
             "description": "JWT tokens signed with RS256, ES256, or HS256 are not quantum-safe. "
-                           "Transition to ML-DSA-based JWT signing.",
+            "Transition to ML-DSA-based JWT signing.",
             "check_rule_ids": {"QS040"},
-            "remediation":  "Replace jwt.encode(..., algorithm='RS256') with "
-                            "JWTSigner from quantum_safe.protocols.jwt.",
+            "remediation": "Replace jwt.encode(..., algorithm='RS256') with "
+            "JWTSigner from quantum_safe.protocols.jwt.",
         },
     ]
 
@@ -286,10 +288,7 @@ class NISTComplianceChecker:
                 evidence = ["No classical crypto usage detected for this control"]
             else:
                 # Have findings — is it PARTIAL or NON_COMPLIANT?
-                critical_or_high = [
-                    f for f in triggered_findings
-                    if f.severity >= Severity.HIGH
-                ]
+                critical_or_high = [f for f in triggered_findings if f.severity >= Severity.HIGH]
                 if critical_or_high:
                     level = ComplianceLevel.NON_COMPLIANT
                 else:
@@ -302,15 +301,17 @@ class NISTComplianceChecker:
                 if len(triggered_findings) > 5:
                     evidence.append(f"... and {len(triggered_findings) - 5} more findings")
 
-            controls.append(ComplianceControl(
-                control_id=ctrl_def["id"],
-                standard=ctrl_def["standard"],
-                title=ctrl_def["title"],
-                description=ctrl_def["description"],
-                level=level,
-                evidence=evidence,
-                remediation=ctrl_def.get("remediation", ""),
-            ))
+            controls.append(
+                ComplianceControl(
+                    control_id=ctrl_def["id"],
+                    standard=ctrl_def["standard"],
+                    title=ctrl_def["title"],
+                    description=ctrl_def["description"],
+                    level=level,
+                    evidence=evidence,
+                    remediation=ctrl_def.get("remediation", ""),
+                )
+            )
 
         # Roll up overall level
         levels = [c.level for c in controls]

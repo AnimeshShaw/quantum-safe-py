@@ -91,8 +91,8 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
     (a_len,) = struct.unpack_from(_LEN_FMT, data, 0)
     if len(data) < _LEN_SIZE + a_len:
         raise VerificationError(algo=context)
-    a = data[_LEN_SIZE: _LEN_SIZE + a_len]
-    b = data[_LEN_SIZE + a_len:]
+    a = data[_LEN_SIZE : _LEN_SIZE + a_len]
+    b = data[_LEN_SIZE + a_len :]
     return a, b
 
 
@@ -211,9 +211,7 @@ class HybridSign:
             for verify() to succeed.
         """
         if secret_key.algorithm != self._algorithm:
-            raise UnsupportedAlgorithm(
-                secret_key.algorithm, available=[self._algorithm]
-            )
+            raise UnsupportedAlgorithm(secret_key.algorithm, available=[self._algorithm])
         if len(context) > 255:
             raise ValueError(f"context must be <=255 bytes, got {len(context)}")
 
@@ -232,14 +230,10 @@ class HybridSign:
         msg_to_sign = rand_prefix + message
 
         # Classical sub-signature
-        classical_sig = self._sign_classical(
-            classical_sec_bytes, msg_to_sign, context
-        )
+        classical_sig = self._sign_classical(classical_sec_bytes, msg_to_sign, context)
 
         # PQC sub-signature
-        pqc_sig = self._backend.sign(
-            self._pqc, pqc_sec_bytes, msg_to_sign, context
-        )
+        pqc_sig = self._backend.sign(self._pqc, pqc_sec_bytes, msg_to_sign, context)
 
         # Pack both into a HybridSignature, then wrap in our blob format
         hs = HybridSignature(
@@ -296,13 +290,9 @@ class HybridSign:
             UnsupportedAlgorithm: if algorithm doesn't match.
         """
         if signed_message.algorithm != self._algorithm:
-            raise UnsupportedAlgorithm(
-                signed_message.algorithm, available=[self._algorithm]
-            )
+            raise UnsupportedAlgorithm(signed_message.algorithm, available=[self._algorithm])
         if public_key.algorithm != self._algorithm:
-            raise UnsupportedAlgorithm(
-                public_key.algorithm, available=[self._algorithm]
-            )
+            raise UnsupportedAlgorithm(public_key.algorithm, available=[self._algorithm])
 
         classical_pub_bytes, pqc_pub_bytes = _unpack_components(
             public_key.raw_bytes, context=self._algorithm
@@ -352,9 +342,7 @@ class HybridSign:
         if self._classical == "Ed25519":
             priv = Ed25519PrivateKey.generate()
             pub = priv.public_key()
-            priv_bytes = priv.private_bytes(
-                Encoding.Raw, PrivateFormat.Raw, NoEncryption()
-            )
+            priv_bytes = priv.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
             pub_bytes = pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return pub_bytes, priv_bytes
 
@@ -364,11 +352,10 @@ class HybridSign:
                 SECP256R1,
                 generate_private_key,
             )
+
             priv = generate_private_key(SECP256R1(), default_backend())
             pub = priv.public_key()
-            priv_bytes = priv.private_bytes(
-                Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
-            )
+            priv_bytes = priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
             # Store public key as raw 64-byte (x, y)
             pub_nums = (
                 pub.public_key().public_numbers()
@@ -380,9 +367,7 @@ class HybridSign:
             return x_bytes + y_bytes, priv_bytes
 
         else:
-            raise UnsupportedAlgorithm(
-                self._classical, available=["Ed25519", "P-256"]
-            )
+            raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256"])
 
     def _sign_classical(
         self,
@@ -405,9 +390,7 @@ class HybridSign:
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
             msg_with_ctx = bytes([len(context)]) + context + message
-            priv = load_pem_private_key(
-                secret_key_bytes, password=None, backend=default_backend()
-            )
+            priv = load_pem_private_key(secret_key_bytes, password=None, backend=default_backend())
             return priv.sign(msg_with_ctx, ECDSA(hashes.SHA256()))
 
         else:
@@ -439,14 +422,13 @@ class HybridSign:
                 SECP256R1,
                 EllipticCurvePublicNumbers,
             )
+
             try:
                 if len(public_key_bytes) != 64:
                     return False
                 x = int.from_bytes(public_key_bytes[:32], "big")
                 y = int.from_bytes(public_key_bytes[32:], "big")
-                pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
-                    default_backend()
-                )
+                pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(default_backend())
                 pub.verify(signature, msg_with_ctx, ECDSA(hashes.SHA256()))
                 return True
             except Exception:  # noqa: BLE001

@@ -88,7 +88,7 @@ class _ShimBase:
     @classmethod
     def shim_stats(cls) -> dict[str, Any]:
         return {
-            "shim":       cls._shim_name,
+            "shim": cls._shim_name,
             "call_count": cls._call_count,
         }
 
@@ -119,6 +119,7 @@ class FernetShim(_ShimBase):
             stacklevel=2,
         )
         from quantum_safe.kem.hybrid import HybridKEM
+
         self._kem = HybridKEM(backend=backend)
         self._keypair = self._kem.generate_keypair()
         self._log_shim_call("__init__")
@@ -126,6 +127,7 @@ class FernetShim(_ShimBase):
     def encrypt(self, data: bytes) -> bytes:
         """Encrypt data. Returns a SealedMessage serialized to bytes."""
         from quantum_safe.protocols.envelope import Envelope
+
         self._log_shim_call("encrypt")
         sealed = Envelope.seal(data, self._keypair.public, kem=self._kem)
         return sealed.to_bytes()
@@ -133,6 +135,7 @@ class FernetShim(_ShimBase):
     def decrypt(self, token: bytes) -> bytes:
         """Decrypt a token produced by encrypt()."""
         from quantum_safe.protocols.envelope import Envelope, SealedMessage
+
         self._log_shim_call("decrypt")
         sealed = SealedMessage.from_bytes(token)
         return Envelope.open(sealed, self._keypair.secret, kem=self._kem)
@@ -211,6 +214,7 @@ class JWTShim(_ShimBase):
         expires_in = 0
         if "exp" in payload:
             import time
+
             exp_delta = int(payload["exp"]) - int(time.time())
             expires_in = max(exp_delta, 1)
         return signer.sign(claims, expires_in=expires_in)

@@ -91,22 +91,22 @@ class AuditReport:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "audit_id":          self.audit_id,
-            "timestamp":         self.timestamp,
-            "target":            self.target,
-            "passed":            self.passed,
-            "files_scanned":     self.files_scanned,
+            "audit_id": self.audit_id,
+            "timestamp": self.timestamp,
+            "target": self.target,
+            "passed": self.passed,
+            "files_scanned": self.files_scanned,
             "finding_counts": {
                 "critical": self.critical_count,
-                "high":     self.high_count,
-                "medium":   self.medium_count,
-                "info":     len(self.scan_report.info),
+                "high": self.high_count,
+                "medium": self.medium_count,
+                "info": len(self.scan_report.info),
             },
             "policy_violations": [v.to_dict() for v in self.policy_violations],
-            "policy":            self.policy.to_dict(),
-            "findings":          [f.to_dict() for f in self.scan_report.findings],
-            "errors":            self.scan_report.errors,
-            "metadata":          self.metadata,
+            "policy": self.policy.to_dict(),
+            "findings": [f.to_dict() for f in self.scan_report.findings],
+            "errors": self.scan_report.errors,
+            "metadata": self.metadata,
         }
 
     def to_json(self, indent: int = 2) -> str:
@@ -280,9 +280,7 @@ class Auditor:
         if output_sarif:
             sarif_path = Path(output_sarif)
             sarif_path.parent.mkdir(parents=True, exist_ok=True)
-            sarif_path.write_text(
-                json.dumps(report.to_sarif(), indent=2), encoding="utf-8"
-            )
+            sarif_path.write_text(json.dumps(report.to_sarif(), indent=2), encoding="utf-8")
 
         if output_json:
             json_path = Path(output_json)

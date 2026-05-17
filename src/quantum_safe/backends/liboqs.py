@@ -118,7 +118,7 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
         nist_level=2,
         public_key_size=1312,
         secret_key_size=2528,
-        ciphertext_size=2420,   # signature size
+        ciphertext_size=2420,  # signature size
         is_kem=False,
         is_signature=True,
         is_nist_standard=True,
@@ -129,7 +129,7 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
         nist_level=3,
         public_key_size=1952,
         secret_key_size=4000,
-        ciphertext_size=3293,   # signature size
+        ciphertext_size=3293,  # signature size
         is_kem=False,
         is_signature=True,
         is_nist_standard=True,
@@ -140,7 +140,7 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
         nist_level=5,
         public_key_size=2592,
         secret_key_size=4864,
-        ciphertext_size=4595,   # signature size
+        ciphertext_size=4595,  # signature size
         is_kem=False,
         is_signature=True,
         is_nist_standard=True,
@@ -151,7 +151,7 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
         nist_level=1,
         public_key_size=32,
         secret_key_size=64,
-        ciphertext_size=7856,   # signature size (small variant is slow, small sigs)
+        ciphertext_size=7856,  # signature size (small variant is slow, small sigs)
         is_kem=False,
         is_signature=True,
         is_nist_standard=True,
@@ -194,6 +194,7 @@ def _import_oqs() -> Any:  # noqa: ANN401
     """Import the oqs module or raise BackendNotAvailable."""
     try:
         import oqs  # type: ignore[import]
+
         return oqs
     except ImportError as exc:
         raise BackendNotAvailable("liboqs") from exc
@@ -270,14 +271,13 @@ class LiboqsKEMBackend(AbstractKEMBackend):
             return bytes(ciphertext), bytes(shared_secret)
         except Exception as exc:
             from quantum_safe.exceptions import CryptoError
+
             raise CryptoError(
                 f"liboqs encapsulation failed for {algorithm}: {exc}",
                 algorithm=algorithm,
             ) from exc
 
-    def decapsulate(
-        self, algorithm: str, secret_key: bytes, ciphertext: bytes
-    ) -> bytes:
+    def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         """Decapsulate a shared secret from a ciphertext.
 
         Returns shared_secret_bytes.
@@ -396,6 +396,7 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
             return bytes(signature)
         except Exception as exc:
             from quantum_safe.exceptions import CryptoError
+
             raise CryptoError(
                 f"liboqs signing failed for {algorithm}: {exc}",
                 algorithm=algorithm,

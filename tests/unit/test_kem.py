@@ -57,6 +57,7 @@ class MockKEMBackend(AbstractKEMBackend):
 
     def supported_algorithms(self):
         from quantum_safe.backends.base import AlgorithmInfo
+
         return [
             AlgorithmInfo(
                 name="ML-KEM-768",
@@ -77,19 +78,21 @@ class MockKEMBackend(AbstractKEMBackend):
         if algorithm != "ML-KEM-768":
             raise ValueError(f"mock doesn't support {algorithm}")
         # Deterministic fake keys — same bytes every time for reproducibility
-        pub = b"\xAA" * 1184
-        sec = b"\xBB" * 2400
+        pub = b"\xaa" * 1184
+        sec = b"\xbb" * 2400
         return pub, sec
 
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
         # XOR key into a fake ciphertext; return a fake shared secret
-        ct = bytes(b ^ 0x55 for b in public_key[:1088]) + b"\x00" * (1088 - min(1088, len(public_key)))
+        ct = bytes(b ^ 0x55 for b in public_key[:1088]) + b"\x00" * (
+            1088 - min(1088, len(public_key))
+        )
         ct = ct[:1088]
-        ss = b"\xCC" * 32
+        ss = b"\xcc" * 32
         return ct, ss
 
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
-        return b"\xCC" * 32
+        return b"\xcc" * 32
 
 
 # ---------------------------------------------------------------------------
@@ -175,6 +178,7 @@ class TestKEM:
         kp = kem.generate_keypair()
         ct, ss = kem.encapsulate(kp.public)
         from quantum_safe.types import CipherText
+
         assert isinstance(ct, CipherText)
         assert isinstance(ss, SharedSecret)
         assert len(ss) == 32
@@ -221,8 +225,8 @@ class TestKEM:
 
 class TestHybridKEMHelpers:
     def test_pack_unpack_round_trip(self):
-        a = b"\xAA" * 32
-        b = b"\xBB" * 1088
+        a = b"\xaa" * 32
+        b = b"\xbb" * 1088
         packed = _pack_components(a, b)
         a2, b2 = _unpack_components(packed)
         assert a2 == a

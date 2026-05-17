@@ -71,7 +71,9 @@ class TestAuditPolicy:
     def test_evaluate_high_finding_creates_violation(self):
         p = AuditPolicy(allow_classical_only=False)
         finding = Finding(
-            file="auth.py", line=10, col=1,
+            file="auth.py",
+            line=10,
+            col=1,
             severity=Severity.HIGH,
             rule_id="QS001",
             message="RSA detected",
@@ -83,7 +85,9 @@ class TestAuditPolicy:
     def test_evaluate_medium_finding_no_violation_by_default(self):
         p = AuditPolicy()  # default fail_on = ["CRITICAL", "HIGH"]
         finding = Finding(
-            file="auth.py", line=10, col=1,
+            file="auth.py",
+            line=10,
+            col=1,
             severity=Severity.MEDIUM,
             rule_id="QS020",
             message="AES-128",
@@ -94,7 +98,9 @@ class TestAuditPolicy:
     def test_evaluate_exempt_path_skipped(self):
         p = AuditPolicy(exempt_paths=["tests/**"])
         finding = Finding(
-            file="tests/conftest.py", line=5, col=1,
+            file="tests/conftest.py",
+            line=5,
+            col=1,
             severity=Severity.HIGH,
             rule_id="QS001",
             message="RSA",
@@ -336,9 +342,11 @@ class TestSBOMEnricher:
         }
 
     def test_enrich_adds_properties(self):
-        sbom = self._make_sbom([
-            {"name": "cryptography", "version": "44.0.5", "type": "library"},
-        ])
+        sbom = self._make_sbom(
+            [
+                {"name": "cryptography", "version": "44.0.5", "type": "library"},
+            ]
+        )
         enriched, assessments = SBOMEnricher.enrich(sbom)
         assert len(assessments) == 1
         props = enriched["components"][0]["properties"]
@@ -348,15 +356,15 @@ class TestSBOMEnricher:
         assert "quantum-safe:action" in prop_names
 
     def test_enrich_adds_metadata_summary(self):
-        sbom = self._make_sbom([
-            {"name": "pycryptodome", "version": "3.20.0"},
-            {"name": "quantum-safe", "version": "0.1.0"},
-        ])
+        sbom = self._make_sbom(
+            [
+                {"name": "pycryptodome", "version": "3.20.0"},
+                {"name": "quantum-safe", "version": "0.1.0"},
+            ]
+        )
         enriched, _ = SBOMEnricher.enrich(sbom)
         meta_props = enriched["metadata"]["properties"]
-        summary_prop = next(
-            (p for p in meta_props if p["name"] == "quantum-safe:summary"), None
-        )
+        summary_prop = next((p for p in meta_props if p["name"] == "quantum-safe:summary"), None)
         assert summary_prop is not None
         assert "READY=1" in summary_prop["value"]
         assert "NOT_READY=1" in summary_prop["value"]
@@ -419,6 +427,7 @@ class TestNISTComplianceChecker:
 
     def _scan(self, src: str) -> ScanReport:
         from quantum_safe.migrate.scanner import Scanner
+
         return Scanner.scan_source(src, filename="test.py")
 
     def test_clean_code_is_compliant(self):
@@ -437,9 +446,7 @@ class TestNISTComplianceChecker:
     def test_md5_code_triggers_sp800208(self):
         scan = self._scan(self._MD5_SRC)
         report = NISTComplianceChecker.check(scan)
-        sp800 = next(
-            (c for c in report.controls if c.control_id == "SP800208-3.1"), None
-        )
+        sp800 = next((c for c in report.controls if c.control_id == "SP800208-3.1"), None)
         assert sp800 is not None
         assert sp800.level == ComplianceLevel.NON_COMPLIANT
 

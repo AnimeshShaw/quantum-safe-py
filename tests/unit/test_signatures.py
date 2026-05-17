@@ -53,6 +53,7 @@ class MockSignatureBackend(AbstractSignatureBackend):
 
     def supported_algorithms(self):
         from quantum_safe.backends.base import AlgorithmInfo
+
         return [
             AlgorithmInfo(
                 name="ML-DSA-65",
@@ -128,8 +129,13 @@ def make_hybrid_sign(hedged: bool = True) -> HybridSign:
 
 class TestSignatureAlgorithmRegistry:
     def test_all_nist_algorithms_present(self):
-        for a in ["ML-DSA-44", "ML-DSA-65", "ML-DSA-87",
-                  "SLH-DSA-SHAKE-128s", "SLH-DSA-SHAKE-128f"]:
+        for a in [
+            "ML-DSA-44",
+            "ML-DSA-65",
+            "ML-DSA-87",
+            "SLH-DSA-SHAKE-128s",
+            "SLH-DSA-SHAKE-128f",
+        ]:
             spec = get_algorithm_spec(a)
             assert spec.is_nist_standard, f"{a} should be nist standard"
 
@@ -169,14 +175,14 @@ class TestSignatureAlgorithmRegistry:
 class TestSigBlobPacking:
     def test_round_trip_hedged(self):
         prefix = os.urandom(32)
-        raw_sig = b"\xAB" * 3293
+        raw_sig = b"\xab" * 3293
         blob = Sign._pack_sig_blob(prefix, raw_sig)
         p2, s2 = Sign._unpack_sig_blob(blob)
         assert p2 == prefix
         assert s2 == raw_sig
 
     def test_round_trip_no_prefix(self):
-        raw_sig = b"\xCD" * 3293
+        raw_sig = b"\xcd" * 3293
         blob = Sign._pack_sig_blob(b"", raw_sig)
         prefix, s2 = Sign._unpack_sig_blob(blob)
         assert prefix == b""
@@ -287,8 +293,8 @@ class TestSign:
 
 class TestHybridSignHelpers:
     def test_pack_unpack_round_trip(self):
-        a = b"\xAA" * 32    # Ed25519 public key
-        b_data = b"\xBB" * 1952  # ML-DSA-65 public key
+        a = b"\xaa" * 32  # Ed25519 public key
+        b_data = b"\xbb" * 1952  # ML-DSA-65 public key
         packed = _pack_components(a, b_data)
         a2, b2 = _unpack_components(packed)
         assert a2 == a
@@ -300,6 +306,7 @@ class TestHybridSignHelpers:
 
     def test_unpack_length_overflow_raises(self):
         import struct
+
         data = struct.pack(">H", 9999) + b"\x00" * 10
         with pytest.raises(VerificationError):
             _unpack_components(data)
@@ -322,15 +329,15 @@ class TestHybridSignEd25519:
         kp = hs.generate_keypair()
         # Unpack and check sizes
         classical_pub, pqc_pub = _unpack_components(kp.public.raw_bytes)
-        assert len(classical_pub) == 32    # Ed25519 public key
-        assert len(pqc_pub) == 1952        # ML-DSA-65 public key
+        assert len(classical_pub) == 32  # Ed25519 public key
+        assert len(pqc_pub) == 1952  # ML-DSA-65 public key
 
     def test_secret_key_has_two_components(self):
         hs = make_hybrid_sign()
         kp = hs.generate_keypair()
         classical_sec, pqc_sec = _unpack_components(kp.secret.raw_bytes)
-        assert len(classical_sec) == 32    # Ed25519 private key (raw)
-        assert len(pqc_sec) == 4000        # ML-DSA-65 secret key
+        assert len(classical_sec) == 32  # Ed25519 private key (raw)
+        assert len(pqc_sec) == 4000  # ML-DSA-65 secret key
 
     def test_sign_returns_hybrid_signed_message(self):
         hs = make_hybrid_sign()
@@ -348,7 +355,7 @@ class TestHybridSignEd25519:
         # Unpack the blob to get the HybridSignature
         rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature)
         hybrid_sig = HybridSignature.from_bytes(hs_bytes)
-        assert len(hybrid_sig.classical_sig) == 64    # Ed25519 sig is always 64 bytes
+        assert len(hybrid_sig.classical_sig) == 64  # Ed25519 sig is always 64 bytes
         assert hybrid_sig.classical_algo == "Ed25519"
         assert hybrid_sig.pqc_algo == "ML-DSA-65"
 
@@ -482,8 +489,8 @@ class TestHybridSignEd25519:
 class TestHybridSignature:
     def test_round_trip(self):
         hs_orig = HybridSignature(
-            classical_sig=b"\xAA" * 64,
-            pqc_sig=b"\xBB" * 3293,
+            classical_sig=b"\xaa" * 64,
+            pqc_sig=b"\xbb" * 3293,
             classical_algo="Ed25519",
             pqc_algo="ML-DSA-65",
         )
@@ -495,7 +502,7 @@ class TestHybridSignature:
         assert hs2.pqc_algo == "ML-DSA-65"
 
     def test_combined_algorithm_name(self):
-        hs = HybridSignature(b"\x01"*64, b"\x02"*3293, "Ed25519", "ML-DSA-65")
+        hs = HybridSignature(b"\x01" * 64, b"\x02" * 3293, "Ed25519", "ML-DSA-65")
         assert hs.combined_algorithm == "Ed25519+ML-DSA-65"
 
     def test_from_bytes_bad_data_raises(self):

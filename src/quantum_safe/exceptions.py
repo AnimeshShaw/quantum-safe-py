@@ -76,8 +76,7 @@ class DecapsulationError(CryptoError):
 
     def __init__(self, algo: str | None = None) -> None:
         super().__init__(
-            "Decapsulation failed: ciphertext may be malformed or the wrong "
-            "secret key was used",
+            "Decapsulation failed: ciphertext may be malformed or the wrong secret key was used",
             algo=algo,
         )
 

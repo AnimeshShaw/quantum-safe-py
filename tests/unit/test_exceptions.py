@@ -1,6 +1,5 @@
 """Unit tests for quantum_safe.exceptions"""
 
-
 from quantum_safe.exceptions import (
     BackendNotAvailable,
     ClassicalKeyDetected,
@@ -84,9 +83,7 @@ class TestBackendNotAvailable:
 
 class TestUnsupportedAlgorithm:
     def test_available_list_in_message(self):
-        exc = UnsupportedAlgorithm(
-            "FAKE-KEM", available=["ML-KEM-512", "ML-KEM-768"]
-        )
+        exc = UnsupportedAlgorithm("FAKE-KEM", available=["ML-KEM-512", "ML-KEM-768"])
         msg = str(exc)
         assert "ML-KEM-512" in msg
         assert "ML-KEM-768" in msg

@@ -43,7 +43,7 @@ class BenchResult:
     name: str
     iterations: int
     warmup: int
-    samples_us: list[float]   # microseconds
+    samples_us: list[float]  # microseconds
 
     @property
     def median_us(self) -> float:
@@ -78,15 +78,15 @@ class BenchResult:
 
     def to_dict(self) -> dict:
         return {
-            "name":         self.name,
-            "iterations":   self.iterations,
-            "warmup":       self.warmup,
-            "median_us":    round(self.median_us, 2),
-            "mean_us":      round(self.mean_us, 2),
-            "p95_us":       round(self.p95_us, 2),
-            "p99_us":       round(self.p99_us, 2),
-            "stdev_us":     round(self.stdev_us, 2),
-            "cov_pct":      round(self.cov_pct, 2),
+            "name": self.name,
+            "iterations": self.iterations,
+            "warmup": self.warmup,
+            "median_us": round(self.median_us, 2),
+            "mean_us": round(self.mean_us, 2),
+            "p95_us": round(self.p95_us, 2),
+            "p99_us": round(self.p99_us, 2),
+            "stdev_us": round(self.stdev_us, 2),
+            "cov_pct": round(self.cov_pct, 2),
         }
 
     def __str__(self) -> str:
@@ -128,7 +128,7 @@ def _bench(name: str, fn: Callable, iterations: int = 1000, warmup: int = 100) -
     # Remove top and bottom 1% outliers (not 5% — see module docstring)
     samples.sort()
     clip = max(1, int(len(samples) * 0.01))
-    samples = samples[clip: len(samples) - clip]
+    samples = samples[clip : len(samples) - clip]
 
     return BenchResult(name=name, iterations=iterations, warmup=warmup, samples_us=samples)
 
@@ -140,11 +140,14 @@ def _bench(name: str, fn: Callable, iterations: int = 1000, warmup: int = 100) -
 
 def bench_x25519_keygen() -> list[BenchResult]:
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+
     results = []
-    results.append(_bench(
-        "X25519 keygen",
-        lambda: X25519PrivateKey.generate(),
-    ))
+    results.append(
+        _bench(
+            "X25519 keygen",
+            lambda: X25519PrivateKey.generate(),
+        )
+    )
     return results
 
 
@@ -156,22 +159,25 @@ def bench_x25519_dh() -> list[BenchResult]:
     bob_pub = bob_priv.public_key()
 
     results = []
-    results.append(_bench(
-        "X25519 DH exchange",
-        lambda: alice_priv.exchange(bob_pub),
-    ))
+    results.append(
+        _bench(
+            "X25519 DH exchange",
+            lambda: alice_priv.exchange(bob_pub),
+        )
+    )
     return results
 
 
 def bench_ed25519_sign_verify() -> list[BenchResult]:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
     priv = Ed25519PrivateKey.generate()
     pub = priv.public_key()
     msg = os.urandom(256)
     sig = priv.sign(msg)
 
     results = []
-    results.append(_bench("Ed25519 sign",   lambda: priv.sign(msg)))
+    results.append(_bench("Ed25519 sign", lambda: priv.sign(msg)))
     results.append(_bench("Ed25519 verify", lambda: pub.verify(sig, msg)))
     return results
 
@@ -183,11 +189,21 @@ def bench_hybrid_kem_classical_only() -> list[BenchResult]:
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
-        def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-        def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-        def decapsulate(self, a, s, c): return b"\xDD" * 32
-        def is_available(self): return True
-        def supported_algorithms(self): return []
+
+        def keygen(self, a):
+            return b"\xaa" * 1184, b"\xbb" * 2400
+
+        def encapsulate(self, a, p):
+            return b"\xcc" * 1088, b"\xdd" * 32
+
+        def decapsulate(self, a, s, c):
+            return b"\xdd" * 32
+
+        def is_available(self):
+            return True
+
+        def supported_algorithms(self):
+            return []
 
     kem = HybridKEM.__new__(HybridKEM)
     kem._classical = "X25519"
@@ -199,15 +215,20 @@ def bench_hybrid_kem_classical_only() -> list[BenchResult]:
 
     results = []
     results.append(_bench("HybridKEM keygen (X25519+mock PQC)", lambda: kem.generate_keypair()))
-    results.append(_bench("HybridKEM encapsulate (X25519+mock)", lambda: kem.encapsulate(kp.public)))
+    results.append(
+        _bench("HybridKEM encapsulate (X25519+mock)", lambda: kem.encapsulate(kp.public))
+    )
 
     hct, _ = kem.encapsulate(kp.public)
-    results.append(_bench("HybridKEM decapsulate (X25519+mock)", lambda: kem.decapsulate(kp.secret, hct)))
+    results.append(
+        _bench("HybridKEM decapsulate (X25519+mock)", lambda: kem.decapsulate(kp.secret, hct))
+    )
     return results
 
 
 def bench_aes_gcm() -> list[BenchResult]:
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
     key = os.urandom(32)
     nonce = os.urandom(12)
     aes = AESGCM(key)
@@ -218,15 +239,20 @@ def bench_aes_gcm() -> list[BenchResult]:
     ct_64kb = aes.encrypt(nonce, plaintext_64kb, None)
 
     results = []
-    results.append(_bench("AES-256-GCM encrypt 1 KB",  lambda: aes.encrypt(nonce, plaintext_1kb, None)))
-    results.append(_bench("AES-256-GCM encrypt 64 KB", lambda: aes.encrypt(nonce, plaintext_64kb, None)))
-    results.append(_bench("AES-256-GCM decrypt 1 KB",  lambda: aes.decrypt(nonce, ct_1kb, None)))
+    results.append(
+        _bench("AES-256-GCM encrypt 1 KB", lambda: aes.encrypt(nonce, plaintext_1kb, None))
+    )
+    results.append(
+        _bench("AES-256-GCM encrypt 64 KB", lambda: aes.encrypt(nonce, plaintext_64kb, None))
+    )
+    results.append(_bench("AES-256-GCM decrypt 1 KB", lambda: aes.decrypt(nonce, ct_1kb, None)))
     return results
 
 
 def bench_hkdf() -> list[BenchResult]:
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
     ikm = os.urandom(32)
 
     def do_hkdf():
@@ -245,11 +271,21 @@ def bench_envelope_seal_open() -> list[BenchResult]:
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
-        def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-        def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-        def decapsulate(self, a, s, c): return b"\xDD" * 32
-        def is_available(self): return True
-        def supported_algorithms(self): return []
+
+        def keygen(self, a):
+            return b"\xaa" * 1184, b"\xbb" * 2400
+
+        def encapsulate(self, a, p):
+            return b"\xcc" * 1088, b"\xdd" * 32
+
+        def decapsulate(self, a, s, c):
+            return b"\xdd" * 32
+
+        def is_available(self):
+            return True
+
+        def supported_algorithms(self):
+            return []
 
     kem = HybridKEM.__new__(HybridKEM)
     kem._classical = "X25519"
@@ -262,8 +298,18 @@ def bench_envelope_seal_open() -> list[BenchResult]:
     sealed = Envelope.seal(payload_1kb, kp.public, kem=kem)
 
     results = []
-    results.append(_bench("Envelope.seal() 1KB (X25519+mock KEM)", lambda: Envelope.seal(payload_1kb, kp.public, kem=kem)))
-    results.append(_bench("Envelope.open() 1KB (X25519+mock KEM)", lambda: Envelope.open(sealed, kp.secret, kem=kem)))
+    results.append(
+        _bench(
+            "Envelope.seal() 1KB (X25519+mock KEM)",
+            lambda: Envelope.seal(payload_1kb, kp.public, kem=kem),
+        )
+    )
+    results.append(
+        _bench(
+            "Envelope.open() 1KB (X25519+mock KEM)",
+            lambda: Envelope.open(sealed, kp.secret, kem=kem),
+        )
+    )
     return results
 
 
@@ -274,11 +320,21 @@ def bench_serialization() -> list[BenchResult]:
 
     class MockPQCBackend(AbstractKEMBackend):
         name = "mock"
-        def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-        def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-        def decapsulate(self, a, s, c): return b"\xDD" * 32
-        def is_available(self): return True
-        def supported_algorithms(self): return []
+
+        def keygen(self, a):
+            return b"\xaa" * 1184, b"\xbb" * 2400
+
+        def encapsulate(self, a, p):
+            return b"\xcc" * 1088, b"\xdd" * 32
+
+        def decapsulate(self, a, s, c):
+            return b"\xdd" * 32
+
+        def is_available(self):
+            return True
+
+        def supported_algorithms(self):
+            return []
 
     kem = HybridKEM.__new__(HybridKEM)
     kem._classical = "X25519"
@@ -294,9 +350,9 @@ def bench_serialization() -> list[BenchResult]:
     from quantum_safe.types import PublicKey
 
     results = []
-    results.append(_bench("PublicKey.to_pem()",    lambda: kp.public.to_pem()))
-    results.append(_bench("PublicKey.from_pem()",  lambda: PublicKey.from_pem(pem)))
-    results.append(_bench("PublicKey.to_cbor()",   lambda: kp.public.to_cbor()))
+    results.append(_bench("PublicKey.to_pem()", lambda: kp.public.to_pem()))
+    results.append(_bench("PublicKey.from_pem()", lambda: PublicKey.from_pem(pem)))
+    results.append(_bench("PublicKey.to_cbor()", lambda: kp.public.to_cbor()))
     results.append(_bench("PublicKey.from_cbor()", lambda: PublicKey.from_cbor(cbor)))
     results.append(_bench("PublicKey.fingerprint()", lambda: kp.public.fingerprint()))
     return results
@@ -312,10 +368,14 @@ def bench_hybrid_kem_real() -> list[BenchResult]:
 
     results = []
     results.append(_bench("HybridKEM keygen (Real ML-KEM-768)", lambda: kem.generate_keypair()))
-    results.append(_bench("HybridKEM encapsulate (Real ML-KEM-768)", lambda: kem.encapsulate(kp.public)))
+    results.append(
+        _bench("HybridKEM encapsulate (Real ML-KEM-768)", lambda: kem.encapsulate(kp.public))
+    )
 
     hct, _ = kem.encapsulate(kp.public)
-    results.append(_bench("HybridKEM decapsulate (Real ML-KEM-768)", lambda: kem.decapsulate(kp.secret, hct)))
+    results.append(
+        _bench("HybridKEM decapsulate (Real ML-KEM-768)", lambda: kem.decapsulate(kp.secret, hct))
+    )
     return results
 
 
@@ -343,20 +403,24 @@ def bench_concurrent_load() -> list[BenchResult]:
     results = []
 
     # Simulate 100 concurrent users (Run 50 times for a stable median)
-    results.append(_bench(
-        "Concurrent Handshakes (100 users)",
-        lambda: simulate_users(100),
-        iterations=50,
-        warmup=5,
-    ))
+    results.append(
+        _bench(
+            "Concurrent Handshakes (100 users)",
+            lambda: simulate_users(100),
+            iterations=50,
+            warmup=5,
+        )
+    )
 
     # Simulate 500 concurrent users (Run 20 times because this is extremely heavy)
-    results.append(_bench(
-        "Concurrent Handshakes (500 users)",
-        lambda: simulate_users(500),
-        iterations=20,
-        warmup=2,
-    ))
+    results.append(
+        _bench(
+            "Concurrent Handshakes (500 users)",
+            lambda: simulate_users(500),
+            iterations=20,
+            warmup=2,
+        )
+    )
 
     return results
 
@@ -403,19 +467,23 @@ def bench_concurrent_load_extended() -> list[BenchResult]:
 
     results = []
 
-    results.append(_bench(
-        "Concurrent Handshakes (1000 users)",
-        lambda: simulate_users(1000),
-        iterations=10,
-        warmup=1,
-    ))
+    results.append(
+        _bench(
+            "Concurrent Handshakes (1000 users)",
+            lambda: simulate_users(1000),
+            iterations=10,
+            warmup=1,
+        )
+    )
 
-    results.append(_bench(
-        "Concurrent Handshakes (5000 users)",
-        lambda: simulate_users(5000),
-        iterations=5,   # 5 iterations → 3 samples after 1% clip — enough for CoV
-        warmup=1,
-    ))
+    results.append(
+        _bench(
+            "Concurrent Handshakes (5000 users)",
+            lambda: simulate_users(5000),
+            iterations=5,  # 5 iterations → 3 samples after 1% clip — enough for CoV
+            warmup=1,
+        )
+    )
 
     return results
 
@@ -453,27 +521,40 @@ def bench_hybrid_decomposition() -> list[BenchResult]:
     bob = X25519PrivateKey.generate()
     bob_pub = bob.public_key()
 
-    results.append(_bench("Decomp ① X25519 keygen",        lambda: X25519PrivateKey.generate()))
-    results.append(_bench("Decomp ① X25519 DH exchange",   lambda: alice.exchange(bob_pub)))
+    results.append(_bench("Decomp ① X25519 keygen", lambda: X25519PrivateKey.generate()))
+    results.append(_bench("Decomp ① X25519 DH exchange", lambda: alice.exchange(bob_pub)))
 
     # ② PQC-only: pure ML-KEM-768 via liboqs (skip if unavailable)
     try:
         import oqs
+
         with oqs.KeyEncapsulation("ML-KEM-768") as pqc:
             pub_key = pqc.generate_keypair()
             ct, _ = pqc.encap_secret(pub_key)
-            results.append(_bench("Decomp ② ML-KEM-768 keygen",       lambda: pqc.generate_keypair()))
-            results.append(_bench("Decomp ② ML-KEM-768 encapsulate",  lambda: pqc.encap_secret(pub_key)))
-            results.append(_bench("Decomp ② ML-KEM-768 decapsulate",  lambda: pqc.decap_secret(ct)))
+            results.append(_bench("Decomp ② ML-KEM-768 keygen", lambda: pqc.generate_keypair()))
+            results.append(
+                _bench("Decomp ② ML-KEM-768 encapsulate", lambda: pqc.encap_secret(pub_key))
+            )
+            results.append(_bench("Decomp ② ML-KEM-768 decapsulate", lambda: pqc.decap_secret(ct)))
     except Exception:
         # Mock PQC to measure the combiner cost in isolation
         class _MockBackend(AbstractKEMBackend):
             name = "mock"
-            def keygen(self, a):        return b"\xAA" * 1184, b"\xBB" * 2400
-            def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-            def decapsulate(self, a, s, c): return b"\xDD" * 32
-            def is_available(self):     return True
-            def supported_algorithms(self): return []
+
+            def keygen(self, a):
+                return b"\xaa" * 1184, b"\xbb" * 2400
+
+            def encapsulate(self, a, p):
+                return b"\xcc" * 1088, b"\xdd" * 32
+
+            def decapsulate(self, a, s, c):
+                return b"\xdd" * 32
+
+            def is_available(self):
+                return True
+
+            def supported_algorithms(self):
+                return []
 
         kem_mock = HybridKEM.__new__(HybridKEM)
         kem_mock._classical = "X25519"
@@ -482,20 +563,44 @@ def bench_hybrid_decomposition() -> list[BenchResult]:
         kem_mock._backend = _MockBackend()
         kp_mock = kem_mock.generate_keypair()
         ct_mock, _ = kem_mock.encapsulate(kp_mock.public)
-        results.append(_bench("Decomp ② ML-KEM-768 keygen (mock)",       lambda: kem_mock.generate_keypair()))
-        results.append(_bench("Decomp ② ML-KEM-768 encapsulate (mock)",  lambda: kem_mock.encapsulate(kp_mock.public)))
-        results.append(_bench("Decomp ② ML-KEM-768 decapsulate (mock)",  lambda: kem_mock.decapsulate(kp_mock.secret, ct_mock)))
+        results.append(
+            _bench("Decomp ② ML-KEM-768 keygen (mock)", lambda: kem_mock.generate_keypair())
+        )
+        results.append(
+            _bench(
+                "Decomp ② ML-KEM-768 encapsulate (mock)",
+                lambda: kem_mock.encapsulate(kp_mock.public),
+            )
+        )
+        results.append(
+            _bench(
+                "Decomp ② ML-KEM-768 decapsulate (mock)",
+                lambda: kem_mock.decapsulate(kp_mock.secret, ct_mock),
+            )
+        )
 
     # ③ Full hybrid: X25519 + ML-KEM-768 + HKDF combiner + serialisation
     kem_full = HybridKEM()
     kp_full = kem_full.generate_keypair()
     ct_full, _ = kem_full.encapsulate(kp_full.public)
 
-    results.append(_bench("Decomp ③ HybridKEM keygen      (full)",       lambda: kem_full.generate_keypair()))
-    results.append(_bench("Decomp ③ HybridKEM encapsulate (full)",       lambda: kem_full.encapsulate(kp_full.public)))
-    results.append(_bench("Decomp ③ HybridKEM decapsulate (full)",       lambda: kem_full.decapsulate(kp_full.secret, ct_full)))
+    results.append(
+        _bench("Decomp ③ HybridKEM keygen      (full)", lambda: kem_full.generate_keypair())
+    )
+    results.append(
+        _bench(
+            "Decomp ③ HybridKEM encapsulate (full)", lambda: kem_full.encapsulate(kp_full.public)
+        )
+    )
+    results.append(
+        _bench(
+            "Decomp ③ HybridKEM decapsulate (full)",
+            lambda: kem_full.decapsulate(kp_full.secret, ct_full),
+        )
+    )
 
     return results
+
 
 # ---------------------------------------------------------------------------
 # Runner
@@ -563,6 +668,7 @@ def run_all(save_json: str | None = None, iterations: int = 1000, with_pqc: bool
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="quantum-safe benchmark suite")
     parser.add_argument("--save", metavar="FILE", help="Save JSON results to FILE")
     parser.add_argument("--iterations", type=int, default=1000, help="Iterations per benchmark")

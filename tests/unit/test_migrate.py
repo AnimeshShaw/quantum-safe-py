@@ -152,49 +152,60 @@ description = "Replaces old RSA based authentication"
 class TestScanReport:
     def test_has_blocking_findings_true(self):
         report = ScanReport(root="test")
-        report.findings.append(Finding(
-            file="a.py", line=1, col=1,
-            severity=Severity.HIGH,
-            rule_id="QS001",
-            message="RSA detected",
-        ))
+        report.findings.append(
+            Finding(
+                file="a.py",
+                line=1,
+                col=1,
+                severity=Severity.HIGH,
+                rule_id="QS001",
+                message="RSA detected",
+            )
+        )
         assert report.has_blocking_findings
 
     def test_has_blocking_findings_false_on_medium(self):
         report = ScanReport(root="test")
-        report.findings.append(Finding(
-            file="a.py", line=1, col=1,
-            severity=Severity.MEDIUM,
-            rule_id="QS020",
-            message="AES-128",
-        ))
+        report.findings.append(
+            Finding(
+                file="a.py",
+                line=1,
+                col=1,
+                severity=Severity.MEDIUM,
+                rule_id="QS020",
+                message="AES-128",
+            )
+        )
         assert not report.has_blocking_findings
 
     def test_summary_format(self):
         report = ScanReport(root="./src", files_scanned=42)
-        report.findings.append(Finding(
-            file="a.py", line=1, col=1,
-            severity=Severity.CRITICAL,
-            rule_id="QS031",
-            message="MD5",
-        ))
+        report.findings.append(
+            Finding(
+                file="a.py",
+                line=1,
+                col=1,
+                severity=Severity.CRITICAL,
+                rule_id="QS031",
+                message="MD5",
+            )
+        )
         s = report.summary()
         assert "42" in s
         assert "CRITICAL" in s
 
     def test_to_json_is_valid(self):
         import json
-        report = Scanner.scan_source(
-            'from cryptography.hazmat.primitives.asymmetric import rsa'
-        )
+
+        report = Scanner.scan_source("from cryptography.hazmat.primitives.asymmetric import rsa")
         data = json.loads(report.to_json())
         assert "findings" in data
         assert isinstance(data["findings"], list)
 
     def test_to_sarif_structure(self):
         report = Scanner.scan_source(
-            'from cryptography.hazmat.primitives.asymmetric import rsa\n'
-            'key = rsa.generate_private_key(65537, 2048)'
+            "from cryptography.hazmat.primitives.asymmetric import rsa\n"
+            "key = rsa.generate_private_key(65537, 2048)"
         )
         sarif = report.to_sarif()
         assert sarif["version"] == "2.1.0"
@@ -209,7 +220,9 @@ class TestScanReport:
 
     def test_finding_str_format(self):
         f = Finding(
-            file="src/auth.py", line=42, col=5,
+            file="src/auth.py",
+            line=42,
+            col=5,
             severity=Severity.HIGH,
             rule_id="QS001",
             message="RSA detected",
@@ -238,7 +251,7 @@ class TestScannerDirectory:
         # Write some Python files to a temp dir
         (tmp_path / "clean.py").write_text("x = 1 + 1\n")
         (tmp_path / "classical.py").write_text(
-            'from cryptography.hazmat.primitives.asymmetric import rsa\n'
+            "from cryptography.hazmat.primitives.asymmetric import rsa\n"
         )
         subdir = tmp_path / "subpkg"
         subdir.mkdir()
@@ -251,7 +264,7 @@ class TestScannerDirectory:
     def test_scan_directory_excludes_pycache(self, tmp_path):
         pycache = tmp_path / "__pycache__"
         pycache.mkdir()
-        (pycache / "hidden.py").write_text('import rsa\n')
+        (pycache / "hidden.py").write_text("import rsa\n")
         (tmp_path / "normal.py").write_text("x = 1\n")
 
         report = Scanner.scan_directory(tmp_path)
@@ -338,10 +351,26 @@ class TestMigrationStateManager:
 
     def test_transition_sequence(self):
         mgr = self._make_mgr()
-        mgr.transition("k","key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768") if False else None
+        mgr.transition(
+            "k",
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        ) if False else None
         # Full sequence
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
-        mgr.transition("key1", MigrationState.HYBRID_TRANSITION, MigrationState.PQC_PREFERRED, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
+        mgr.transition(
+            "key1",
+            MigrationState.HYBRID_TRANSITION,
+            MigrationState.PQC_PREFERRED,
+            "X25519+ML-KEM-768",
+        )
         mgr.transition("key1", MigrationState.PQC_PREFERRED, MigrationState.PQC_ONLY, "ML-KEM-768")
         assert mgr.get_current_state("key1") == MigrationState.PQC_ONLY
 
@@ -357,7 +386,12 @@ class TestMigrationStateManager:
 
     def test_backward_without_allow_raises(self):
         mgr = self._make_mgr()
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
         with pytest.raises(ValueError, match="allow_backward"):
             mgr.transition(
                 "key1",
@@ -368,7 +402,12 @@ class TestMigrationStateManager:
 
     def test_backward_without_reason_raises(self):
         mgr = self._make_mgr()
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
         with pytest.raises(ValueError, match="reason"):
             mgr.transition(
                 "key1",
@@ -381,7 +420,12 @@ class TestMigrationStateManager:
 
     def test_backward_with_reason_succeeds(self):
         mgr = self._make_mgr()
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
         rec = mgr.transition(
             "key1",
             MigrationState.HYBRID_TRANSITION,
@@ -395,8 +439,18 @@ class TestMigrationStateManager:
 
     def test_history_grows(self):
         mgr = self._make_mgr()
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
-        mgr.transition("key1", MigrationState.HYBRID_TRANSITION, MigrationState.PQC_PREFERRED, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
+        mgr.transition(
+            "key1",
+            MigrationState.HYBRID_TRANSITION,
+            MigrationState.PQC_PREFERRED,
+            "X25519+ML-KEM-768",
+        )
         history = mgr.get_history("key1")
         assert len(history) == 2
         assert history[0].from_state == MigrationState.CLASSICAL_ONLY
@@ -404,16 +458,32 @@ class TestMigrationStateManager:
 
     def test_stale_state_raises(self):
         mgr = self._make_mgr()
-        mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
+        mgr.transition(
+            "key1",
+            MigrationState.CLASSICAL_ONLY,
+            MigrationState.HYBRID_TRANSITION,
+            "X25519+ML-KEM-768",
+        )
         # Now try to transition from CLASSICAL_ONLY again (stale)
         with pytest.raises(ValueError, match="Concurrent modification"):
-            mgr.transition("key1", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "X25519+ML-KEM-768")
+            mgr.transition(
+                "key1",
+                MigrationState.CLASSICAL_ONLY,
+                MigrationState.HYBRID_TRANSITION,
+                "X25519+ML-KEM-768",
+            )
 
     def test_needs_migration_list(self):
         mgr = self._make_mgr()
-        mgr.transition("key-a", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "algo")
-        mgr.transition("key-b", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "algo")
-        mgr.transition("key-b", MigrationState.HYBRID_TRANSITION, MigrationState.PQC_PREFERRED, "algo")
+        mgr.transition(
+            "key-a", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "algo"
+        )
+        mgr.transition(
+            "key-b", MigrationState.CLASSICAL_ONLY, MigrationState.HYBRID_TRANSITION, "algo"
+        )
+        mgr.transition(
+            "key-b", MigrationState.HYBRID_TRANSITION, MigrationState.PQC_PREFERRED, "algo"
+        )
         # key-a is HYBRID (migrated enough), key-b is PQC_PREFERRED
         # Neither is CLASSICAL_ONLY now, so needs_migration should be empty
         assert mgr.needs_migration() == []
@@ -435,34 +505,48 @@ class TestMigrationStateManager:
 
 class MockKEMBackend:
     name = "mock"
-    def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-    def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-    def decapsulate(self, a, s, c): return b"\xDD" * 32
-    def is_available(self): return True
+
+    def keygen(self, a):
+        return b"\xaa" * 1184, b"\xbb" * 2400
+
+    def encapsulate(self, a, p):
+        return b"\xcc" * 1088, b"\xdd" * 32
+
+    def decapsulate(self, a, s, c):
+        return b"\xdd" * 32
+
+    def is_available(self):
+        return True
+
     def supported_algorithms(self):
         from quantum_safe.backends.base import AlgorithmInfo
+
         return [AlgorithmInfo("ML-KEM-768", 3, 1184, 2400, 1088, True, False, True)]
 
 
 class MockSigBackend:
     name = "mock"
-    def keygen(self, a): return b"\xAA" * 1952, b"\xBB" * 4000
-    def sign(self, a, sk, msg, ctx=b""): return b"\xCC" * 3293
-    def verify(self, a, pk, msg, sig, ctx=b""): return True
-    def is_available(self): return True
-    def supported_algorithms(self): return []
+
+    def keygen(self, a):
+        return b"\xaa" * 1952, b"\xbb" * 4000
+
+    def sign(self, a, sk, msg, ctx=b""):
+        return b"\xcc" * 3293
+
+    def verify(self, a, pk, msg, sig, ctx=b""):
+        return True
+
+    def is_available(self):
+        return True
+
+    def supported_algorithms(self):
+        return []
 
 
 class TestUpgrader:
     def test_upgrade_kem_key(self, monkeypatch):
-        monkeypatch.setattr(
-            "quantum_safe.backends._load_liboqs_kem",
-            lambda: MockKEMBackend()
-        )
-        monkeypatch.setattr(
-            "quantum_safe.backends._load_rustcrypto_kem",
-            lambda: MockKEMBackend()
-        )
+        monkeypatch.setattr("quantum_safe.backends._load_liboqs_kem", lambda: MockKEMBackend())
+        monkeypatch.setattr("quantum_safe.backends._load_rustcrypto_kem", lambda: MockKEMBackend())
 
         result = Upgrader.upgrade_kem_key(
             classical_secret_bytes=b"\x01" * 32,
@@ -479,14 +563,11 @@ class TestUpgrader:
 
     def test_upgrade_preserves_classical_pub(self, monkeypatch):
         from quantum_safe.kem.hybrid import _unpack_components
-        monkeypatch.setattr(
-            "quantum_safe.backends._load_liboqs_kem", lambda: MockKEMBackend()
-        )
-        monkeypatch.setattr(
-            "quantum_safe.backends._load_rustcrypto_kem", lambda: MockKEMBackend()
-        )
 
-        classical_pub = b"\xDE" * 32
+        monkeypatch.setattr("quantum_safe.backends._load_liboqs_kem", lambda: MockKEMBackend())
+        monkeypatch.setattr("quantum_safe.backends._load_rustcrypto_kem", lambda: MockKEMBackend())
+
+        classical_pub = b"\xde" * 32
         result = Upgrader.upgrade_kem_key(
             classical_secret_bytes=b"\x01" * 32,
             classical_public_bytes=classical_pub,
@@ -554,17 +635,28 @@ class TestFernetShim:
 
         class MockPQCBackend:
             name = "mock"
-            def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-            def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-            def decapsulate(self, a, s, c): return b"\xDD" * 32
-            def is_available(self): return True
+
+            def keygen(self, a):
+                return b"\xaa" * 1184, b"\xbb" * 2400
+
+            def encapsulate(self, a, p):
+                return b"\xcc" * 1088, b"\xdd" * 32
+
+            def decapsulate(self, a, s, c):
+                return b"\xdd" * 32
+
+            def is_available(self):
+                return True
+
             def supported_algorithms(self):
                 class DummyAlgo:  # noqa: E701
                     name = "ML-KEM-768"
+
                 return [DummyAlgo()]
 
         # Patch the backend resolution so FernetShim doesn't need liboqs
         import quantum_safe.kem.hybrid as _hybrid
+
         original_get = _hybrid.get_kem_backend
 
         def mock_get(name="auto"):
@@ -580,20 +672,32 @@ class TestFernetShim:
 
     def test_shim_stats_counts(self):
         from quantum_safe.migrate.shims import FernetShim
+
         # Reset counter
         FernetShim._call_count = 0
         import quantum_safe.kem.hybrid as _hybrid
+
         original = _hybrid.get_kem_backend
 
         class FakeBackend:
             name = "mock"
-            def keygen(self, a): return b"\xAA" * 1184, b"\xBB" * 2400
-            def encapsulate(self, a, p): return b"\xCC" * 1088, b"\xDD" * 32
-            def decapsulate(self, a, s, c): return b"\xDD" * 32
-            def is_available(self): return True
+
+            def keygen(self, a):
+                return b"\xaa" * 1184, b"\xbb" * 2400
+
+            def encapsulate(self, a, p):
+                return b"\xcc" * 1088, b"\xdd" * 32
+
+            def decapsulate(self, a, s, c):
+                return b"\xdd" * 32
+
+            def is_available(self):
+                return True
+
             def supported_algorithms(self):
                 class DummyAlgo:  # noqa: E701
                     name = "ML-KEM-768"
+
                 return [DummyAlgo()]
 
         _hybrid.get_kem_backend = lambda name="auto": FakeBackend()

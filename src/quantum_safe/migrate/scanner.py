@@ -53,6 +53,7 @@ from typing import Any
 
 class Severity(IntEnum):
     """Finding severity levels, ordered so higher = worse."""
+
     INFO = 0
     MEDIUM = 1
     HIGH = 2
@@ -85,13 +86,13 @@ class Finding:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "file":     self.file,
-            "line":     self.line,
-            "col":      self.col,
+            "file": self.file,
+            "line": self.line,
+            "col": self.col,
             "severity": self.severity.name,
-            "rule_id":  self.rule_id,
-            "message":  self.message,
-            "snippet":  self.snippet,
+            "rule_id": self.rule_id,
+            "message": self.message,
+            "snippet": self.snippet,
             "fix_hint": self.fix_hint,
         }
 
@@ -157,10 +158,7 @@ class ScanReport:
             parts.append(f"{len(self.info)} INFO")
         if not parts:
             parts.append("no findings")
-        return (
-            f"Scanned {self.files_scanned} files in '{self.root}': "
-            + ", ".join(parts)
-        )
+        return f"Scanned {self.files_scanned} files in '{self.root}': " + ", ".join(parts)
 
     # ------------------------------------------------------------------
     # Serialization
@@ -170,11 +168,11 @@ class ScanReport:
         """Serialize to JSON."""
         return json.dumps(
             {
-                "root":          self.root,
+                "root": self.root,
                 "files_scanned": self.files_scanned,
-                "summary":       self.summary(),
-                "findings":      [f.to_dict() for f in self.findings],
-                "errors":        self.errors,
+                "summary": self.summary(),
+                "findings": [f.to_dict() for f in self.findings],
+                "errors": self.errors,
             },
             indent=indent,
         )
@@ -193,12 +191,10 @@ class ScanReport:
 
         rules = [
             {
-                "id":   rule_id,
+                "id": rule_id,
                 "name": rule_id,
                 "shortDescription": {"text": f.message},
-                "defaultConfiguration": {
-                    "level": _sarif_level(f.severity)
-                },
+                "defaultConfiguration": {"level": _sarif_level(f.severity)},
                 "helpUri": "https://quantum-safe-py.readthedocs.io/en/latest/guides/audit.html",
             }
             for rule_id, f in seen_rules.items()
@@ -206,38 +202,42 @@ class ScanReport:
 
         results = []
         for f in self.findings:
-            results.append({
-                "ruleId":  f.rule_id,
-                "message": {"text": f.message},
-                "level":   _sarif_level(f.severity),
-                "locations": [
-                    {
-                        "physicalLocation": {
-                            "artifactLocation": {"uri": f.file},
-                            "region": {
-                                "startLine":   f.line,
-                                "startColumn": f.col,
-                            },
+            results.append(
+                {
+                    "ruleId": f.rule_id,
+                    "message": {"text": f.message},
+                    "level": _sarif_level(f.severity),
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {"uri": f.file},
+                                "region": {
+                                    "startLine": f.line,
+                                    "startColumn": f.col,
+                                },
+                            }
                         }
-                    }
-                ],
-                "fixes": [
-                    {
-                        "description": {"text": f.fix_hint},
-                    }
-                ] if f.fix_hint else [],
-            })
+                    ],
+                    "fixes": [
+                        {
+                            "description": {"text": f.fix_hint},
+                        }
+                    ]
+                    if f.fix_hint
+                    else [],
+                }
+            )
 
         return {
-            "$schema":  "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-            "version":  "2.1.0",
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.1.0",
             "runs": [
                 {
                     "tool": {
                         "driver": {
-                            "name":    "qs-audit",
+                            "name": "qs-audit",
                             "version": "0.1.0",
-                            "rules":   rules,
+                            "rules": rules,
                         }
                     },
                     "results": results,
@@ -249,9 +249,9 @@ class ScanReport:
 def _sarif_level(severity: Severity) -> str:
     return {
         Severity.CRITICAL: "error",
-        Severity.HIGH:     "error",
-        Severity.MEDIUM:   "warning",
-        Severity.INFO:     "note",
+        Severity.HIGH: "error",
+        Severity.MEDIUM: "warning",
+        Severity.INFO: "note",
     }[severity]
 
 
@@ -280,10 +280,7 @@ def _is_attr_call(node: ast.AST, aliases: _Aliases, *path: str) -> bool:
         return False
     func = node.func
     if len(path) == 1:
-        return (
-            isinstance(func, ast.Name)
-            and aliases.get(func.id, func.id) == path[0]
-        )
+        return isinstance(func, ast.Name) and aliases.get(func.id, func.id) == path[0]
     if len(path) == 2:
         return (
             isinstance(func, ast.Attribute)
@@ -305,129 +302,128 @@ def _string_value(node: ast.AST) -> str | None:
 _RULES: list[dict[str, Any]] = [
     # ---- RSA -------------------------------------------------------
     {
-        "id":       "QS001",
+        "id": "QS001",
         "severity": Severity.HIGH,
-        "message":  "RSA key generation detected - RSA is not quantum-safe",
+        "message": "RSA key generation detected - RSA is not quantum-safe",
         "fix_hint": "Replace with HybridKEM() for key exchange or HybridSign() for signatures",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.rsa"},
-        "calls":    {("rsa", "generate_private_key")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.rsa"},
+        "calls": {("rsa", "generate_private_key")},
     },
     {
-        "id":       "QS002",
+        "id": "QS002",
         "severity": Severity.HIGH,
-        "message":  "RSA PKCS1v15 padding detected - not quantum-safe",
+        "message": "RSA PKCS1v15 padding detected - not quantum-safe",
         "fix_hint": "Replace RSA encryption with Envelope.seal() / Envelope.open()",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.padding"},
-        "calls":    {("padding", "PKCS1v15")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.padding"},
+        "calls": {("padding", "PKCS1v15")},
     },
     {
-        "id":       "QS003",
+        "id": "QS003",
         "severity": Severity.HIGH,
-        "message":  "RSA-OAEP encryption detected - not quantum-safe",
+        "message": "RSA-OAEP encryption detected - not quantum-safe",
         "fix_hint": "Replace with Envelope.seal() which uses HybridKEM + AES-256-GCM",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.padding"},
-        "calls":    {("padding", "OAEP")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.padding"},
+        "calls": {("padding", "OAEP")},
     },
     # ---- ECDSA / ECDH ---------------------------------------------
     {
-        "id":       "QS010",
+        "id": "QS010",
         "severity": Severity.HIGH,
-        "message":  "ECDSA key generation detected - not quantum-safe",
+        "message": "ECDSA key generation detected - not quantum-safe",
         "fix_hint": "Replace with HybridSign() for signatures",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.ec"},
-        "calls":    {("ec", "generate_private_key")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.ec"},
+        "calls": {("ec", "generate_private_key")},
     },
     {
-        "id":       "QS011",
+        "id": "QS011",
         "severity": Severity.HIGH,
-        "message":  "ECDH key exchange detected - not quantum-safe",
+        "message": "ECDH key exchange detected - not quantum-safe",
         "fix_hint": "Replace with HybridKEM() for key exchange",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.ec"},
-        "calls":    {("ec", "ECDH")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.ec"},
+        "calls": {("ec", "ECDH")},
     },
     # ---- DSA -------------------------------------------------------
     {
-        "id":       "QS015",
+        "id": "QS015",
         "severity": Severity.CRITICAL,
-        "message":  "DSA key generation detected - not quantum-safe and deprecated",
+        "message": "DSA key generation detected - not quantum-safe and deprecated",
         "fix_hint": "Replace with HybridSign() (ML-DSA-65 + Ed25519)",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.dsa"},
-        "calls":    {("dsa", "generate_private_key")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.dsa"},
+        "calls": {("dsa", "generate_private_key")},
     },
     # ---- DH (classical Diffie-Hellman) ----------------------------
     {
-        "id":       "QS016",
+        "id": "QS016",
         "severity": Severity.HIGH,
-        "message":  "Classical DH key generation detected - not quantum-safe",
+        "message": "Classical DH key generation detected - not quantum-safe",
         "fix_hint": "Replace with HybridKEM()",
-        "imports":  {"cryptography.hazmat.primitives.asymmetric.dh"},
-        "calls":    {("dh", "generate_parameters")},
+        "imports": {"cryptography.hazmat.primitives.asymmetric.dh"},
+        "calls": {("dh", "generate_parameters")},
     },
     # ---- Weak symmetric -------------------------------------------
     {
-        "id":       "QS020",
+        "id": "QS020",
         "severity": Severity.MEDIUM,
-        "message":  "AES-128 detected - consider upgrading to AES-256",
+        "message": "AES-128 detected - consider upgrading to AES-256",
         "fix_hint": "Use AES-256-GCM. Envelope.seal() uses AES-256-GCM by default.",
-        "imports":  set(),
+        "imports": set(),
         "string_patterns": {"AES-128", "AES128"},
     },
     {
-        "id":       "QS021",
+        "id": "QS021",
         "severity": Severity.MEDIUM,
-        "message":  "3DES / TripleDES detected - deprecated and not quantum-safe",
+        "message": "3DES / TripleDES detected - deprecated and not quantum-safe",
         "fix_hint": "Replace with AES-256-GCM",
-        "imports":  {"cryptography.hazmat.primitives.ciphers.algorithms"},
-        "calls":    {("algorithms", "TripleDES")},
+        "imports": {"cryptography.hazmat.primitives.ciphers.algorithms"},
+        "calls": {("algorithms", "TripleDES")},
         "string_patterns": {"3DES", "TripleDES", "DES3"},
     },
     # ---- Weak hash ------------------------------------------------
     {
-        "id":       "QS030",
+        "id": "QS030",
         "severity": Severity.MEDIUM,
-        "message":  "SHA-1 detected - cryptographically broken",
+        "message": "SHA-1 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or SHA-3",
-        "imports":  {"cryptography.hazmat.primitives.hashes", "hashlib"},
-        "calls":    {("hashes", "SHA1"), ("hashlib", "sha1"), ("hashlib", "sha224")},
+        "imports": {"cryptography.hazmat.primitives.hashes", "hashlib"},
+        "calls": {("hashes", "SHA1"), ("hashlib", "sha1"), ("hashlib", "sha224")},
         "string_patterns": {"SHA1", "SHA-1"},
     },
     {
-        "id":       "QS031",
+        "id": "QS031",
         "severity": Severity.CRITICAL,
-        "message":  "MD5 detected - cryptographically broken",
+        "message": "MD5 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or BLAKE2b",
-        "imports":  {"cryptography.hazmat.primitives.hashes", "hashlib"},
-        "calls":    {("hashes", "MD5"), ("hashlib", "md5")},
+        "imports": {"cryptography.hazmat.primitives.hashes", "hashlib"},
+        "calls": {("hashes", "MD5"), ("hashlib", "md5")},
         "string_patterns": {"MD5"},
     },
     # hashlib.new("sha1") / hashlib.new("md5") are caught by string_patterns above
     # since the algorithm name is a string literal passed to hashlib.new().
     # ---- JWT algorithm identifiers --------------------------------
     {
-        "id":       "QS040",
+        "id": "QS040",
         "severity": Severity.HIGH,
-        "message":  "Classical JWT algorithm '{detail}' detected",
+        "message": "Classical JWT algorithm '{detail}' detected",
         "fix_hint": "Use JWTSigner from quantum_safe.protocols.jwt with ML-DSA-65",
-        "imports":  set(),
-        "string_patterns": {"RS256", "RS384", "RS512", "ES256", "ES384",
-                             "PS256", "PS384", "PS512"},
+        "imports": set(),
+        "string_patterns": {"RS256", "RS384", "RS512", "ES256", "ES384", "PS256", "PS384", "PS512"},
     },
     # ---- pycryptodome / pycrypto -----------------------------------
     {
-        "id":       "QS050",
+        "id": "QS050",
         "severity": Severity.HIGH,
-        "message":  "pycryptodome RSA usage detected - not quantum-safe",
+        "message": "pycryptodome RSA usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridKEM or HybridSign",
-        "imports":  {"Crypto.PublicKey.RSA", "Cryptodome.PublicKey.RSA"},
-        "calls":    set(),
+        "imports": {"Crypto.PublicKey.RSA", "Cryptodome.PublicKey.RSA"},
+        "calls": set(),
     },
     {
-        "id":       "QS051",
+        "id": "QS051",
         "severity": Severity.HIGH,
-        "message":  "pycryptodome ECC usage detected - not quantum-safe",
+        "message": "pycryptodome ECC usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridSign",
-        "imports":  {"Crypto.PublicKey.ECC", "Cryptodome.PublicKey.ECC"},
-        "calls":    set(),
+        "imports": {"Crypto.PublicKey.ECC", "Cryptodome.PublicKey.ECC"},
+        "calls": set(),
     },
 ]
 
@@ -624,8 +620,16 @@ class Scanner:
             raise FileNotFoundError(f"Directory not found: {directory}")
 
         default_excludes = {
-            ".git", "__pycache__", ".venv", "venv", "node_modules",
-            ".mypy_cache", ".pytest_cache", "dist", "build", "*.egg-info",
+            ".git",
+            "__pycache__",
+            ".venv",
+            "venv",
+            "node_modules",
+            ".mypy_cache",
+            ".pytest_cache",
+            "dist",
+            "build",
+            "*.egg-info",
         }
         excluded = set(exclude or []) | default_excludes
 
@@ -638,9 +642,7 @@ class Scanner:
         return report
 
     @classmethod
-    def scan_source(
-        cls, source: str, filename: str = "<string>"
-    ) -> ScanReport:
+    def scan_source(cls, source: str, filename: str = "<string>") -> ScanReport:
         """Scan a source string directly (useful for testing or inline analysis)."""
         report = ScanReport(root=filename)
         cls._scan_source_text(source, filename, report)
@@ -659,10 +661,7 @@ class Scanner:
         """Yield .py files under root, respecting exclusions."""
         for dirpath, dirnames, filenames in os.walk(root):
             # Prune excluded directories in-place
-            dirnames[:] = [
-                d for d in dirnames
-                if d not in excluded and not d.startswith(".")
-            ]
+            dirnames[:] = [d for d in dirnames if d not in excluded and not d.startswith(".")]
             for filename in filenames:
                 if not filename.endswith(".py"):
                     continue
@@ -694,10 +693,12 @@ class Scanner:
         try:
             tree = ast.parse(source, filename=filename)
         except SyntaxError as exc:
-            report.errors.append({
-                "file":  filename,
-                "error": f"SyntaxError at line {exc.lineno}: {exc.msg}",
-            })
+            report.errors.append(
+                {
+                    "file": filename,
+                    "error": f"SyntaxError at line {exc.lineno}: {exc.msg}",
+                }
+            )
             return
 
         source_lines = source.splitlines()

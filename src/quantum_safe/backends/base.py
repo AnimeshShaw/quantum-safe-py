@@ -35,8 +35,8 @@ class AlgorithmInfo:
     Used for capability discovery and benchmark reporting.
     """
 
-    name: str            # e.g. "ML-KEM-768"
-    nist_level: int      # NIST security level 1-5
+    name: str  # e.g. "ML-KEM-768"
+    nist_level: int  # NIST security level 1-5
     public_key_size: int  # bytes
     secret_key_size: int  # bytes
     ciphertext_size: int  # bytes (for KEMs); signature_size for signatures
@@ -97,9 +97,7 @@ class AbstractKEMBackend(ABC):
         ...
 
     @abstractmethod
-    def decapsulate(
-        self, algorithm: str, secret_key: bytes, ciphertext: bytes
-    ) -> bytes:
+    def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         """Decapsulate: recover the shared secret from a ciphertext.
 
         Args:

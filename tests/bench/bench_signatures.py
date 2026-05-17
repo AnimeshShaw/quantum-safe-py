@@ -65,6 +65,7 @@ import _oqs_path  # noqa: F401 — registers oqs.dll dir on Windows
 # Shared BenchResult (mirrors bench_kem.py to keep harnesses consistent)
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BenchResult:
     """Timing statistics for one benchmarked operation."""
@@ -72,7 +73,7 @@ class BenchResult:
     name: str
     iterations: int
     warmup: int
-    samples_us: list[float]   # microseconds, after trim
+    samples_us: list[float]  # microseconds, after trim
 
     @property
     def median_us(self) -> float:
@@ -107,15 +108,15 @@ class BenchResult:
 
     def to_dict(self) -> dict:
         return {
-            "name":       self.name,
+            "name": self.name,
             "iterations": self.iterations,
-            "warmup":     self.warmup,
-            "median_us":  round(self.median_us, 2),
-            "mean_us":    round(self.mean_us, 2),
-            "p95_us":     round(self.p95_us, 2),
-            "p99_us":     round(self.p99_us, 2),
-            "stdev_us":   round(self.stdev_us, 2),
-            "cov_pct":    round(self.cov_pct, 2),
+            "warmup": self.warmup,
+            "median_us": round(self.median_us, 2),
+            "mean_us": round(self.mean_us, 2),
+            "p95_us": round(self.p95_us, 2),
+            "p99_us": round(self.p99_us, 2),
+            "stdev_us": round(self.stdev_us, 2),
+            "cov_pct": round(self.cov_pct, 2),
         }
 
     def __str__(self) -> str:
@@ -162,13 +163,14 @@ def _bench(
 
     samples.sort()
     clip = max(1, int(len(samples) * 0.01))
-    samples = samples[clip: len(samples) - clip]
+    samples = samples[clip : len(samples) - clip]
     return BenchResult(name=name, iterations=iterations, warmup=warmup, samples_us=samples)
 
 
 # ---------------------------------------------------------------------------
 # Benchmark suites
 # ---------------------------------------------------------------------------
+
 
 def bench_classical_baselines() -> list[BenchResult]:
     """Ed25519 sign/verify — known constant-time reference points for CoV comparison.
@@ -325,9 +327,7 @@ def bench_x509_hybrid_cert() -> list[BenchResult]:
     results.append(
         _bench(
             "X.509 HybridCert verify_cosig",
-            lambda: HybridCertificateBuilder.verify_cosig(
-                cert_pem, cosig_bundle, hybrid_kp.public
-            ),
+            lambda: HybridCertificateBuilder.verify_cosig(cert_pem, cosig_bundle, hybrid_kp.public),
         )
     )
 
@@ -338,12 +338,13 @@ def bench_x509_hybrid_cert() -> list[BenchResult]:
 # Table printing
 # ---------------------------------------------------------------------------
 
+
 def _print_section(title: str, results: list[BenchResult]) -> None:
     if not results:
         return
     print(f"\n### {title}")
     print(f"  {'Operation':<45} {'Median':>12}  {'p95':>12}  {'CoV':>6}")
-    print(f"  {'-'*45} {'-'*12}  {'-'*12}  {'-'*6}")
+    print(f"  {'-' * 45} {'-' * 12}  {'-' * 12}  {'-' * 6}")
     for r in results:
         print(r)
     print()
@@ -381,13 +382,12 @@ def _save_json(
 # Main entry point
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     import argparse
     import platform
 
-    parser = argparse.ArgumentParser(
-        description="quantum-safe signature benchmarks"
-    )
+    parser = argparse.ArgumentParser(description="quantum-safe signature benchmarks")
     parser.add_argument(
         "--with-pqc",
         action="store_true",
@@ -441,7 +441,7 @@ def main() -> None:
     # CoV summary for Contribution 4
     print("### CoV Summary (side-channel proxy — threshold 3.0%)")
     print(f"  {'Operation':<45} {'CoV':>6}  {'Status'}")
-    print(f"  {'-'*45} {'-'*6}  {'-'*15}")
+    print(f"  {'-' * 45} {'-' * 6}  {'-' * 15}")
     for section_results in all_results.values():
         for r in section_results:
             status = "OK" if r.cov_pct <= 3.0 else ("FLAG *" if r.cov_pct > 5 else "WATCH ~")

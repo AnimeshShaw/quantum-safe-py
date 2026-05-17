@@ -38,6 +38,7 @@ def _import_qs_py() -> Any:  # noqa: ANN401
     """Import the quantum_safe_py native extension or raise BackendNotAvailable."""
     try:
         import quantum_safe_py as _qs_py  # type: ignore[import]
+
         return _qs_py
     except ImportError as exc:
         raise BackendNotAvailable("rustcrypto") from exc
@@ -97,9 +98,7 @@ class RustCryptoKEMBackend(AbstractKEMBackend):
         qs = _import_qs_py()
         return qs.kem_encapsulate(algorithm, public_key)
 
-    def decapsulate(
-        self, algorithm: str, secret_key: bytes, ciphertext: bytes
-    ) -> bytes:
+    def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         qs = _import_qs_py()
         return qs.kem_decapsulate(algorithm, secret_key, ciphertext)
 

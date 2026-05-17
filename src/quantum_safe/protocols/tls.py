@@ -64,9 +64,9 @@ _OQS_GROUP_NAMES = {
 
 # Priority order: hybrid first, classical fallback
 _DEFAULT_GROUP_PREFERENCE = [
-    "X25519MLKEM768",   # hybrid primary
-    "X25519",           # classical fallback
-    "P-256",            # classical fallback
+    "X25519MLKEM768",  # hybrid primary
+    "X25519",  # classical fallback
+    "P-256",  # classical fallback
 ]
 
 

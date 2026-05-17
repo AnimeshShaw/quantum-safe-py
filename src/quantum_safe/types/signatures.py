@@ -74,8 +74,7 @@ class SignedMessage:
     def __post_init__(self) -> None:
         if len(self.context) > _MAX_CONTEXT_LEN:
             raise ValueError(
-                f"context must be at most {_MAX_CONTEXT_LEN} bytes, "
-                f"got {len(self.context)}"
+                f"context must be at most {_MAX_CONTEXT_LEN} bytes, got {len(self.context)}"
             )
         if not self.message:
             raise ValueError("message cannot be empty")
@@ -99,16 +98,18 @@ class SignedMessage:
 
     def to_cbor(self) -> bytes:
         """Serialize to CBOR for storage or transmission."""
-        return _ser.dumps({
-            "v": _SIGNED_MSG_VERSION,
-            "msg": self.message,
-            "sig": self.signature,
-            "algo": self.algorithm,
-            "ctx": self.context,
-            "fp": self.signer_fingerprint,
-            "ts": self.signed_at,
-            "hybrid": self.is_hybrid,
-        })
+        return _ser.dumps(
+            {
+                "v": _SIGNED_MSG_VERSION,
+                "msg": self.message,
+                "sig": self.signature,
+                "algo": self.algorithm,
+                "ctx": self.context,
+                "fp": self.signer_fingerprint,
+                "ts": self.signed_at,
+                "hybrid": self.is_hybrid,
+            }
+        )
 
     @classmethod
     def from_cbor(cls, data: bytes) -> SignedMessage:
@@ -121,8 +122,7 @@ class SignedMessage:
         if d.get("v", 0) != _SIGNED_MSG_VERSION:
             raise KeyParseError(
                 "cbor",
-                f"unsupported SignedMessage version {d.get('v')}, "
-                f"expected {_SIGNED_MSG_VERSION}",
+                f"unsupported SignedMessage version {d.get('v')}, expected {_SIGNED_MSG_VERSION}",
             )
 
         return cls(
@@ -183,12 +183,14 @@ class HybridSignature:
 
     def to_bytes(self) -> bytes:
         """Encode as CBOR for embedding in a SignedMessage.signature field."""
-        return _ser.dumps({
-            "classical_sig": self.classical_sig,
-            "pqc_sig": self.pqc_sig,
-            "classical_algo": self.classical_algo,
-            "pqc_algo": self.pqc_algo,
-        })
+        return _ser.dumps(
+            {
+                "classical_sig": self.classical_sig,
+                "pqc_sig": self.pqc_sig,
+                "classical_algo": self.classical_algo,
+                "pqc_algo": self.pqc_algo,
+            }
+        )
 
     @classmethod
     def from_bytes(cls, data: bytes) -> HybridSignature:

@@ -38,24 +38,28 @@ _KNOWN_BACKENDS = {"liboqs", "rustcrypto", "noble", "auto"}
 def _load_liboqs_kem() -> AbstractKEMBackend:
     """Load and return the liboqs KEM backend. Cached after first load."""
     from quantum_safe.backends.liboqs import LiboqsKEMBackend
+
     return LiboqsKEMBackend()
 
 
 @cache
 def _load_rustcrypto_kem() -> AbstractKEMBackend:
     from quantum_safe.backends.rustcrypto import RustCryptoKEMBackend
+
     return RustCryptoKEMBackend()
 
 
 @cache
 def _load_liboqs_sig() -> AbstractSignatureBackend:
     from quantum_safe.backends.liboqs import LiboqsSignatureBackend
+
     return LiboqsSignatureBackend()
 
 
 @cache
 def _load_rustcrypto_sig() -> AbstractSignatureBackend:
     from quantum_safe.backends.rustcrypto import RustCryptoSignatureBackend
+
     return RustCryptoSignatureBackend()
 
 
@@ -75,9 +79,7 @@ def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
         name = env_override
 
     if name not in _KNOWN_BACKENDS:
-        raise ValueError(
-            f"Unknown backend '{name}'. Valid options: {sorted(_KNOWN_BACKENDS)}"
-        )
+        raise ValueError(f"Unknown backend '{name}'. Valid options: {sorted(_KNOWN_BACKENDS)}")
 
     if name == "auto":
         return _auto_select_kem_backend()
@@ -107,9 +109,7 @@ def get_signature_backend(name: str = "auto") -> AbstractSignatureBackend:
         name = env_override
 
     if name not in _KNOWN_BACKENDS:
-        raise ValueError(
-            f"Unknown backend '{name}'. Valid options: {sorted(_KNOWN_BACKENDS)}"
-        )
+        raise ValueError(f"Unknown backend '{name}'. Valid options: {sorted(_KNOWN_BACKENDS)}")
 
     if name == "auto":
         return _auto_select_sig_backend()

@@ -62,8 +62,7 @@ class SharedSecret:
     def __init__(self, data: bytes, algorithm: str, is_hybrid: bool = False) -> None:
         if len(data) != _SHARED_SECRET_LEN:
             raise ValueError(
-                f"SharedSecret must be exactly {_SHARED_SECRET_LEN} bytes, "
-                f"got {len(data)}"
+                f"SharedSecret must be exactly {_SHARED_SECRET_LEN} bytes, got {len(data)}"
             )
         # Store in a mutable buffer so we can zero it
         self._data = bytearray(data)
@@ -99,9 +98,7 @@ class SharedSecret:
         try:
             n = len(self._data)
             if n:
-                ctypes.memset(
-                    (ctypes.c_char * n).from_buffer(self._data), 0, n
-                )
+                ctypes.memset((ctypes.c_char * n).from_buffer(self._data), 0, n)
         except Exception:  # noqa: BLE001, S110
             pass
 
@@ -175,6 +172,7 @@ class CipherText:
         expected = self._EXPECTED_SIZES.get(algorithm)
         if expected is not None and len(data) != expected:
             import warnings
+
             warnings.warn(
                 f"CipherText for {algorithm} has unexpected size "
                 f"(expected {expected}, got {len(data)}). "
@@ -251,9 +249,7 @@ class HybridCipherText:
 
     def to_bytes(self) -> bytes:
         """Encode as length-prefixed wire format."""
-        prefix = struct.pack(
-            self._LEN_PREFIX_FORMAT, len(self._classical_ct)
-        )
+        prefix = struct.pack(self._LEN_PREFIX_FORMAT, len(self._classical_ct))
         return prefix + self._classical_ct + self._pqc_ct
 
     @classmethod

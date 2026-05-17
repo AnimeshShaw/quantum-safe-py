@@ -62,22 +62,22 @@ _PEM_SECRET_LABEL = "QUANTUM SAFE SECRET KEY"  # never log this label + content 
 # Used to reject keys whose byte length doesn't match the claimed algorithm,
 # preventing type-confusion attacks where ML-DSA bytes claim to be ML-KEM.
 _KNOWN_PUBLIC_KEY_SIZES: dict[str, int] = {
-    "ML-KEM-512":  800,
-    "ML-KEM-768":  1184,
+    "ML-KEM-512": 800,
+    "ML-KEM-768": 1184,
     "ML-KEM-1024": 1568,
-    "ML-DSA-44":   1312,
-    "ML-DSA-65":   1952,
-    "ML-DSA-87":   2592,
+    "ML-DSA-44": 1312,
+    "ML-DSA-65": 1952,
+    "ML-DSA-87": 2592,
     "SLH-DSA-SHAKE-128s": 32,
     "SLH-DSA-SHAKE-128f": 32,
 }
 _KNOWN_SECRET_KEY_SIZES: dict[str, int] = {
-    "ML-KEM-512":  1632,
-    "ML-KEM-768":  2400,
+    "ML-KEM-512": 1632,
+    "ML-KEM-768": 2400,
     "ML-KEM-1024": 3168,
-    "ML-DSA-44":   2528,
-    "ML-DSA-65":   4000,
-    "ML-DSA-87":   4864,
+    "ML-DSA-44": 2528,
+    "ML-DSA-65": 4000,
+    "ML-DSA-87": 4864,
     "SLH-DSA-SHAKE-128s": 64,
     "SLH-DSA-SHAKE-128f": 64,
 }
@@ -98,8 +98,8 @@ class MigrationState(Enum):
 
     CLASSICAL_ONLY = "classical_only"
     HYBRID_TRANSITION = "hybrid_transition"  # has both classical + PQC components
-    PQC_PREFERRED = "pqc_preferred"          # hybrid, but PQC is the trusted component
-    PQC_ONLY = "pqc_only"                    # no classical component at all
+    PQC_PREFERRED = "pqc_preferred"  # hybrid, but PQC is the trusted component
+    PQC_ONLY = "pqc_only"  # no classical component at all
 
 
 class _ZeroizingBytes:
@@ -141,9 +141,7 @@ class _ZeroizingBytes:
         try:
             n = len(self._data)
             if n:
-                ctypes.memset(
-                    (ctypes.c_char * n).from_buffer(self._data), 0, n
-                )
+                ctypes.memset((ctypes.c_char * n).from_buffer(self._data), 0, n)
         except Exception:  # noqa: BLE001, S110
             pass  # Don't raise in __del__
 
@@ -211,9 +209,8 @@ class BaseKey(ABC):
         if hash_algo == "blake3":
             try:
                 import blake3  # type: ignore[import]
-                h = blake3.blake3(
-                    self.algorithm.encode() + b"\x00" + self.raw_bytes
-                )
+
+                h = blake3.blake3(self.algorithm.encode() + b"\x00" + self.raw_bytes)
                 return h.hexdigest()
             except ImportError:
                 warnings.warn(
@@ -256,9 +253,7 @@ class BaseKey(ABC):
         if "pem" not in self._supported_formats:
             raise UnsupportedFormatError("pem", self.algorithm)
 
-        label = (
-            _PEM_PUBLIC_LABEL if self.key_type == KeyType.PUBLIC else _PEM_SECRET_LABEL
-        )
+        label = _PEM_PUBLIC_LABEL if self.key_type == KeyType.PUBLIC else _PEM_SECRET_LABEL
         cbor_payload = self._to_cbor_payload()
         b64 = base64.b64encode(cbor_payload).decode("ascii")
         # Wrap at 64 chars per line (RFC 7468)
@@ -270,13 +265,7 @@ class BaseKey(ABC):
             f"qs-migration: {self.migration_state.value}"
         )
 
-        return (
-            f"-----BEGIN {label}-----\n"
-            f"{headers}\n"
-            f"\n"
-            f"{wrapped}\n"
-            f"-----END {label}-----\n"
-        )
+        return f"-----BEGIN {label}-----\n{headers}\n\n{wrapped}\n-----END {label}-----\n"
 
     def to_cbor(self) -> bytes:
         """Serialize this key to CBOR bytes.
@@ -455,10 +444,7 @@ class PublicKey(BaseKey):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, PublicKey):
             return NotImplemented
-        return (
-            self._algorithm == other._algorithm
-            and hmac.compare_digest(self._raw, other._raw)
-        )
+        return self._algorithm == other._algorithm and hmac.compare_digest(self._raw, other._raw)
 
     def __hash__(self) -> int:
         # Safe to hash public keys — they're not secret
@@ -486,8 +472,7 @@ class PublicKey(BaseKey):
         if _PEM_SECRET_LABEL in pem.splitlines()[0]:
             raise KeyParseError(
                 "pem",
-                "attempted to load a SECRET KEY as a PublicKey — "
-                "use SecretKey.from_pem() instead",
+                "attempted to load a SECRET KEY as a PublicKey — use SecretKey.from_pem() instead",
             )
 
         try:
@@ -639,10 +624,7 @@ class SecretKey(BaseKey):
         if not isinstance(other, SecretKey):
             return NotImplemented
         # Constant-time comparison
-        return (
-            self._algorithm == other._algorithm
-            and self._raw == other._raw
-        )
+        return self._algorithm == other._algorithm and self._raw == other._raw
 
     def __hash__(self) -> int:
         # Secret keys should not be hashed (e.g. put in sets) — the hash
@@ -662,8 +644,7 @@ class SecretKey(BaseKey):
         if _PEM_PUBLIC_LABEL in pem.splitlines()[0]:
             raise KeyParseError(
                 "pem",
-                "attempted to load a PUBLIC KEY as a SecretKey — "
-                "use PublicKey.from_pem() instead",
+                "attempted to load a PUBLIC KEY as a SecretKey — use PublicKey.from_pem() instead",
             )
 
         _headers, raw_cbor = cls._parse_pem_body(pem)
@@ -745,12 +726,14 @@ class KeyPair:
         The bundle contains both public and secret key material. Treat it
         with the same care as the secret key.
         """
-        return _ser.dumps({
-            "v": _CURRENT_KEY_VERSION,
-            "bundle": "keypair",
-            "pub": _ser.loads(self.public.to_cbor()),
-            "sec": _ser.loads(self.secret.to_cbor()),
-        })
+        return _ser.dumps(
+            {
+                "v": _CURRENT_KEY_VERSION,
+                "bundle": "keypair",
+                "pub": _ser.loads(self.public.to_cbor()),
+                "sec": _ser.loads(self.secret.to_cbor()),
+            }
+        )
 
     @classmethod
     def from_cbor_bundle(cls, data: bytes) -> KeyPair:
@@ -771,6 +754,7 @@ class KeyPair:
 # ---------------------------------------------------------------------------
 # Utility: generate a random nonce / salt of a given length
 # ---------------------------------------------------------------------------
+
 
 def generate_nonce(length: int = 32) -> bytes:
     """Generate cryptographically secure random bytes.

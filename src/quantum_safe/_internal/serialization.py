@@ -42,8 +42,7 @@ try:
     def loads(data: bytes) -> Any:  # noqa: ANN401
         if len(data) > _MAX_PAYLOAD_BYTES:
             raise ValueError(
-                f"Payload size {len(data)} exceeds maximum allowed "
-                f"{_MAX_PAYLOAD_BYTES} bytes"
+                f"Payload size {len(data)} exceeds maximum allowed {_MAX_PAYLOAD_BYTES} bytes"
             )
         return _cbor2.loads(data)
 
@@ -71,7 +70,7 @@ except ImportError:
     def _decode(obj: Any) -> Any:  # noqa: ANN401
         """Recursively decode a JSON-deserialized object."""
         if isinstance(obj, str) and obj.startswith(_B64_PREFIX):
-            b64 = obj[len(_B64_PREFIX):]
+            b64 = obj[len(_B64_PREFIX) :]
             # Restore padding
             padded = b64 + "=" * (-len(b64) % 4)
             return base64.urlsafe_b64decode(padded)
@@ -92,8 +91,7 @@ except ImportError:
         """Deserialize bytes produced by dumps()."""
         if len(data) > _MAX_PAYLOAD_BYTES:
             raise ValueError(
-                f"Payload size {len(data)} exceeds maximum allowed "
-                f"{_MAX_PAYLOAD_BYTES} bytes"
+                f"Payload size {len(data)} exceeds maximum allowed {_MAX_PAYLOAD_BYTES} bytes"
             )
         wrapper = json.loads(data.decode("utf-8"))
         if isinstance(wrapper, dict) and wrapper.get("_qs_fmt") == "json-b64-v1":

@@ -62,6 +62,7 @@ from dataclasses import dataclass
 # Bootstrap confidence intervals
 # ---------------------------------------------------------------------------
 
+
 def bootstrap_ci(
     samples: Sequence[float],
     confidence: float = 0.95,
@@ -117,6 +118,7 @@ def bootstrap_ci(
 # ---------------------------------------------------------------------------
 # Welch's t-test (unequal variance)
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class TTestResult:
@@ -295,6 +297,7 @@ def _beta_cf(a: float, b: float, x: float) -> float:
 # Cohen's d
 # ---------------------------------------------------------------------------
 
+
 def cohens_d(
     samples_a: Sequence[float],
     samples_b: Sequence[float],
@@ -340,6 +343,7 @@ def cohens_d(
 # ---------------------------------------------------------------------------
 # Throughput curve
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class ThroughputPoint:
@@ -410,9 +414,7 @@ def throughput_curve(
             # Linear would scale throughput proportionally to users
             expected_linear = baseline_ops_per_sec * (users / tiers[0][0])
             efficiency_pct = (
-                ops_per_sec / expected_linear * 100.0
-                if expected_linear > 0
-                else float("nan")
+                ops_per_sec / expected_linear * 100.0 if expected_linear > 0 else float("nan")
             )
 
         points.append(
@@ -431,6 +433,7 @@ def throughput_curve(
 # ---------------------------------------------------------------------------
 # CoV stability report
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class CovReport:
@@ -487,6 +490,7 @@ def cov_stability_report(
     Returns:
         A :class:`CovReport` dataclass.
     """
+
     def trimmed_cov(s: Sequence[float], p: float) -> float:
         if len(s) < 4:
             return float("nan")
@@ -502,7 +506,9 @@ def cov_stability_report(
 
     cov = trimmed_cov(samples, trim_pct)
     baseline_cov = trimmed_cov(baseline_samples, trim_pct)
-    delta = cov - baseline_cov if not (math.isnan(cov) or math.isnan(baseline_cov)) else float("nan")
+    delta = (
+        cov - baseline_cov if not (math.isnan(cov) or math.isnan(baseline_cov)) else float("nan")
+    )
     stable = cov <= threshold_pct if not math.isnan(cov) else False
 
     if math.isnan(cov):
@@ -526,6 +532,7 @@ def cov_stability_report(
 # ---------------------------------------------------------------------------
 # LaTeX table generator
 # ---------------------------------------------------------------------------
+
 
 def latex_table(
     rows: list[dict[str, str | float]],
@@ -605,6 +612,7 @@ def latex_table(
 # ---------------------------------------------------------------------------
 # Convenience: describe_samples
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SampleSummary:
