@@ -353,10 +353,10 @@ class HybridKEM:
                 generate_private_key,
             )
 
-            priv = generate_private_key(SECP256R1(), default_backend())
-            pub = priv.public_key()
-            priv_bytes = priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
-            pub_bytes = pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+            ec_priv = generate_private_key(SECP256R1(), default_backend())
+            ec_pub = ec_priv.public_key()
+            priv_bytes = ec_priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+            pub_bytes = ec_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
             return priv_bytes, pub_bytes
         else:
             raise UnsupportedAlgorithm(
@@ -396,8 +396,8 @@ class HybridKEM:
                 generate_private_key,
             )
 
-            ephem_priv = generate_private_key(SECP256R1(), default_backend())
-            ephem_pub = ephem_priv.public_key()
+            ec_ephem_priv = generate_private_key(SECP256R1(), default_backend())
+            ec_ephem_pub = ec_ephem_priv.public_key()
 
             # Load recipient's public key from uncompressed point
             # cryptography doesn't have a direct from_encoded_point in all versions
@@ -406,14 +406,14 @@ class HybridKEM:
                 raise DecapsulationError(algo=self._classical)
             x = int.from_bytes(recipient_pub_bytes[1:33], "big")
             y = int.from_bytes(recipient_pub_bytes[33:65], "big")
-            recipient_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
+            ec_recipient_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
                 default_backend()
             )
 
-            shared_key = ephem_priv.exchange(ECDH(), recipient_pub)
+            shared_key = ec_ephem_priv.exchange(ECDH(), ec_recipient_pub)
             if len(shared_key) < 32:
                 raise DecapsulationError(algo=self._classical)
-            ct = ephem_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+            ct = ec_ephem_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
             return ct, shared_key[:32]
         else:
             raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256"])
@@ -447,7 +447,7 @@ class HybridKEM:
                 )
                 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
-                our_priv = cast(
+                ec_our_priv = cast(
                     EllipticCurvePrivateKey,
                     load_pem_private_key(
                         secret_key_bytes, password=None, backend=default_backend()
@@ -460,7 +460,7 @@ class HybridKEM:
                 sender_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
                     default_backend()
                 )
-                shared = our_priv.exchange(ECDH(), sender_pub)
+                shared = ec_our_priv.exchange(ECDH(), sender_pub)
                 if len(shared) < 32:
                     raise DecapsulationError(algo=self._algorithm)
                 return shared[:32]

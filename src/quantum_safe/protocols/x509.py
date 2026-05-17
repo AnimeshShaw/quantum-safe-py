@@ -299,6 +299,7 @@ class HybridCertificateBuilder:
 
         # Build the verifier instance using the normal constructor so that
         # validate_hybrid_combination() runs and rejects unapproved pairs.
+        verifier: HybridSign | Sign
         if "+" in algo:
             from quantum_safe.signatures.algorithms import parse_hybrid_name
 

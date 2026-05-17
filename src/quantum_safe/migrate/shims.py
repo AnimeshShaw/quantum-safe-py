@@ -141,12 +141,12 @@ class FernetShim(_ShimBase):
         return Envelope.open(sealed, self._keypair.secret, kem=self._kem)
 
     @property
-    def public_key(self) -> PublicKey:  # type: ignore[return]
+    def public_key(self) -> PublicKey:
         """The public key used for encryption. Share this with senders."""
         return self._keypair.public
 
     @property
-    def secret_key(self) -> SecretKey:  # type: ignore[return]
+    def secret_key(self) -> SecretKey:
         """The secret key used for decryption. Keep this private."""
         return self._keypair.secret
 

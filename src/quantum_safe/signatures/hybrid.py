@@ -43,7 +43,7 @@ from __future__ import annotations
 import os
 import struct
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -353,15 +353,11 @@ class HybridSign:
                 generate_private_key,
             )
 
-            priv = generate_private_key(SECP256R1(), default_backend())
-            pub = priv.public_key()
-            priv_bytes = priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+            ec_priv = generate_private_key(SECP256R1(), default_backend())
+            ec_pub = ec_priv.public_key()
+            priv_bytes = ec_priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
             # Store public key as raw 64-byte (x, y)
-            pub_nums = (
-                pub.public_key().public_numbers()
-                if hasattr(pub, "public_key")
-                else pub.public_numbers()
-            )
+            pub_nums = ec_pub.public_numbers()
             x_bytes = pub_nums.x.to_bytes(32, "big")
             y_bytes = pub_nums.y.to_bytes(32, "big")
             return x_bytes + y_bytes, priv_bytes
@@ -386,12 +382,18 @@ class HybridSign:
         elif self._classical == "P-256":
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import hashes
-            from cryptography.hazmat.primitives.asymmetric.ec import ECDSA
+            from cryptography.hazmat.primitives.asymmetric.ec import (
+                ECDSA,
+                EllipticCurvePrivateKey,
+            )
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
             msg_with_ctx = bytes([len(context)]) + context + message
-            priv = load_pem_private_key(secret_key_bytes, password=None, backend=default_backend())
-            return priv.sign(msg_with_ctx, ECDSA(hashes.SHA256()))
+            ec_priv = cast(
+                EllipticCurvePrivateKey,
+                load_pem_private_key(secret_key_bytes, password=None, backend=default_backend()),
+            )
+            return ec_priv.sign(msg_with_ctx, ECDSA(hashes.SHA256()))
 
         else:
             raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256"])
@@ -428,8 +430,8 @@ class HybridSign:
                     return False
                 x = int.from_bytes(public_key_bytes[:32], "big")
                 y = int.from_bytes(public_key_bytes[32:], "big")
-                pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(default_backend())
-                pub.verify(signature, msg_with_ctx, ECDSA(hashes.SHA256()))
+                ec_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(default_backend())
+                ec_pub.verify(signature, msg_with_ctx, ECDSA(hashes.SHA256()))
                 return True
             except Exception:  # noqa: BLE001
                 return False

@@ -146,6 +146,7 @@ if _HAS_CLICK:
 
         click.echo(f"Loading key from {input_path}...")
 
+        key: SecretKey | PublicKey
         try:
             # Try loading as secret key first
             key = SecretKey.from_pem(pem_data)

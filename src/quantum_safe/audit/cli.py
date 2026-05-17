@@ -135,8 +135,8 @@ if _HAS_CLICK:
         meta: dict[str, str] = {}
         for item in metadata:
             if "=" in item:
-                k, _, v = item.partition("=")
-                meta[k.strip()] = v.strip()
+                k, _, val = item.partition("=")
+                meta[k.strip()] = val.strip()
 
         report = Auditor.audit(
             path,

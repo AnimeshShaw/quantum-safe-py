@@ -193,7 +193,7 @@ _SIG_LIBOQS_NAMES: dict[str, str] = {
 def _import_oqs() -> Any:  # noqa: ANN401
     """Import the oqs module or raise BackendNotAvailable."""
     try:
-        import oqs  # type: ignore[import]
+        import oqs
 
         return oqs
     except ImportError as exc:

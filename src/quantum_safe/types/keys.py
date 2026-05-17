@@ -33,7 +33,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from quantum_safe._internal import serialization as _ser
 from quantum_safe.exceptions import (
@@ -208,10 +208,10 @@ class BaseKey(ABC):
         """
         if hash_algo == "blake3":
             try:
-                import blake3  # type: ignore[import]
+                import blake3  # type: ignore[import-not-found]
 
                 h = blake3.blake3(self.algorithm.encode() + b"\x00" + self.raw_bytes)
-                return h.hexdigest()
+                return cast(str, h.hexdigest())
             except ImportError:
                 warnings.warn(
                     "blake3 package not installed, falling back to sha256 for fingerprint",
@@ -223,7 +223,7 @@ class BaseKey(ABC):
         h.update(self.algorithm.encode("ascii"))
         h.update(b"\x00")  # separator — prevents length extension issues
         h.update(self.raw_bytes)
-        return h.hexdigest()
+        return cast(str, h.hexdigest())
 
     def fingerprint_colon(self, hash_algo: str = "sha256") -> str:
         """Return fingerprint as colon-separated pairs: aa:bb:cc:..."""

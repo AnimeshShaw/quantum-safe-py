@@ -54,7 +54,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from typing import Any
+from typing import Any, cast
 
 from quantum_safe.exceptions import UnsupportedAlgorithm, VerificationError
 from quantum_safe.signatures.core import Sign
@@ -323,7 +323,7 @@ class JWTVerifier:
             if self._audience not in aud:
                 raise VerificationError(algo=self._algorithm)
 
-        return claims
+        return cast(dict[str, Any], claims)
 
     @property
     def algorithm(self) -> str:

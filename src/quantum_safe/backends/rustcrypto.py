@@ -28,7 +28,7 @@ Until then, is_available() returns False and the liboqs backend is used.
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
 from quantum_safe.exceptions import BackendNotAvailable
@@ -37,7 +37,7 @@ from quantum_safe.exceptions import BackendNotAvailable
 def _import_qs_py() -> Any:  # noqa: ANN401
     """Import the quantum_safe_py native extension or raise BackendNotAvailable."""
     try:
-        import quantum_safe_py as _qs_py  # type: ignore[import]
+        import quantum_safe_py as _qs_py  # type: ignore[import-not-found]
 
         return _qs_py
     except ImportError as exc:
@@ -92,15 +92,15 @@ class RustCryptoKEMBackend(AbstractKEMBackend):
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
         qs = _import_qs_py()
-        return qs.kem_keygen(algorithm)
+        return cast(tuple[bytes, bytes], qs.kem_keygen(algorithm))
 
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
         qs = _import_qs_py()
-        return qs.kem_encapsulate(algorithm, public_key)
+        return cast(tuple[bytes, bytes], qs.kem_encapsulate(algorithm, public_key))
 
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         qs = _import_qs_py()
-        return qs.kem_decapsulate(algorithm, secret_key, ciphertext)
+        return cast(bytes, qs.kem_decapsulate(algorithm, secret_key, ciphertext))
 
     def is_available(self) -> bool:
         try:
@@ -152,7 +152,7 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
         qs = _import_qs_py()
-        return qs.sig_keygen(algorithm)
+        return cast(tuple[bytes, bytes], qs.sig_keygen(algorithm))
 
     def sign(
         self,
@@ -162,7 +162,7 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
         context: bytes = b"",
     ) -> bytes:
         qs = _import_qs_py()
-        return qs.sig_sign(algorithm, secret_key, message, context)
+        return cast(bytes, qs.sig_sign(algorithm, secret_key, message, context))
 
     def verify(
         self,

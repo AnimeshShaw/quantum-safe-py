@@ -31,7 +31,7 @@ import datetime
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 from quantum_safe.migrate.scanner import Finding, ScanReport, Severity
 
@@ -165,7 +165,7 @@ class NISTComplianceChecker:
 
     # NIST controls we evaluate. Each has a check function.
     # The structure is intentionally readable so auditors can review it.
-    _CONTROLS = [
+    _CONTROLS: ClassVar[list[dict[str, Any]]] = [
         {
             "id": "FIPS203-2.1",
             "standard": "FIPS 203",

@@ -201,7 +201,7 @@ class AuditPolicy:
 
         if path.suffix in (".yaml", ".yml"):
             try:
-                import yaml  # type: ignore[import]
+                import yaml  # type: ignore[import-untyped]
 
                 data = yaml.safe_load(text)
             except ImportError:
