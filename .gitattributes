@@ -1,0 +1,22 @@
+# Normalize line endings: store as LF in git, checkout as-is on all platforms
+* text=auto eol=lf
+
+# Force LF for source files
+*.py    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.rst   text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.cfg   text eol=lf
+*.ini   text eol=lf
+*.json  text eol=lf
+*.cff   text eol=lf
+
+# Binary files - no line ending conversion
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.whl   binary
+*.gz    binary
