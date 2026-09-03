@@ -86,16 +86,25 @@ class LiboqsVendorBuildHook(BuildHookInterface):
 
         self.app.display_info(f"[liboqs-vendor] building liboqs into {staging} ...")
 
-        # The interpreter hatchling runs us under (pip's isolated build
-        # environment for [build-system] requires) does not necessarily have
-        # pip importable as a module — bootstrap it defensively before use.
-        subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=False)
+        # pip's build-isolation machinery sets PYTHONPATH to restrict this
+        # process (and anything it spawns) to an overlay containing only
+        # hatchling's own build dependencies. ensurepip can still write pip
+        # into the real site-packages (it doesn't need to import "pip" to do
+        # that), but a subsequent `python -m pip` can't find what was just
+        # installed, because the inherited PYTHONPATH hides the real
+        # site-packages from it. Strip it for these subprocesses only.
+        env = os.environ.copy()
+        env.pop("PYTHONPATH", None)
+
+        subprocess.run(
+            [sys.executable, "-m", "ensurepip", "--upgrade"], check=False, env=env
+        )
         subprocess.run(
             [sys.executable, "-m", "pip", "install", "liboqs-python>=0.10.0"],
             check=True,
+            env=env,
         )
 
-        env = os.environ.copy()
         env["OQS_INSTALL_PATH"] = str(staging)
         subprocess.run(
             [sys.executable, "-c", "import oqs"],
