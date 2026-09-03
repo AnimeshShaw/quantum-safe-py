@@ -30,6 +30,9 @@ new one per call rather than sharing instances.
 from __future__ import annotations
 
 import ctypes
+import importlib.resources
+import os
+from pathlib import Path
 from typing import Any, ClassVar
 
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
@@ -191,8 +194,34 @@ _SIG_LIBOQS_NAMES: dict[str, str] = {
 }
 
 
+def _vendored_liboqs_dir() -> Path | None:
+    """Return the bundled liboqs directory shipped inside our own wheel, if any.
+
+    Populated at build time by hatch_build.py's LiboqsVendorBuildHook — only
+    present in wheels built with QUANTUM_SAFE_VENDOR_LIBOQS=1 (our released
+    wheels). A plain `pip install -e .` / sdist install has no such directory,
+    and liboqs-python falls back to its normal system-lib-or-build-from-source
+    behavior.
+    """
+    try:
+        base = Path(str(importlib.resources.files("quantum_safe"))) / "_vendor" / "liboqs"
+    except ModuleNotFoundError:
+        return None
+    return base if base.is_dir() else None
+
+
 def _import_oqs() -> Any:  # noqa: ANN401
-    """Import the oqs module or raise BackendNotAvailable."""
+    """Import the oqs module or raise BackendNotAvailable.
+
+    If we shipped a vendored liboqs binary and the caller hasn't already set
+    OQS_INSTALL_PATH themselves, point liboqs-python at our bundled copy so it
+    never attempts to download/compile liboqs from source.
+    """
+    if "OQS_INSTALL_PATH" not in os.environ:
+        vendor_dir = _vendored_liboqs_dir()
+        if vendor_dir is not None:
+            os.environ["OQS_INSTALL_PATH"] = str(vendor_dir)
+
     try:
         import oqs
 

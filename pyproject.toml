@@ -94,6 +94,24 @@ Documentation = "https://quantum-safe-py.readthedocs.io/en/latest/"
 [tool.hatch.build.targets.wheel]
 packages = ["src/quantum_safe"]
 
+# Vendors a compiled liboqs binary into the wheel — see hatch_build.py.
+# Only active when QUANTUM_SAFE_VENDOR_LIBOQS=1 (set by cibuildwheel below).
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+# ---------------------------------------------------------------------------
+# cibuildwheel — builds platform-specific wheels with a vendored liboqs binary
+# ---------------------------------------------------------------------------
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-*"
+skip = "pp* *-musllinux* *-win32 *-manylinux_i686"
+environment = { QUANTUM_SAFE_VENDOR_LIBOQS = "1" }
+build-verbosity = 1
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+before-all = "yum install -y cmake git || (apt-get update && apt-get install -y cmake git)"
+
 # ---------------------------------------------------------------------------
 # Ruff linter config
 # ---------------------------------------------------------------------------

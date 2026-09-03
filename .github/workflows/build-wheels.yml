@@ -1,0 +1,87 @@
+name: Build vendored wheels
+
+# Testing-phase triggers: this branch + manual dispatch. Once verified, this
+# will be narrowed to release tags only.
+on:
+  push:
+    branches: [feature/vendor-liboqs-wheels]
+  workflow_dispatch:
+
+jobs:
+  build-wheels:
+    name: Build wheel (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels with vendored liboqs
+        uses: pypa/cibuildwheel@v2.21
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  smoke-test:
+    name: Smoke test vendored wheel (${{ matrix.os }})
+    needs: build-wheels
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the built wheel only (no editable install, no sdist)
+        shell: bash
+        run: |
+          WHEEL=$(ls dist/*cp311*.whl | head -n1)
+          echo "Installing $WHEEL"
+          python -m pip install "$WHEEL"
+
+      - name: Verify liboqs works from the vendored binary, not a source build
+        shell: bash
+        run: |
+          python - <<'EOF'
+          import os
+          from pathlib import Path
+
+          from quantum_safe.backends import list_available_backends
+
+          backends = list_available_backends()
+          assert backends["liboqs"] is True, f"liboqs backend not available: {backends}"
+
+          import oqs
+
+          assert "ML-KEM-768" in oqs.get_enabled_kem_mechanisms()
+          assert "ML-DSA-65" in oqs.get_enabled_sig_mechanisms()
+
+          # liboqs-python's own auto-build writes to ~/_oqs by default. If our
+          # vendored binary was found and used, that directory must never be
+          # touched — its absence is the proof no source build happened.
+          default_auto_build_dir = Path.home() / "_oqs"
+          assert not default_auto_build_dir.exists(), (
+              "liboqs-python fell back to its own auto-build; vendoring didn't take effect"
+          )
+
+          print("OQS_INSTALL_PATH used:", os.environ.get("OQS_INSTALL_PATH"))
+          print("liboqs OK —", oqs.oqs_version())
+          EOF
