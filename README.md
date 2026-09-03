@@ -66,9 +66,12 @@ all work with the classical (X25519/Ed25519) components.
 pip install 'quantum-safe-py[liboqs]'
 ```
 
-Installs `liboqs-python` which vendors a pre-built liboqs binary for common
-platforms (Linux x86-64, macOS ARM/x86, Windows x86-64). If you're on an
-unusual architecture, build liboqs from source first.
+Installs `liboqs-python`, which does **not** ship a prebuilt liboqs binary.
+The first time you `import oqs`, it uses a system-installed liboqs if one is
+found, or otherwise downloads and compiles liboqs from source — this
+requires `git`, `CMake`, and a C compiler on the machine running it (on
+Windows, MSVC Build Tools with the C++ workload). Plan for a one-time build
+step on first install; there is currently no pure-pip, compiler-free path.
 
 Verify installation:
 ```bash

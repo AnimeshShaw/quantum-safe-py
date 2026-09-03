@@ -46,7 +46,9 @@ jobs:
           path: junit-unit-*.xml
 
   # ---------------------------------------------------------------------------
-  # Integration tests — requires liboqs-python (pre-built binary on ubuntu)
+  # Integration tests — requires liboqs-python, which compiles liboqs from
+  # source on first import (ubuntu-latest already has git/cmake/gcc, so this
+  # succeeds silently; it is not a prebuilt binary)
   # ---------------------------------------------------------------------------
   integration-tests:
     name: Integration tests (liboqs)
