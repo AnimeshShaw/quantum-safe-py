@@ -1,10 +1,10 @@
 name: Build vendored wheels
 
-# Testing-phase triggers: this branch + manual dispatch. Once verified, this
-# will be narrowed to release tags only.
+# Runs on version tags (e.g. v0.1.0) — cut a release by tagging master — plus
+# manual dispatch for ad-hoc testing.
 on:
   push:
-    branches: [feature/vendor-liboqs-wheels]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
