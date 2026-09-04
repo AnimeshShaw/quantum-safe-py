@@ -29,10 +29,16 @@ With liboqs backend (full ML-KEM / ML-DSA)
 
    pip install 'quantum-safe-py[liboqs]'
 
-This installs ``liboqs-python``, which does **not** ship a prebuilt liboqs
-binary. On first ``import oqs`` it uses a system liboqs if found, or
-downloads and compiles liboqs from source — this requires ``git``, ``CMake``,
-and a C compiler (on Windows, MSVC Build Tools with the C++ workload).
+``liboqs-python`` itself does **not** ship a prebuilt liboqs binary on any
+platform — on its own, the first ``import oqs`` downloads and compiles
+liboqs from source, needing ``git``, ``CMake``, and a C compiler (on
+Windows, MSVC Build Tools with the C++ workload).
+
+Our own released wheels work around that for common platforms — Linux
+x86_64, Windows x64, and macOS arm64 (14+) — by compiling liboqs ourselves at
+release time and bundling the binary into the wheel. On those platforms,
+installation is compiler-free. Elsewhere (32-bit, other architectures, Intel
+Mac, macOS <14), liboqs-python's normal build-from-source path applies.
 
 .. note::
 
@@ -73,7 +79,7 @@ Running the test suite:
 Windows notes
 -------------
 
-On Windows, ``liboqs-python`` ships a pre-built DLL so no compiler is
-required.  If you see a version mismatch warning between ``liboqs`` and
-``liboqs-python`` at import time, it is informational only — the library
-functions correctly.
+On Windows, our released wheel bundles a precompiled liboqs DLL, so no
+compiler is required. If you see a version mismatch warning between
+``liboqs`` and ``liboqs-python`` at import time, it is informational only —
+the library functions correctly.

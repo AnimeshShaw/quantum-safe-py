@@ -66,12 +66,18 @@ all work with the classical (X25519/Ed25519) components.
 pip install 'quantum-safe-py[liboqs]'
 ```
 
-Installs `liboqs-python`, which does **not** ship a prebuilt liboqs binary.
-The first time you `import oqs`, it uses a system-installed liboqs if one is
-found, or otherwise downloads and compiles liboqs from source — this
-requires `git`, `CMake`, and a C compiler on the machine running it (on
-Windows, MSVC Build Tools with the C++ workload). Plan for a one-time build
-step on first install; there is currently no pure-pip, compiler-free path.
+`liboqs-python` itself (the dependency behind this extra) does **not** ship a
+prebuilt liboqs binary — on its own, the first `import oqs` downloads and
+compiles liboqs from source, needing `git`, `CMake`, and a C compiler.
+
+Our own released wheels work around that: for common platforms — Linux
+x86_64, Windows x64, and macOS arm64 (14+) — we compile liboqs ourselves as
+part of the release process and bundle the binary directly into the wheel
+(see `hatch_build.py`). On those platforms, `pip install
+'quantum-safe-py[liboqs]'` just works, no compiler needed. Outside them
+(32-bit, other architectures, Intel Mac, macOS <14), liboqs-python falls back
+to its normal build-from-source path, so you'll still need `git`/`CMake`/a C
+compiler there.
 
 Verify installation:
 ```bash

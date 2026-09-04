@@ -135,7 +135,9 @@ Backend architecture
 The library dispatches to a cryptographic backend for all PQC operations:
 
 - **liboqs** — reference implementation of ML-KEM, ML-DSA, SLH-DSA.
-  Ships a pre-built binary for common platforms.
+  Our released wheels bundle a precompiled binary for common platforms
+  (Linux x86_64, Windows x64, macOS arm64 14+); elsewhere it builds from
+  source on first import.
 - **rustcrypto** — stub awaiting a PyO3 crate (``is_available()`` returns
   ``False`` until published).
 

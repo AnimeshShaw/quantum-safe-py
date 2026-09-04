@@ -4,6 +4,23 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased] — Security hardening 2026-04-12
 
+### Packaging
+
+- **Vendored liboqs binary for the `[liboqs]` extra** (`hatch_build.py`,
+  `pyproject.toml`, `backends/liboqs.py`): released wheels for Linux x86_64,
+  Windows x64, and macOS arm64 (14+) now bundle a precompiled liboqs binary,
+  built via a `cibuildwheel` CI matrix. `pip install
+  'quantum-safe-py[liboqs]'` no longer requires `git`/`CMake`/a C compiler on
+  those platforms — `_import_oqs()` points `OQS_INSTALL_PATH` at the bundled
+  binary before `liboqs-python` gets a chance to fall back to its normal
+  build-from-source path. Other platforms/architectures are unaffected and
+  keep the previous build-from-source behavior.
+- Corrected documentation (`README.md`, `docs/guides/installation.rst`, the
+  `backends/liboqs` module docstring) that had previously and incorrectly
+  claimed `liboqs-python` itself vendors a prebuilt binary — it doesn't; the
+  above is what actually makes that true now, and only for the platforms
+  listed.
+
 ### Security
 
 A comprehensive cryptographic security audit (14 findings) was performed against

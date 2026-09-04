@@ -16,10 +16,14 @@ Installation::
 
     pip install 'quantum-safe[liboqs]'
 
-The actual install pulls liboqs-python, which does not ship a prebuilt
-liboqs binary.  On first ``import oqs`` it uses a system liboqs if found, or
-downloads and compiles liboqs from source (needs git, CMake, and a C
-compiler) — see the OQS docs.
+The actual install pulls liboqs-python, which on its own does not ship a
+prebuilt liboqs binary — on first ``import oqs`` it uses a system liboqs if
+found, or downloads and compiles liboqs from source (needs git, CMake, and a
+C compiler). Our own released wheels bundle a precompiled liboqs binary for
+common platforms (Linux x86_64, Windows x64, macOS arm64 14+) — see
+``hatch_build.py`` and ``_vendored_liboqs_dir()`` below — so installation is
+compiler-free there. Elsewhere, liboqs-python's normal build-from-source path
+applies; see the OQS docs.
 
 Thread safety: Each liboqs operation creates its own internal context, so
 these classes are safe to use from multiple threads.  The oqs Python objects
