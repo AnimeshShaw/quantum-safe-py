@@ -110,7 +110,12 @@ build-verbosity = 1
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
-before-all = "yum install -y cmake git || (apt-get update && apt-get install -y cmake git)"
+before-all = "yum install -y cmake git openssl-devel || (apt-get update && apt-get install -y cmake git libssl-dev)"
+
+# macOS doesn't ship OpenSSL dev headers by default (Apple dropped it in
+# favor of its Security framework); liboqs's CMake build needs them.
+[tool.cibuildwheel.macos]
+before-all = "brew install openssl@3"
 
 # ---------------------------------------------------------------------------
 # Ruff linter config
