@@ -106,9 +106,35 @@ class LiboqsVendorBuildHook(BuildHookInterface):
         )
 
         env["OQS_INSTALL_PATH"] = str(staging)
-        subprocess.run(
+        result = subprocess.run(
             [sys.executable, "-c", "import oqs"],
-            check=True,
             env=env,
             cwd=str(Path(self.root)),
         )
+        if result.returncode != 0:
+            self._diagnose_load_failure(staging, env)
+            raise RuntimeError(
+                "[liboqs-vendor] 'import oqs' failed after building liboqs — "
+                "see ctypes.CDLL diagnostic above for the real underlying error."
+            )
+
+    def _diagnose_load_failure(self, staging: Path, env: dict) -> None:
+        """liboqs-python swallows the real OSError behind a generic message.
+
+        Probe every compiled shared library directly with ctypes.CDLL, which
+        surfaces the actual missing-dependency error (e.g. a specific .so/.dll
+        name) instead of liboqs-python's "Could not load liboqs shared
+        library".
+        """
+        src_dir = self._expected_src_dir(staging)
+        self.app.display_info(f"[liboqs-vendor] diagnosing load failure in {src_dir}")
+        probe = (
+            "import ctypes, glob, sys\n"
+            f"for path in sorted(glob.glob(r'{src_dir}/*')):\n"
+            "    try:\n"
+            "        ctypes.CDLL(path)\n"
+            "        print(f'OK: {path}')\n"
+            "    except OSError as e:\n"
+            "        print(f'FAIL: {path}: {e}')\n"
+        )
+        subprocess.run([sys.executable, "-c", probe], env=env, check=False)
