@@ -85,3 +85,58 @@ jobs:
           print("OQS_INSTALL_PATH used:", os.environ.get("OQS_INSTALL_PATH"))
           print("liboqs OK —", oqs.oqs_version())
           EOF
+
+  build-sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build sdist
+        # Source distribution for platforms our wheel matrix doesn't cover
+        # (ARM Linux, Intel Mac, macOS <14, 32-bit) — pip falls back to
+        # liboqs-python's normal build-from-source path there.
+        run: |
+          python -m pip install build
+          python -m build --sdist
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish:
+    name: Publish to PyPI
+    needs: [smoke-test, build-sdist]
+    runs-on: ubuntu-latest
+    # Matches the environment name you configure in PyPI's trusted-publisher
+    # setup for this repo/workflow (Settings > Publishing on pypi.org). Change
+    # or remove this if you configure it differently there.
+    environment: pypi
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels + sdist
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+
+      - name: Download sdist
+        uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
