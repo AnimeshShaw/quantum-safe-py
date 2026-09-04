@@ -113,9 +113,15 @@ manylinux-x86_64-image = "manylinux_2_28"
 before-all = "yum install -y cmake git openssl-devel || (apt-get update && apt-get install -y cmake git libssl-dev)"
 
 # macOS doesn't ship OpenSSL dev headers by default (Apple dropped it in
-# favor of its Security framework); liboqs's CMake build needs them.
+# favor of its Security framework); liboqs's CMake build needs them. CMake
+# finds the runner's pre-existing openssl@1.1 rather than the openssl@3 we
+# install here (openssl@3 is keg-only, not on the default search path) — that
+# 1.1 build's own minimum macOS target is 14.0, so the wheel must match it or
+# delocate refuses to bundle it in. Floor is macOS 14 (Sonoma)+ for now;
+# earlier macOS falls back to building liboqs from source on install.
 [tool.cibuildwheel.macos]
 before-all = "brew install openssl@3"
+environment = { QUANTUM_SAFE_VENDOR_LIBOQS = "1", MACOSX_DEPLOYMENT_TARGET = "14.0" }
 
 # ---------------------------------------------------------------------------
 # Ruff linter config
