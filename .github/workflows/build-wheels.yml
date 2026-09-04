@@ -54,8 +54,8 @@ jobs:
         shell: bash
         run: |
           WHEEL=$(ls dist/*cp311*.whl | head -n1)
-          echo "Installing $WHEEL"
-          python -m pip install "$WHEEL"
+          echo "Installing $WHEEL[liboqs]"
+          python -m pip install "$WHEEL[liboqs]"
 
       - name: Verify liboqs works from the vendored binary, not a source build
         shell: bash
