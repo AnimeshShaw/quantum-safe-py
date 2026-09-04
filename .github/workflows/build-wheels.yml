@@ -115,12 +115,12 @@ jobs:
     name: Publish to PyPI
     needs: [smoke-test, build-sdist]
     runs-on: ubuntu-latest
-    # Matches the environment name you configure in PyPI's trusted-publisher
-    # setup for this repo/workflow (Settings > Publishing on pypi.org). Change
-    # or remove this if you configure it differently there.
+    # Requires a PYPI_API_TOKEN repository secret (Settings > Secrets and
+    # variables > Actions), scoped on pypi.org to just this project, not your
+    # whole account. Using this instead of trusted publishing (OIDC) for now —
+    # switch back by removing `with.password` here and adding
+    # `permissions: id-token: write` once trusted publishing is set up.
     environment: pypi
-    permissions:
-      id-token: write
 
     steps:
       - name: Download all wheels + sdist
@@ -140,3 +140,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          password: ${{ secrets.PYPI_API_TOKEN }}
