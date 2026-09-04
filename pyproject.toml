@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quantum-safe-py"
-version = "0.1.0"
+version = "0.2.0"
 description = "Production-grade post-quantum cryptography with hybrid KEM, migration tooling, and protocol helpers"
 readme = "README.md"
 license = { text = "Apache-2.0" }

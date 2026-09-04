@@ -2,7 +2,9 @@
 
 All notable changes to quantum-safe are documented here.
 
-## [Unreleased] — Security hardening 2026-04-12
+## [Unreleased]
+
+## [0.2.0] - 2026-09-04
 
 ### Packaging
 
