@@ -129,6 +129,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      - name: Upgrade pip tooling
+        # actions/setup-python's hosted image bundles whatever pip/setuptools
+        # version it was built with (e.g. setuptools 79.0.1, flagged by
+        # pip-audit as PYSEC-2026-3447 — fixed in 83.0.0). Upgrade explicitly
+        # before installing anything so the audit below scans current tooling.
+        run: pip install --upgrade pip setuptools wheel
+
       - name: Install pip-audit
         run: pip install pip-audit
 
