@@ -4,6 +4,16 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-05
+
+### Packaging
+
+- **PyPI publishing fixed**: the 0.2.0 tag's release workflow built and
+  smoke-tested wheels for all three platforms successfully, but the publish
+  step failed — PyPI Trusted Publishing (OIDC) was never configured for this
+  repo, so the token exchange was rejected. 0.2.0 was never actually uploaded.
+  The workflow now publishes via a `PYPI_API_TOKEN` repository secret instead.
+
 ## [0.2.0] - 2026-09-04
 
 ### Packaging
