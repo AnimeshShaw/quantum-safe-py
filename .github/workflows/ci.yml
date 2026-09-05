@@ -145,7 +145,10 @@ jobs:
       - name: Audit dependencies for known CVEs
         # Fails the build if any dependency has a known vulnerability.
         # Use --ignore-vuln <GHSA-id> only with a documented justification.
-        run: pip-audit --strict --desc on
+        # --skip-editable excludes the editable-installed project itself
+        # (line above), which pip-audit can't look up on PyPI under an
+        # unreleased/pre-publish version number.
+        run: pip-audit --strict --desc on --skip-editable
 
   # ---------------------------------------------------------------------------
   # DevSecOps — static application security testing (Bandit)
