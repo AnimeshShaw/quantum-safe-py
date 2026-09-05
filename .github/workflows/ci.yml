@@ -147,8 +147,12 @@ jobs:
         # Use --ignore-vuln <GHSA-id> only with a documented justification.
         # --skip-editable excludes the editable-installed project itself
         # (line above), which pip-audit can't look up on PyPI under an
-        # unreleased/pre-publish version number.
-        run: pip-audit --strict --desc on --skip-editable
+        # unreleased/pre-publish version number. No --strict: that flag fails
+        # the build on any uncollectable dependency, which --skip-editable
+        # deliberately creates one of (the local package itself) — it doesn't
+        # affect whether a real found vulnerability fails the build, which it
+        # still does.
+        run: pip-audit --desc on --skip-editable
 
   # ---------------------------------------------------------------------------
   # DevSecOps — static application security testing (Bandit)
