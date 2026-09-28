@@ -19,7 +19,7 @@
 | GC | Disabled during measurement | Prevents GC pauses skewing samples |
 | Reported statistic | Median (p50) | Robust to extreme tail values; standard in systems papers |
 | CPU pinning (ENV-2) | `--cpuset-cpus="0,1"` | Pins Docker container to cores 0–1, eliminating cross-core migration noise |
-| Runs | 3 independent runs; best selected | Guards against thermal/scheduler outlier runs |
+| Runs | 3 independent runs; **median** selected | Discards a thermal/scheduler outlier run without reporting a minimum. Best-of-3 ran 8.0% optimistic on average across 33 operations (range 0.4-21.8%); the full hybrid handshake moves 243.26 -> 245.55 us (+0.94%) under median-of-3. |
 
 Trimmed samples formula: `samples[clip : len(samples) - clip]` where
 `clip = max(1, int(N × 0.01))`.
@@ -403,3 +403,106 @@ $env:OQS_DLL_DIR = "C:\Users\<you>\_oqs\bin"
 python -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000
 python -X utf8 tests/bench/bench_signatures.py --with-pqc --iterations 3000
 ```
+
+---
+
+## ACVP conformance (known-answer tests)
+
+Run with `python tests/conformance/acvp_kat.py`. Vectors are fetched from NIST's
+ACVP-Server repository at pinned commit `975de31eb83d87039ec88934fdc47d8c312b892d`.
+
+**This is not a CAVP or CMVP validation.** Validation is performed by accredited
+laboratories against the production ACVTS server and results in a certificate;
+nothing here produces one. The supported claim is "answers NIST-issued ACVP
+vectors correctly for the paths tested", which is weaker than "validated" and
+stronger than "the API exists". The distinction matters under CNSA 2.0, where
+compliance runs through validated modules.
+
+### Result: 150/150 runnable cases
+
+| Test type | Runnable | Result |
+| --- | --- | --- |
+| ML-KEM keyGen (seeded) | 75 | **75/75** exact `ek` **and** `dk` match, ML-KEM-512/768/1024 |
+| ML-KEM decapsulation (VAL) | 30 | **30/30** exact shared-secret match |
+| ML-DSA sigVer | 45 | **45/45** — 9 expect acceptance, 36 expect rejection |
+| ML-KEM encapsulation | 0 | Needs injected `m`; only a randomness callback could supply it |
+| ML-KEM key checks | 0 | No public key-validation entry point |
+| ML-DSA keyGen / sigGen | 0 | Needs seed or deterministic-mode control the API does not expose |
+| ML-DSA `externalMu` | 0 | Supplies `mu` rather than a message |
+
+Three properties of this result are worth stating explicitly:
+
+- **keyGen pins the full key expansion.** `generate_keypair_seed()` accepts the
+  64-byte `d || z` seed that FIPS 203 keygen is defined over, and both the
+  encapsulation and decapsulation keys are compared — not just the public half.
+- **Decapsulation covers the rejection path.** The VAL set includes deliberately
+  malformed ciphertexts, whose expected output is the FIPS 203 implicit-rejection
+  value rather than an error, so that branch is pinned to an exact answer.
+- **sigVer exercises both polarities.** 9 cases expect acceptance and 36 expect
+  rejection. This matters: an implementation that rejected everything would pass
+  all rejection cases, so a pass rate over rejection cases alone would be weak
+  evidence. Both directions pass here.
+
+### Interface finding: liboqs implements the FIPS 204 *external* interface
+
+FIPS 204 distinguishes an external interface, which mixes a domain separator and
+context string into the message before signing, from an internal one operating on
+the prepared message. The runner probes this rather than assuming it, and detects
+**external**. Two practical consequences:
+
+- Every ACVP acceptance case carries a non-empty context (76-171 bytes in the
+  published vectors), so they are only reachable through `verify_with_ctx_str`.
+  Using plain `verify()` makes all of them unreachable and yields a misleading
+  "no runnable cases" result.
+- `externalMu` groups remain out of scope: verifying from `mu` is a distinct
+  entry point this binding does not expose.
+
+---
+
+## Two-class timing-leakage assessment (ENV-2)
+
+Run with `python tests/bench/bench_leakage.py --iterations 20000`. ENV-2 figures
+below are from `results/env2/leakage_env2.json` (Docker/Linux, liboqs built with
+`-DOQS_DIST_BUILD=ON`, `--cpuset-cpus="0,1"`, 20,000 measurements per class per
+test, interleaved with randomised class order).
+
+CoV is **not** used as the side-channel measure here. CoV is computed with the
+secret held fixed, so it describes stability under repetition and cannot
+constrain secret dependence. This is the fixed-versus-random design instead.
+
+| Comparison | ENV-2 \|t\| range | ENV-2 Δmean | ENV-1 \|t\| range | Reading |
+| --- | --- | --- | --- | --- |
+| **Control A** — fixed vs fixed | 0.63–1.07 | −0.056 to −0.021 µs | ≤ 0.65 | apparatus quiet |
+| **Control B** — random vs random | 0.50–1.93 | +0.011 to +0.245 µs | ≤ 0.60 | varying the key alone produces nothing |
+| ML-KEM-768 decap — fixed vs fresh key | **7.03–39.43** | +0.447 to +0.567 µs | 11.5–33.1 | artifact, not leakage — see below |
+| ML-KEM-768 decap — valid vs implicit reject | 0.20–0.49 | −0.037 to +0.013 µs | ≤ 0.77 | rejection path not separable |
+| ML-DSA-65 sign — fixed vs fresh key | 0.86–1.12 | −0.774 to −0.421 µs | ≤ 0.44 | key-independent |
+| HybridKEM decap — fixed vs fresh key | 1.28–2.38 | +0.482 to +0.638 µs | 2.2–3.4 | no key-dependent timing |
+
+### The positive result is an artifact, and Control B is what shows it
+
+Fixed-versus-random on ML-KEM decapsulation reaches |t| up to 39.4 while
+random-versus-random stays at 1.93. Varying the key between two classes produces
+no difference, so the signal does not track key values. What separates the classes
+is that the fixed class re-executes on byte-identical inputs and settles into a
+microarchitectural steady state the varying class never reaches.
+
+Reported without Control B, this measurement would have supported a claim of
+timing leakage in a FIPS 203 implementation at |t| > 39. **A fixed-versus-random
+t-statistic is not self-interpreting at this level of abstraction.**
+
+### Cross-environment agreement strengthens the reading
+
+ENV-1 (Windows, generic build, no AVX2/AVX-512 dispatch) and ENV-2 select
+different code. The artifact is roughly **five times smaller in absolute terms on
+the optimised build** (Δmean ≈ 0.5 µs vs ≈ 2.8 µs), yet Control B stays quiet in
+both and all three genuine findings hold in both. The interpretation therefore
+does not rest on one compiler configuration.
+
+### Honest caveat on tail sensitivity
+
+ENV-2 |t| for the artifact runs 7.03 → 39.43 across the crop sweep while Δmean
+stays flat near 0.5 µs. The effect size is stable; the t-statistic is dominated by
+how the upper tail is handled. The runner reports this as instability rather than
+as a verdict, which is why the crop sweep is analysed on one sample set rather
+than re-measured per threshold.
