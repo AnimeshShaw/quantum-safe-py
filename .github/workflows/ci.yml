@@ -88,6 +88,46 @@ jobs:
           path: junit-integration.xml
 
   # ---------------------------------------------------------------------------
+  # ACVP conformance — runs NIST-published ML-KEM/ML-DSA vectors against the
+  # installed backend. This is a known-answer test, NOT a CAVP/CMVP validation:
+  # validation is performed by accredited laboratories and produces a
+  # certificate, which nothing here does. Vectors are fetched from a commit
+  # pinned in tests/conformance/acvp_kat.py, so a re-run reproduces the same
+  # answers. Separated from integration-tests because it needs network access.
+  # ---------------------------------------------------------------------------
+  acvp-conformance:
+    name: ACVP conformance (NIST vectors)
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install with liboqs backend
+        run: pip install -e '.[dev,liboqs]'
+
+      - name: Cache ACVP vectors
+        uses: actions/cache@v4
+        with:
+          path: tests/conformance/_vectors
+          key: acvp-vectors-${{ hashFiles('tests/conformance/acvp_kat.py') }}
+
+      - name: Run ACVP known-answer tests
+        run: python tests/conformance/acvp_kat.py --save acvp_kat.json
+
+      - name: Upload conformance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acvp-conformance-report
+          path: acvp_kat.json
+
+  # ---------------------------------------------------------------------------
   # Lint and type-check
   # ---------------------------------------------------------------------------
   lint:

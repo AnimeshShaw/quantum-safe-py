@@ -1,0 +1,4 @@
+# NIST ACVP vectors are fetched on demand from a pinned upstream commit
+# (see acvp_kat.py:ACVP_COMMIT). They run to tens of megabytes, so they are
+# cached locally rather than committed.
+_vectors/
