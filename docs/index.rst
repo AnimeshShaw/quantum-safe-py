@@ -62,6 +62,7 @@ and a CI-ready audit scanner — all in one library.
    api/protocols
    api/migrate
    api/audit
+   api/compliance
    api/backends
    api/exceptions
 

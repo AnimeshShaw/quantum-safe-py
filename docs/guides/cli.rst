@@ -105,6 +105,66 @@ Generate a NIST SP 800-208 compliance report.
    Examples:
      qs-audit compliance ./src --format json --output compliance.json
 
+``qs-audit cnsa2``
+~~~~~~~~~~~~~~~~~~
+
+Check a KEM/signature/hash selection against **CNSA 2.0** mandated parameter
+sets (ML-KEM-1024, ML-DSA-87, SHA-384/512) — a different, narrower check than
+``qs-audit compliance`` above: this one is about *which parameter sets you
+selected*, not about scanning source code. Defaults mirror this library's own
+defaults, so running with no arguments shows what an unconfigured deployment
+scores (it does not score compliant — see :doc:`/api/compliance`).
+
+.. code-block:: bash
+
+   qs-audit cnsa2 [OPTIONS]
+
+   Options:
+     --kem TEXT              KEM or hybrid KEM to evaluate (default: X25519+ML-KEM-768)
+     --signature TEXT        Signature or hybrid signature to evaluate (default: Ed25519+ML-DSA-65)
+     --hash TEXT              Hash algorithm to evaluate (default: SHA-256)
+     --skip-code-signing      Omit the SP 800-208 software/firmware signing check
+                              (only use if the deployment provably does not sign
+                              software or firmware)
+     --output PATH            Write report to file (default: stdout)
+
+   Examples:
+     # What do the library's own defaults score? (spoiler: not compliant)
+     qs-audit cnsa2
+
+     # Check an actual CNSA 2.0 configuration
+     qs-audit cnsa2 --kem X25519+ML-KEM-1024 --signature Ed25519+ML-DSA-87 --hash SHA-512
+
+Exits ``1`` if any checked requirement is not met — including an unmet
+requirement the library cannot satisfy on its own (SP 800-208 code signing),
+which is reported rather than silently skipped.
+
+``qs-audit cbom``
+~~~~~~~~~~~~~~~~~
+
+Emit a **CycloneDX 1.6 Cryptographic Bill of Materials** for a path: every
+detected classical algorithm with its file:line location and a
+quantum-vulnerability assessment, plus (by default) the post-quantum
+algorithms this library provides to migrate to.
+
+.. code-block:: bash
+
+   qs-audit cbom <path> [OPTIONS]
+
+   Options:
+     --output PATH        Write CBOM JSON to file (default: stdout)
+     --no-provided         Omit the provided-algorithm inventory; list only
+                           what the scan detected
+     --exclude PATTERN    Glob pattern to exclude (repeatable)
+
+   Examples:
+     qs-audit cbom ./src --output cbom.json
+     qs-audit cbom ./src --no-provided --exclude "tests/**"
+
+This is an inventory, not a compliance verdict — pair it with
+``qs-audit cnsa2`` for parameter-set compliance, and remember that neither is
+a FIPS 140-3 validation.
+
 qs-migrate
 ----------
 

@@ -1,8 +1,59 @@
+0.3.0
+-----
+
+Added
+~~~~~
+
+- **LMS stateful signatures** (RFC 8554) via the optional ``[lms]`` extra,
+  wrapping ``pyhsslms``. Write-ahead index reservation through a
+  caller-supplied durable store, refusing a key presented at an
+  already-issued index -- built after confirming directly that a naive
+  restore-from-snapshot rewinds the index and produces two verifying
+  signatures at one index.
+- **CNSA 2.0 compliance profile** (``quantum_safe.compliance.cnsa2``):
+  reports or enforces the CNSA 2.0 mandated parameter sets (ML-KEM-1024,
+  ML-DSA-87, SHA-384/512). ``qs-audit cnsa2`` CLI command.
+- **CycloneDX 1.6 Cryptographic Bill of Materials** (``quantum_safe.audit.cbom``).
+  ``qs-audit cbom`` CLI command.
+- **ACVP known-answer conformance testing** against NIST-published vectors
+  (``tests/conformance/acvp_kat.py``), wired into CI. 225/225 runnable cases
+  pass: ML-KEM keyGen, encapsulation, decapsulation, and ML-DSA sigVer.
+  Explicitly not a CAVP/CMVP validation.
+- **Two-class timing-leakage harness** (``tests/bench/bench_leakage.py``),
+  replacing CoV as the tool for the secret-dependence question. Requires a
+  random-vs-random control in addition to the usual fixed-vs-fixed one --
+  without it the harness reports a stable false positive on this project's
+  own hardware.
+- Externally-derived production-readiness rubric
+  (``docs/production_readiness_rubric.md``), re-auditing nine PQC libraries
+  against nine dimensions anchored to CNSA 2.0, CMVP, the TNO CADI market
+  survey, and the IETF hybrid draft.
+
+Fixed
+~~~~~
+
+- **Breaking**: ``SLH-DSA-*`` algorithm names previously resolved to liboqs'
+  pre-standard round-3 ``SPHINCS+-...-simple`` mechanisms rather than FIPS 205.
+  Signatures made under the old mapping do not verify against the corrected
+  one. Confirmed non-interchangeable by cross-verification.
+- Benchmark harness shared one liboqs object across keygen, encapsulate, and
+  decapsulate measurements; ``generate_keypair()`` overwrote the stored
+  secret key, so the decapsulate benchmark silently measured the FIPS 203
+  implicit-rejection path rather than normal decapsulation.
+- ``Dockerfile`` never copied ``hatch_build.py``, so the reproducibility
+  image could not build at all.
+
+Changed
+~~~~~~~
+
+- Benchmark run selection: best-of-3 to median-of-3 (best-of-3 ran 8.0%
+  optimistic on average across 33 operations).
+
 Changelog
 =========
 
-0.2.0 — unreleased
--------------------
+0.2.0
+------
 
 Added
 ~~~~~

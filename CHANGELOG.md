@@ -4,6 +4,85 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-28
+
+### ⚠ Breaking
+
+- **`SLH-DSA-*` algorithm names now resolve to FIPS 205, not pre-standard
+  SPHINCS+.** They previously mapped to liboqs' `SPHINCS+-...-simple`
+  mechanisms (the round-3 submission), while the algorithm registry marked
+  them `is_nist_standard=True`. The two share key and signature sizes, so
+  the substitution was invisible from lengths — confirmed by
+  cross-verification that they are not interchangeable: a signature made
+  under one does not verify under the other. **Any signature produced under
+  the old `SLH-DSA-*` names in 0.2.x will not verify against 0.3.0.**
+  Round-3 SPHINCS+ remains available under explicit `SPHINCS+-*` names, so
+  it can no longer masquerade as a standard.
+
+### Added
+
+- **LMS stateful signatures** (RFC 8554) via the optional `[lms]` extra
+  (`pip install 'quantum-safe-py[lms]'`), wrapping `pyhsslms` (maintained by
+  an RFC 8554 co-author). LMS is stateful and fails catastrophically on
+  one-time-key reuse — confirmed directly that restoring a stale snapshot
+  rewinds the signing index and that two different messages signed at the
+  rewound index both verify. The wrapper write-ahead reserves each index
+  through a caller-supplied durable store *before* releasing a signature,
+  and refuses a key presented at an already-issued index. See
+  `quantum_safe.signatures.stateful`.
+- **CNSA 2.0 compliance profile** (`quantum_safe.compliance.cnsa2`): reports
+  or enforces the CNSA 2.0 mandated parameter sets (ML-KEM-1024, ML-DSA-87,
+  SHA-384/512). This library's own defaults (ML-KEM-768, ML-DSA-65) are
+  below the suite; `cnsa2.hybrid_kem()` / `cnsa2.hybrid_sign()` give a
+  compliant configuration in one call. New `qs-audit cnsa2` CLI command.
+- **CycloneDX 1.6 Cryptographic Bill of Materials** (`quantum_safe.audit.cbom`):
+  emits `cryptographic-asset` components with OIDs and NIST quantum security
+  levels, separating detected classical algorithms (file:line per
+  occurrence) from post-quantum algorithms available to migrate to. New
+  `qs-audit cbom` CLI command.
+- **ACVP known-answer conformance testing** against NIST-published vectors
+  (`tests/conformance/acvp_kat.py`), pinned to an upstream commit for
+  reproducibility, wired into CI. 225/225 runnable cases pass: ML-KEM keyGen
+  75/75 (seeded from the 64-byte `d‖z`), ML-KEM encapsulation 75/75 (via
+  `OQS_KEM_encaps_derand` through ctypes, since the high-level binding can't
+  accept ACVP-supplied randomness), ML-KEM decapsulation 30/30 (including
+  implicit-rejection cases), ML-DSA sigVer 45/45 (both acceptance and
+  rejection cases). Explicitly documented as conformance evidence, not a
+  CAVP or CMVP validation.
+- **Two-class timing-leakage harness** (`tests/bench/bench_leakage.py`):
+  fixed-vs-random testing per operation, with a random-vs-random control
+  in addition to the usual fixed-vs-fixed one. Without the second control
+  this harness reports a stable false positive (|t| up to 39) on ML-KEM
+  decapsulation, tracking the fixed class re-executing on byte-identical
+  inputs rather than key material — the finding is documented in the
+  companion timing-leakage paper.
+- **Externally-derived production-readiness rubric**
+  (`docs/production_readiness_rubric.md`): nine dimensions anchored to
+  CNSA 2.0, CMVP, the TNO CADI market survey, and the IETF hybrid draft,
+  applied to a September 2026 audit of nine PQC libraries. Three
+  self-selected dimensions from an earlier version had no external anchor
+  and are dropped. The audit scores this library below Bouncy Castle on
+  stateful signing and conformance evidence, and below its own CNSA 2.0
+  parameter sets on its own defaults.
+
+### Fixed
+
+- Benchmark harness (`bench_kem.py`, `bench_signatures.py`) shared one
+  liboqs object across keygen, encapsulate, and decapsulate measurements.
+  `generate_keypair()` overwrites the object's stored secret key, so the
+  decapsulate benchmark silently measured the FIPS 203 implicit-rejection
+  path rather than normal decapsulation. Each operation now gets its own
+  object, with assertions pinning the success path.
+- `Dockerfile` never copied `hatch_build.py`, which `pyproject.toml`
+  registers as a required build hook, so the reproducibility image could
+  not be built at all.
+
+### Changed
+
+- Benchmark run-selection rule: best-of-3 to median-of-3. Best-of-3 ran
+  8.0% optimistic on average across 33 operations (range 0.4%–21.8%); the
+  full hybrid handshake headline figure moves 243.26 → 245.55 µs (+0.94%).
+
 ## [0.2.1] - 2026-09-05
 
 ### Packaging

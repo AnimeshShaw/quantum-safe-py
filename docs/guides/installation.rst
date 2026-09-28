@@ -53,6 +53,19 @@ Verify the install:
    python -c "from quantum_safe.backends import list_available_backends; print(list_available_backends())"
    # → {'rustcrypto': False, 'liboqs': True, 'noble': False}
 
+With LMS stateful signatures (CNSA 2.0 software/firmware signing)
+--------------------------------------------------------------------
+
+.. code-block:: bash
+
+   pip install 'quantum-safe-py[lms]'
+
+Optional and separate from ``[liboqs]`` on purpose: LMS is **stateful**, and
+misusing that state compromises the signing key permanently. Installing it
+should be a deliberate choice, not a default. Read the LMS section of
+:doc:`/api/signatures` in full before using it — the state-handling
+discipline it requires is not optional even though the dependency is.
+
 Development install
 -------------------
 

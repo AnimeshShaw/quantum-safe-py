@@ -14,16 +14,26 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 
 ## Why this library exists
 
-Every PQC library today exposes algorithm primitives. None of them solve the production problem:
+We audited nine PQC libraries against nine dimensions anchored to CNSA 2.0,
+CMVP, the TNO CADI market survey, and the IETF hybrid draft — not to our own
+design, so the audit can (and does) score this library below others on some
+dimensions. Full methodology, per-dimension sources, and a re-auditable
+verification procedure: [`docs/production_readiness_rubric.md`](docs/production_readiness_rubric.md).
 
-| Gap | Status in ecosystem | This library |
+| Gap (September 2026 audit, 7 libraries with verified evidence) | Ecosystem | This library |
 |-----|---------------------|--------------|
-| Hybrid KEM (X25519+ML-KEM) | Only Cloudflare CIRCL (Go) | ✓ Default mode |
-| Cross-language key format | Every library differs | ✓ PEM/CBOR/JWK parity |
-| Migration path for existing keys | No library supports this | ✓ `Upgrader` + state machine |
-| Protocol helpers (TLS, JWT, X.509) | Not implemented anywhere | ✓ `protocols` module |
-| CI audit gate (SARIF output) | grep scripts | ✓ `qs-audit` CLI |
-| SBOM PQC-readiness enrichment | None | ✓ CycloneDX enrichment |
+| Cryptographic discovery/inventory | **0 of 7** provide it | ✓ CycloneDX CBOM (`qs-audit cbom`) |
+| Stateful hash-based signing (LMS/XMSS) | 1 of 7 (Bouncy Castle: both) | Partial — LMS only, optional `[lms]` extra |
+| Conformance evidence vs. NIST vectors | 1 of 5 holds a real CMVP cert (Bouncy Castle) | 225/225 ACVP known-answer cases — **not** a CMVP validation |
+| Hybrid KEM combiner | 3 of 6 have one (up from 1 of 9 nine months ago) | ✓ Default mode |
+| CNSA 2.0 parameter sets by default | n/a (raw primitives, no opinion) | **Partial** — defaults are ML-KEM-768/ML-DSA-65, below CNSA 2.0; `qs-audit cnsa2` reports or `cnsa2.enforce()` blocks it |
+| Migration path for existing keys | 1 of 7 partial | ✓ `Upgrader` + state machine |
+| Protocol helpers (TLS, JWT, X.509) | 3 of 7 (partial-to-full) | ✓ `protocols` module |
+
+We are not the strongest library on every axis — Bouncy Castle holds an
+actual CMVP FIPS 140-3 certificate and supports both LMS and XMSS, ahead of
+us on both. We report that rather than the version of this table that would
+look better.
 
 ---
 
@@ -370,6 +380,65 @@ for a in not_ready:
     print(f"NOT READY: {a.name} {a.version} → {a.action}")
 ```
 
+### CycloneDX Cryptographic Bill of Materials (CBOM)
+
+Every audited library in our September 2026 survey scored **None** on
+automated cryptographic discovery — this is the actual gap, not the hybrid-KEM
+one an older library snapshot suggested. `qs-audit cbom` closes it: a
+CycloneDX 1.6 `cryptographic-asset` inventory, one component per detected
+classical algorithm (file:line, quantum-vulnerability flag) plus the
+post-quantum algorithms available to migrate to.
+
+```bash
+qs-audit cbom ./src --output cbom.json
+```
+
+This is an inventory, not a compliance verdict — pair it with `qs-audit cnsa2`
+below, and note that neither is a FIPS 140-3 validation.
+
+### CNSA 2.0 parameter-set compliance
+
+CNSA 2.0 mandates specific parameter sets — ML-KEM-**1024**, ML-DSA-**87** —
+not just "uses post-quantum algorithms". **This library's own defaults
+(ML-KEM-768, ML-DSA-65) are below that suite.** We report this against
+ourselves rather than let it stay implicit:
+
+```python
+from quantum_safe.compliance import cnsa2
+
+report = cnsa2.report(kem="X25519+ML-KEM-768", signature="Ed25519+ML-DSA-65")
+print(report.render())
+# [FAIL] Key establishment ... requires ML-KEM-1024
+# [FAIL] Signatures ... requires ML-DSA-87
+# OVERALL: NOT compliant
+
+kem    = cnsa2.hybrid_kem()   # X25519 + ML-KEM-1024, compliant
+signer = cnsa2.hybrid_sign()  # Ed25519 + ML-DSA-87, compliant
+```
+
+Or from the CLI: `qs-audit cnsa2` (defaults to checking this library's own
+defaults — which fail, on purpose, so you see it immediately).
+
+### ACVP conformance evidence
+
+**225 of 225 runnable ACVP known-answer cases**, run against NIST's own
+published test vectors — ML-KEM keyGen (75/75, exact `ek`+`dk`), ML-KEM
+encapsulation (75/75), ML-KEM decapsulation (30/30, including
+implicit-rejection cases), ML-DSA sigVer (45/45, both acceptance and
+rejection). No other Python PQC library publishes this.
+
+**This is conformance evidence, not a CAVP or CMVP validation** — validation
+is performed by an accredited laboratory and produces a certificate; nothing
+here does. Bouncy Castle is the one library in our audit holding an actual
+CMVP FIPS 140-3 certificate, and we say so rather than blur the distinction.
+
+```bash
+python tests/conformance/acvp_kat.py --save results/acvp_kat.json
+```
+
+Full methodology, including exactly which ACVP test types remain unreachable
+through a high-level API and why: `results/BENCHMARKS.md`.
+
 ---
 
 ## CLI tools
@@ -397,6 +466,12 @@ qs-audit requirements requirements.txt
 
 # NIST SP 800-208 compliance report
 qs-audit compliance ./src --format json --output compliance.json
+
+# CNSA 2.0 parameter-set check (defaults to checking this library's own defaults)
+qs-audit cnsa2
+
+# CycloneDX Cryptographic Bill of Materials
+qs-audit cbom ./src --output cbom.json
 ```
 
 ### qs-migrate
@@ -434,9 +509,17 @@ We use `hmac.compare_digest()` for all secret comparisons.  Hybrid signature
 verification evaluates **both** sub-signatures unconditionally before combining
 the result, preventing timing oracles that would reveal which component failed.
 The underlying liboqs implementations are designed for constant-time operation.
-ENV-2 benchmarks (Docker/WSL2, 3,000 iterations) show ML-KEM-768 decapsulate
-CoV ~3.9% — within the AES-256-GCM noise floor band of 2.1%, confirming timing
-stability in practice.
+
+Two distinct measurements back this, and it matters which one you're reading:
+CoV (Coefficient of Variation, ~3.9% for ML-KEM-768 decapsulation in ENV-2,
+within the AES-256-GCM noise floor) is computed with the secret held fixed, so
+it shows timing *stability under repetition* — not secret independence.
+A separate fixed-vs-random test with a random-vs-random control (needed to
+rule out measurement artifacts — see `docs/guides/benchmarks.rst`) shows no
+key-dependent timing in ML-KEM decapsulation, the implicit-rejection path, or
+the hybrid combiner, across two environments. Neither is a formal
+constant-time proof; `dudect` or `ct-verif` against the compiled backend
+would be. See the companion timing-leakage paper for the full methodology.
 
 ### Serialization safety
 
@@ -578,9 +661,10 @@ If you use quantum-safe-py in research or build on the methodology, please cite 
   title     = {quantum-safe: Bridging the Post-Quantum Production Gap with a
                Hybrid-by-Default Python Cryptography Library},
   author    = {Shaw, Animesh},
-  journal   = {arXiv preprint arXiv:ARXIV_ID_PLACEHOLDER},
+  journal   = {arXiv preprint arXiv:2605.17061},
   year      = {2026},
-  url       = {https://arxiv.org/abs/ARXIV_ID_PLACEHOLDER}
+  note      = {v2},
+  url       = {https://arxiv.org/abs/2605.17061}
 }
 ```
 

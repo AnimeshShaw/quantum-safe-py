@@ -51,7 +51,7 @@ the OS scheduler. **ENV-2 (Docker/Linux) is the primary reference** for paper cl
 Benchmark harnesses
 -------------------
 
-Two harness scripts live in ``tests/bench/``:
+Three harness scripts live in ``tests/bench/``:
 
 .. list-table::
    :header-rows: 1
@@ -65,6 +65,16 @@ Two harness scripts live in ``tests/bench/``:
    * - ``bench_signatures.py``
      - Signature operations: Ed25519 baseline, ML-DSA-65 standalone, HybridSign
        (Ed25519+ML-DSA-65), X.509 hybrid certificate build and cosig verify
+   * - ``bench_leakage.py``
+     - Two-class (fixed-vs-random) timing-leakage assessment — see
+       `Two-class leakage testing`_ below. A different methodology from the
+       other two: it answers whether timing depends on the secret, which CoV
+       cannot.
+
+A separate module, ``tests/conformance/acvp_kat.py``, runs NIST's published
+ACVP known-answer vectors — see `ACVP conformance testing`_ below. It is not a
+benchmark (it checks correctness, not speed) but lives alongside the benchmark
+harness because it shares the same reproducibility goals.
 
 All harnesses share the same methodology:
 
@@ -171,15 +181,29 @@ Each operation prints one line::
 
 ----
 
-CoV as a side-channel proxy
-----------------------------
+CoV as a stability metric (not a side-channel proxy)
+------------------------------------------------------
 
-The coefficient of variation (CoV) is the primary metric for the
-timing side-channel analysis (paper Contribution 4).
+.. important::
+
+   An earlier version of this guide, and of the paper it supports, described
+   CoV as a "timing side-channel proxy". That framing does not hold up: CoV in
+   ``bench_kem.py`` / ``bench_signatures.py`` is computed with the secret
+   (the key) **held fixed** across the measurement, varying only across
+   repeated calls with the same key. A metric computed that way describes how
+   *stable* an operation's timing is under repetition — it cannot, even
+   weakly, constrain whether timing depends on the *specific secret*, because
+   the secret never varies within the measurement. Use
+   ``bench_leakage.py`` (`Two-class leakage testing`_ below) for the
+   secret-dependence question.
+
+The coefficient of variation (CoV) below is a stability metric: how much an
+operation's timing varies under repetition with one key held fixed.
 
 The baseline reference is AES-256-GCM, which is universally accepted as
-constant-time. Any operation with CoV ≤ AES-GCM's CoV is considered
-timing-stable on that platform.
+constant-time. An operation whose CoV sits near AES-GCM's CoV shows timing
+stability comparable to a known-safe reference — informative, but not by
+itself evidence about secret dependence.
 
 **ENV-2 (Docker/WSL2) noise floor: ~2.1%** — AES-256-GCM 1 KB encrypt.
 Operations within ~2% CoV are timing-stable. The paper uses this per-environment
@@ -477,3 +501,88 @@ The JSON structure::
         ]
       }
     }
+
+----
+
+Two-class leakage testing
+--------------------------
+
+``bench_leakage.py`` answers the question CoV cannot: does an operation's
+timing depend on the *specific secret*, not just vary across repeated calls?
+
+The design is fixed-versus-random (the approach ``dudect`` uses): one class
+holds a single secret fixed across every measurement, the other class draws a
+fresh secret each time. Environmental noise appears in both classes and
+cancels in a between-class comparison (Welch's :math:`t`-test), so a
+significant difference is attributable to the secret.
+
+**This is not self-interpreting at this level of abstraction.** A naive
+implementation gave one reused object to the fixed class and a pool of
+distinct objects to the random class — :math:`|t| > 13`, which reads as leakage but is
+actually memory locality (the reused object stays cache-resident). Getting a
+trustworthy answer needs:
+
+- **Matched allocation** — both classes cycle equally-sized pools of distinct
+  objects, so only key *contents* differ.
+- **Matched construction** — both pools built the same way (by key injection),
+  not one by generation and one by injection.
+- **Randomised class order** per measurement, so neither class is
+  systematically the cache-warm one.
+- **A crop-threshold sweep analysed on one sample set** — a verdict that
+  flips with how much of the tail is trimmed is not a verdict.
+- **A random-vs-random control, in addition to the usual fixed-vs-fixed one.**
+  This is the control that is easy to omit and decisive when included: on
+  this project's own data, fixed-vs-random reached :math:`|t| = 39` on ML-KEM
+  decapsulation while random-vs-random stayed under 2 — proving the signal
+  tracked repetition, not key material, which a naive test without that
+  control would have reported as a real leak.
+
+.. code-block:: bash
+
+   python tests/bench/bench_leakage.py --iterations 20000 --save results/leakage.json
+
+Interpreting the output: the runner reports its own apparatus-noise floor
+(the fixed-vs-fixed control) and refuses to call a result "leak" if it can't
+be distinguished from that floor, or if the verdict is unstable across the
+crop sweep. Read the printed ``INTERPRETATION`` block — it states in plain
+language whether a positive fixed-vs-random result is attributable to the key
+or to the measurement design.
+
+Current results (both ENV-1 and ENV-2) are recorded in
+``results/BENCHMARKS.md`` under "Two-class timing-leakage assessment".
+
+----
+
+ACVP conformance testing
+--------------------------
+
+``tests/conformance/acvp_kat.py`` runs NIST's own published ACVP
+known-answer vectors against the installed backend.
+
+.. warning::
+
+   This is **not** a CAVP or CMVP validation. Validation is performed by
+   accredited laboratories against NIST's production ACVTS server and results
+   in a certificate. This module produces none of that. The supported claim
+   is "answers NIST-issued ACVP vectors correctly", not "validated" — never
+   describe a passing run as validation, certification, or compliance.
+
+Vectors are fetched from a pinned commit of ``usnistgov/ACVP-Server`` (so a
+re-run reproduces the same answers) and cached under
+``tests/conformance/_vectors/`` (gitignored).
+
+.. code-block:: bash
+
+   python tests/conformance/acvp_kat.py --save results/acvp_kat.json
+
+Current result: **225 of 225 runnable cases** produce the expected answer —
+ML-KEM keyGen (75/75, seeded from the 64-byte ``d‖z``), ML-KEM encapsulation
+(75/75, reached through ``OQS_KEM_encaps_derand`` via ``ctypes`` since the
+high-level binding can't accept ACVP's supplied randomness), ML-KEM
+decapsulation (30/30, including implicit-rejection cases), and ML-DSA sigVer
+(45/45, across both acceptance and rejection cases — an implementation that
+rejected everything would pass only the rejection cases, so both polarities
+matter). ML-KEM key-validation checks and ML-DSA keyGen/sigGen remain out of
+reach of the current API surface; the runner reports this as a scope limit,
+not a failure. Full detail, including *why* each unreachable test type is
+unreachable, is in ``results/BENCHMARKS.md`` and the module's own docstring.
