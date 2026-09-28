@@ -216,26 +216,39 @@ def bench_ml_dsa(message_sizes: list[int] | None = None) -> list[BenchResult]:
 
     for msg_size in message_sizes:
         message = os.urandom(msg_size)
-        with oqs.Signature("ML-DSA-65") as signer:
-            pub_key = signer.generate_keypair()
-            sig = signer.sign(message)  # pre-computed
-
+        # One Signature object per measured operation. generate_keypair()
+        # overwrites the object's stored signing key, so a shared object would
+        # leave the sign and verify benchmarks running against a key that no
+        # longer matches the pre-computed signature.
+        with oqs.Signature("ML-DSA-65") as keygen_signer:
             results.append(
                 _bench(
                     "ML-DSA-65 keygen",
-                    lambda: signer.generate_keypair(),
+                    lambda: keygen_signer.generate_keypair(),
                 )
             )
+
+        with oqs.Signature("ML-DSA-65") as sign_signer:
+            sign_signer.generate_keypair()
             results.append(
                 _bench(
                     f"ML-DSA-65 sign ({msg_size}B)",
-                    lambda: signer.sign(message),
+                    lambda: sign_signer.sign(message),
                 )
+            )
+
+        with oqs.Signature("ML-DSA-65") as verify_signer:
+            verify_pub = verify_signer.generate_keypair()
+            verify_sig = verify_signer.sign(message)
+            # Guard the success path: a failing verify may short-circuit and
+            # would measure a different code path than the one we report.
+            assert verify_signer.verify(message, verify_sig, verify_pub), (
+                "ML-DSA verify benchmark is not on the success path"
             )
             results.append(
                 _bench(
                     f"ML-DSA-65 verify ({msg_size}B)",
-                    lambda: signer.verify(message, sig, pub_key),
+                    lambda: verify_signer.verify(message, verify_sig, verify_pub),
                 )
             )
 

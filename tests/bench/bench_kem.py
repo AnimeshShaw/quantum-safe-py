@@ -528,14 +528,35 @@ def bench_hybrid_decomposition() -> list[BenchResult]:
     try:
         import oqs
 
-        with oqs.KeyEncapsulation("ML-KEM-768") as pqc:
-            pub_key = pqc.generate_keypair()
-            ct, _ = pqc.encap_secret(pub_key)
-            results.append(_bench("Decomp ② ML-KEM-768 keygen", lambda: pqc.generate_keypair()))
+        # Each operation gets its own KeyEncapsulation object. Sharing one is a
+        # trap: generate_keypair() overwrites the object's stored secret key, so
+        # running the keygen benchmark first leaves the object holding a key that
+        # does not match the ciphertext encapsulated earlier. ML-KEM decapsulation
+        # does not fail on a mismatch — FIPS 203 returns an implicit-rejection
+        # value in constant time — so the decapsulate benchmark would silently
+        # measure the rejection path instead of normal decapsulation.
+        with oqs.KeyEncapsulation("ML-KEM-768") as keygen_kem:
             results.append(
-                _bench("Decomp ② ML-KEM-768 encapsulate", lambda: pqc.encap_secret(pub_key))
+                _bench("Decomp ② ML-KEM-768 keygen", lambda: keygen_kem.generate_keypair())
             )
-            results.append(_bench("Decomp ② ML-KEM-768 decapsulate", lambda: pqc.decap_secret(ct)))
+
+        with oqs.KeyEncapsulation("ML-KEM-768") as encap_kem:
+            encap_pub = encap_kem.generate_keypair()
+            results.append(
+                _bench("Decomp ② ML-KEM-768 encapsulate", lambda: encap_kem.encap_secret(encap_pub))
+            )
+
+        with oqs.KeyEncapsulation("ML-KEM-768") as decap_kem:
+            decap_pub = decap_kem.generate_keypair()
+            decap_ct, decap_ss = decap_kem.encap_secret(decap_pub)
+            # Assert the pair really matches, so a future refactor cannot quietly
+            # reintroduce a rejection-path measurement.
+            assert decap_kem.decap_secret(decap_ct) == decap_ss, (
+                "ML-KEM decapsulation benchmark is not on the success path"
+            )
+            results.append(
+                _bench("Decomp ② ML-KEM-768 decapsulate", lambda: decap_kem.decap_secret(decap_ct))
+            )
     except Exception:
         # Mock PQC to measure the combiner cost in isolation
         class _MockBackend(AbstractKEMBackend):

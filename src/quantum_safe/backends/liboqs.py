@@ -193,9 +193,38 @@ _SIG_LIBOQS_NAMES: dict[str, str] = {
     "ML-DSA-44": "ML-DSA-44",
     "ML-DSA-65": "ML-DSA-65",
     "ML-DSA-87": "ML-DSA-87",
-    "SLH-DSA-SHAKE-128s": "SPHINCS+-SHAKE-128s-simple",  # liboqs name differs
-    "SLH-DSA-SHAKE-128f": "SPHINCS+-SHAKE-128f-simple",
+    # FIPS 205 SLH-DSA. These previously mapped to "SPHINCS+-...-simple", which
+    # is the pre-standard round-3 submission, not FIPS 205. The two share
+    # parameter sizes but are NOT interchangeable: FIPS 205 prepends a
+    # domain-separation prefix to the message, so a SPHINCS+ signature does not
+    # verify under SLH-DSA and vice versa (asserted in the test suite). Anything
+    # selecting these names for FIPS 205 compliance must reach the SLH_DSA_*
+    # mechanisms below.
+    "SLH-DSA-SHAKE-128s": "SLH_DSA_PURE_SHAKE_128S",
+    "SLH-DSA-SHAKE-128f": "SLH_DSA_PURE_SHAKE_128F",
+    "SLH-DSA-SHAKE-192s": "SLH_DSA_PURE_SHAKE_192S",
+    "SLH-DSA-SHAKE-192f": "SLH_DSA_PURE_SHAKE_192F",
+    "SLH-DSA-SHAKE-256s": "SLH_DSA_PURE_SHAKE_256S",
+    "SLH-DSA-SHAKE-256f": "SLH_DSA_PURE_SHAKE_256F",
+    "SLH-DSA-SHA2-128s": "SLH_DSA_PURE_SHA2_128S",
+    "SLH-DSA-SHA2-128f": "SLH_DSA_PURE_SHA2_128F",
+    "SLH-DSA-SHA2-192s": "SLH_DSA_PURE_SHA2_192S",
+    "SLH-DSA-SHA2-192f": "SLH_DSA_PURE_SHA2_192F",
+    "SLH-DSA-SHA2-256s": "SLH_DSA_PURE_SHA2_256S",
+    "SLH-DSA-SHA2-256f": "SLH_DSA_PURE_SHA2_256F",
 }
+
+# Pre-standard round-3 SPHINCS+ mechanisms, kept reachable under explicit
+# names so that callers who genuinely need the legacy algorithm can ask for it
+# without it masquerading as a FIPS 205 standard.
+_LEGACY_SPHINCS_NAMES: dict[str, str] = {
+    "SPHINCS+-SHAKE-128s": "SPHINCS+-SHAKE-128s-simple",
+    "SPHINCS+-SHAKE-128f": "SPHINCS+-SHAKE-128f-simple",
+    "SPHINCS+-SHAKE-192s": "SPHINCS+-SHAKE-192s-simple",
+    "SPHINCS+-SHAKE-256s": "SPHINCS+-SHAKE-256s-simple",
+}
+
+_SIG_LIBOQS_NAMES.update(_LEGACY_SPHINCS_NAMES)
 
 
 def _vendored_liboqs_dir() -> Path | None:

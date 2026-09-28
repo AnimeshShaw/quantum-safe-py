@@ -30,10 +30,18 @@ RUN git clone --depth 1 --branch ${LIBOQS_TAG} \
 
 WORKDIR /app
 
-COPY pyproject.toml README.md ./
+# hatch_build.py is required, not optional: pyproject.toml registers a custom
+# build hook that lives in it, so without this line pip fails during "getting
+# requirements to build wheel" and the image cannot be built at all. That broke
+# when the liboqs vendoring hook was introduced, and with it the claim that every
+# published number is reproducible from a single Docker command.
+COPY pyproject.toml README.md hatch_build.py ./
 COPY src/ src/
 
-# oqs-python will now find liboqs.so at /usr/local/lib and skip the auto-installer
+# oqs-python will now find liboqs.so at /usr/local/lib and skip the auto-installer.
+# QUANTUM_SAFE_VENDOR_LIBOQS is deliberately left unset: the vendoring hook is for
+# released wheels, and this image wants the system liboqs built above so that the
+# measured binary is the one whose build flags are documented for ENV-2.
 RUN pip install --no-cache-dir ".[liboqs]"
 
 # Sanity-check: confirm liboqs loads and ML-KEM-768 round-trips correctly
@@ -42,6 +50,7 @@ RUN python -c "import warnings; warnings.filterwarnings('ignore'); import oqs; k
 # ── Stage 3: benchmark harnesses ─────────────────────────────────────────
 
 COPY tests/bench/ tests/bench/
+COPY tests/conformance/ tests/conformance/
 COPY results/ results/
 
 # Expose a volume for persisting JSON snapshots to the host
