@@ -50,6 +50,14 @@ dependencies = [
 liboqs = [
     "liboqs-python>=0.10.0",
 ]
+# LMS stateful hash-based signatures (RFC 8554 / SP 800-208), required by
+# CNSA 2.0 for software and firmware signing and not available through liboqs.
+# Optional because LMS is stateful: misusing the state compromises the key, so
+# it should be an explicit choice rather than something installed by default.
+# See quantum_safe.signatures.stateful for the hazards and the discipline.
+lms = [
+    "pyhsslms>=2.0.0",
+]
 # SECURITY: For production deployments, install with hash verification to prevent
 # supply-chain attacks.  Generate a pinned requirements file with:
 #   pip-compile --generate-hashes pyproject.toml -o requirements.txt
@@ -150,9 +158,9 @@ python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
-# liboqs-python doesn't ship stubs
+# Neither liboqs-python nor pyhsslms ships type stubs
 [[tool.mypy.overrides]]
-module = ["oqs.*", "cbor2.*"]
+module = ["oqs.*", "cbor2.*", "pyhsslms.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------------------
@@ -168,6 +176,7 @@ markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",
     "requires_liboqs: needs liboqs-python installed",
     "requires_oqs: alias for requires_liboqs",
+    "conformance: ACVP known-answer tests; needs liboqs and the pinned NIST vectors",
 ]
 
 # ---------------------------------------------------------------------------

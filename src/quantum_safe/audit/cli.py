@@ -314,3 +314,129 @@ if _HAS_CLICK:
 
         if report.overall_level == ComplianceLevel.NON_COMPLIANT:
             sys.exit(1)
+
+    # ------------------------------------------------------------------
+    # cnsa2 subcommand
+    # ------------------------------------------------------------------
+
+    @_cli.command("cnsa2")
+    @click.option(
+        "--kem",
+        default="X25519+ML-KEM-768",
+        show_default=True,
+        help="KEM or hybrid KEM selection to evaluate.",
+    )
+    @click.option(
+        "--signature",
+        default="Ed25519+ML-DSA-65",
+        show_default=True,
+        help="Signature or hybrid signature selection to evaluate.",
+    )
+    @click.option(
+        "--hash",
+        "hash_algorithm",
+        default="SHA-256",
+        show_default=True,
+        help="Hash used for derivation and signing.",
+    )
+    @click.option(
+        "--skip-code-signing",
+        is_flag=True,
+        help=(
+            "Omit the SP 800-208 software/firmware signing requirement. Only use "
+            "this if the deployment provably does not sign software or firmware; "
+            "otherwise the report looks cleaner than the deployment is."
+        ),
+    )
+    @click.option("--output", "-o", default=None, help="Output file. Default: stdout.")
+    def cnsa2_cmd(
+        kem: str,
+        signature: str,
+        hash_algorithm: str,
+        skip_code_signing: bool,
+        output: str | None,
+    ) -> None:
+        """Check a configuration against CNSA 2.0 parameter requirements.
+
+        Defaults deliberately mirror this library's own defaults, so running the
+        command with no arguments shows what an unconfigured deployment scores.
+        It does not score compliant: CNSA 2.0 requires ML-KEM-1024 and ML-DSA-87.
+
+        This reports parameter selection only. CNSA 2.0 compliance for National
+        Security Systems runs through FIPS 140-3 validated modules, and no
+        self-assessment produces one.
+        """
+        from quantum_safe.compliance import cnsa2
+
+        report = cnsa2.report(
+            kem=kem,
+            signature=signature,
+            hash_algorithm=hash_algorithm,
+            include_code_signing=not skip_code_signing,
+        )
+        out = report.render()
+
+        if output:
+            Path(output).write_text(out, encoding="utf-8")
+            click.echo(f"CNSA 2.0 report written to {output}")
+        else:
+            click.echo(out)
+
+        if not report.compliant:
+            sys.exit(1)
+
+    # ------------------------------------------------------------------
+    # cbom subcommand
+    # ------------------------------------------------------------------
+
+    @_cli.command("cbom")
+    @click.argument("path", default=".", type=click.Path(exists=True))
+    @click.option("--output", "-o", default=None, help="Output file. Default: stdout.")
+    @click.option(
+        "--no-provided",
+        is_flag=True,
+        help=(
+            "Omit the post-quantum algorithms this library provides, listing only "
+            "what the scan detected. Useful when the consumer wants current usage "
+            "rather than migration options."
+        ),
+    )
+    @click.option(
+        "--exclude",
+        multiple=True,
+        help="Glob pattern to exclude. Repeatable.",
+    )
+    def cbom_cmd(
+        path: str, output: str | None, no_provided: bool, exclude: tuple[str, ...]
+    ) -> None:
+        """Emit a CycloneDX 1.6 Cryptographic Bill of Materials for PATH.
+
+        Produces machine-readable cryptographic inventory: every detected
+        classical algorithm with its location and quantum-vulnerability
+        assessment, plus the post-quantum algorithms available to migrate to.
+
+        This is an inventory, not a compliance verdict. For CNSA 2.0 parameter
+        requirements use `qs-audit cnsa2`.
+        """
+        from quantum_safe.audit.cbom import build_cbom, to_json
+        from quantum_safe.migrate.scanner import Scanner
+
+        p = Path(path)
+        if p.is_file():
+            scan = Scanner.scan_file(p)
+        else:
+            scan = Scanner.scan_directory(p, exclude=list(exclude) if exclude else None)
+
+        cbom = build_cbom(
+            scan,
+            include_provided=not no_provided,
+            application_name=p.name or str(p),
+        )
+        out = to_json(cbom)
+
+        if output:
+            Path(output).write_text(out, encoding="utf-8")
+            n = len(cbom["components"])
+            click.echo(f"CBOM written to {output} ({n} cryptographic assets)")
+        else:
+            click.echo(out)
