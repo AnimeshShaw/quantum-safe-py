@@ -9,7 +9,7 @@ abstract: >
 authors:
   - family-names: Shaw
     given-names: Animesh
-    email: animeshshaw@pm.me
+    email: animesh15b@iimk.edu.in
 version: "0.3.0"
 date-released: "2026-09-28"
 url: "https://pypi.org/project/quantum-safe-py/"

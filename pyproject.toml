@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
 authors = [
-    { name = "Animesh Shaw", email = "animeshshaw@pm.me" },
+    { name = "Animesh Shaw", email = "animesh15b@iimk.edu.in" },
 ]
 keywords = [
     "cryptography",
