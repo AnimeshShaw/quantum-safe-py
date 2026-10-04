@@ -264,6 +264,37 @@ def check_signature(algorithm: str) -> CheckResult:
     return _check_pqc_selection("Signatures", algorithm, CNSA2_SIGNATURE)
 
 
+def check_key_derivation(kem: str) -> CheckResult:
+    """Check the hash this library uses to derive keys for a KEM selection.
+
+    CNSA 2.0 requires SHA-384 or SHA-512 wherever a hash is used. This library's
+    hybrid combiner and v1 envelopes use HKDF-SHA-256, so any hybrid selection
+    fails this requirement. A pure ML-KEM-1024 envelope (envelope v2) derives its
+    key with HKDF-SHA-384.
+    """
+    requirement = "Key-derivation hash (this library)"
+    expected = " or ".join(CNSA2_HASHES)
+    if kem == CNSA2_KEM:
+        return CheckResult(
+            requirement=requirement,
+            finding=Finding.COMPLIANT,
+            detail="A pure ML-KEM-1024 envelope (envelope v2) derives its key with HKDF-SHA-384.",
+            expected=expected,
+            actual="SHA-384",
+        )
+    return CheckResult(
+        requirement=requirement,
+        finding=Finding.NON_COMPLIANT,
+        detail=(
+            f"{kem}: this library's hybrid combiner and v1 envelopes derive keys with "
+            "HKDF-SHA-256, kept for byte-compatibility, but CNSA 2.0 requires SHA-384 or "
+            "SHA-512. A pure ML-KEM-1024 envelope (envelope v2) uses HKDF-SHA-384."
+        ),
+        expected=expected,
+        actual="SHA-256",
+    )
+
+
 def check_hash(algorithm: str) -> CheckResult:
     normalised = algorithm.upper().replace("SHA", "SHA-").replace("SHA--", "SHA-")
     if normalised in CNSA2_HASHES:
@@ -288,6 +319,7 @@ def report(
     signature: str | None = None,
     hash_algorithm: str | None = None,
     include_code_signing: bool = True,
+    include_key_derivation: bool = True,
 ) -> ComplianceReport:
     """Evaluate a configuration against the CNSA 2.0 parameter requirements.
 
@@ -299,6 +331,9 @@ def report(
             firmware signing requirement. Leave enabled unless the deployment
             provably does not sign software or firmware, since omitting it
             produces a report that looks cleaner than the deployment is.
+        include_key_derivation: whether to evaluate this library's own key
+            derivation hash for the ``kem`` selection (default True when
+            ``kem`` is given); see :func:`check_key_derivation`.
     """
     rep = ComplianceReport()
     if kem is not None:
@@ -307,6 +342,8 @@ def report(
         rep.checks.append(check_signature(signature))
     if hash_algorithm is not None:
         rep.checks.append(check_hash(hash_algorithm))
+    if kem is not None and include_key_derivation:
+        rep.checks.append(check_key_derivation(kem))
     if include_code_signing:
         if lms_available():
             rep.checks.append(

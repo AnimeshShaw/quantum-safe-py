@@ -141,6 +141,36 @@ class TestReport:
         assert "is not a validation" in rendered
 
 
+class TestKeyDerivation:
+    """CNSA 2.0 requires SHA-384/512; this library's hybrids derive with SHA-256."""
+
+    def test_pure_ml_kem_1024_is_compliant(self) -> None:
+        r = cnsa2.check_key_derivation("ML-KEM-1024")
+        assert r.ok and r.actual == "SHA-384"
+
+    @pytest.mark.parametrize(
+        "alg", ["X25519+ML-KEM-1024", "X25519+ML-KEM-768", "P-256+ML-KEM-768", "ML-KEM-768"]
+    )
+    def test_everything_else_is_not(self, alg: str) -> None:
+        r = cnsa2.check_key_derivation(alg)
+        assert r.finding is cnsa2.Finding.NON_COMPLIANT and r.actual == "SHA-256"
+
+    def test_report_includes_the_row_and_can_exclude_it(self) -> None:
+        with_row = cnsa2.report(kem="X25519+ML-KEM-1024", include_code_signing=False)
+        assert any("Key-derivation" in c.requirement for c in with_row.checks)
+        without = cnsa2.report(
+            kem="X25519+ML-KEM-1024", include_code_signing=False, include_key_derivation=False
+        )
+        assert not any("Key-derivation" in c.requirement for c in without.checks)
+
+    def test_pure_selection_report_can_be_clean(self) -> None:
+        rep = cnsa2.report(kem="ML-KEM-1024", signature="ML-DSA-87", include_code_signing=False)
+        assert rep.compliant
+
+    def test_enforce_default_is_unaffected_by_the_row(self) -> None:
+        cnsa2.enforce(kem="X25519+ML-KEM-1024")  # parameter-set guard only
+
+
 class TestEnforce:
     def test_raises_below_requirements(self) -> None:
         with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):

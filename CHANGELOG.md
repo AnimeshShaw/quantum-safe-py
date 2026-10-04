@@ -68,6 +68,7 @@ All notable changes to quantum-safe are documented here.
 - A missing `cbor2` now raises `ImportError` at import instead of silently switching to a JSON+base64 format that no CBOR reader (including another installation of this library and quantum-safe-ts) can read. The fallback is removed.
 - `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
   ML-DSA-87, the CNSA 2.0-compliant configurations.
+- `cnsa2.report()` gains a key-derivation row (`check_key_derivation`, `include_key_derivation=`): this library's hybrid combiner and v1 envelopes derive keys with HKDF-SHA-256, below the SHA-384/512 CNSA 2.0 requires; a pure ML-KEM-1024 envelope (v2) uses HKDF-SHA-384. Matches quantum-safe-ts. `enforce()` is unaffected.
 - `cnsa2.enforce(..., strict=True)`: also refuse configurations that
   `report()` calls `PARTIAL`, for use as a CI gate.
 - `Sign.verify(..., context=...)` and `HybridSign.verify(..., context=...)`:
