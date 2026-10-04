@@ -14,9 +14,11 @@ All notable changes to quantum-safe are documented here.
   default, are unaffected. Nothing is re-encoded: every signature 0.3.0
   wrote still verifies on a verifier in the matching mode.
 - **CNSA 2.0: `cnsa2.report()` and `qs-audit cnsa2` now report X25519,
-  P-256 and Ed25519 hybrids as `PARTIAL`, not compliant.** CNSA 2.0 makes
-  hybrid operation optional and requires a hybrid's classical half to be a
-  CNSA 1.0 algorithm (P-384). Standalone ML-KEM-1024 / ML-DSA-87 are the
+  P-256 and Ed25519 hybrids as `PARTIAL`, not compliant.** NSA's CNSA 2.0 FAQ
+  (Dec 2024, Ver. 2.1) says hybrid products are not required and that a
+  hybrid should not be used on NSS mission systems except for exceptions NSA
+  specifically recommends (it names IKEv2). Every hybrid, including one with
+  a P-384 classical half, is therefore `PARTIAL`. Standalone ML-KEM-1024 / ML-DSA-87 are the
   compliant choice; use the new `cnsa2.pqc_kem()` / `cnsa2.pqc_sign()`.
   `cnsa2.enforce()` is unchanged for these hybrids by default (it guards the
   post-quantum parameter set, as in quantum-safe-ts); pass `strict=True` to

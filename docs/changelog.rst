@@ -11,8 +11,9 @@ Changed behaviour
   unaffected, and nothing is re-encoded: every signature 0.3.0 wrote still
   verifies on a verifier in the matching mode.
 - **CNSA 2.0:** ``cnsa2.report()`` and ``qs-audit cnsa2`` report X25519, P-256
-  and Ed25519 hybrids as ``PARTIAL``, not compliant. CNSA 2.0 makes hybrid
-  optional and requires a hybrid's classical half to be CNSA 1.0 (P-384).
+  and Ed25519 hybrids as ``PARTIAL``, not compliant: NSA's CNSA 2.0 FAQ says
+  hybrids are not required and should not be used on NSS mission systems
+  except NSA-specified exceptions.
   Use ``cnsa2.pqc_kem()`` / ``cnsa2.pqc_sign()`` for a compliant
   configuration. ``cnsa2.enforce()`` still guards the post-quantum parameter
   set by default; ``strict=True`` also refuses ``PARTIAL``.

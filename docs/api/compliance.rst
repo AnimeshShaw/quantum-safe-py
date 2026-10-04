@@ -32,11 +32,15 @@ Quickest path to a compliant configuration:
    kem    = cnsa2.pqc_kem()       # ML-KEM-1024
    signer = cnsa2.pqc_sign()      # ML-DSA-87
 
-Hybrid operation is optional under CNSA 2.0, and where a National Security
-System uses a hybrid, its classical half must be a CNSA 1.0 algorithm (ECDH /
-ECDSA on P-384). The hybrid helpers therefore carry the required post-quantum
-parameter set but are reported **PARTIAL**, because X25519, P-256 and Ed25519
-are not CNSA algorithms (P-384 hybrids are not implemented by this library):
+Hybrid operation is outside what CNSA 2.0 prescribes.  NSA's CNSA 2.0 FAQ
+(December 2024, Ver. 2.1) says NSA "will not require NSS developers to use
+hybrid certified products for security purposes", and "Do not use a hybrid or
+other non-standardized QR solution on NSS mission systems except for those
+exceptions NSA specifically recommends".  The one exception it names is IKEv2,
+where NSA's profile keeps CNSA 1.0 key establishment "fortified by key
+establishment using ML-KEM-1024".  The hybrid helpers therefore carry the
+required post-quantum parameter set but are reported **PARTIAL**, whatever
+their classical half:
 
 .. code-block:: python
 

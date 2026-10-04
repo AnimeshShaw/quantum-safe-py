@@ -13,20 +13,21 @@ class TestKemChecks:
 
     @pytest.mark.parametrize("alg", ["X25519+ML-KEM-1024", "P-256+ML-KEM-1024"])
     def test_hybrid_with_non_cnsa_classical_half_is_partial(self, alg: str) -> None:
-        """Hybrid is optional; a hybrid's classical half must be CNSA 1.0 (P-384).
+        """A hybrid has the right PQC half but is outside what CNSA 2.0 prescribes.
 
-        X25519 and P-256 are not CNSA algorithms, so the PQC half meets the
-        requirement but the configuration as a whole is only PARTIAL.
+        NSA's FAQ says hybrids are not required and not to be used on NSS mission
+        systems except NSA-specified exceptions, so the verdict is PARTIAL.
         """
         result = cnsa2.check_kem(alg)
         assert result.finding is cnsa2.Finding.PARTIAL
         assert not result.ok
-        assert "ML-KEM-1024" in result.detail and "P-384" in result.detail
+        assert "ML-KEM-1024" in result.detail and "FAQ" in result.detail
 
-    def test_hybrid_with_cnsa1_classical_half_passes(self) -> None:
+    def test_p384_hybrid_is_partial_too(self) -> None:
+        """P-384 has the shape of NSA's IKEv2 exception, which is IKEv2-specific."""
         result = cnsa2.check_kem("P-384+ML-KEM-1024")
-        assert result.ok
-        assert "not implemented" in result.detail
+        assert result.finding is cnsa2.Finding.PARTIAL
+        assert "IKEv2" in result.detail
 
     @pytest.mark.parametrize(
         "alg",
@@ -53,8 +54,8 @@ class TestSignatureChecks:
         assert result.finding is cnsa2.Finding.PARTIAL
         assert not result.ok
 
-    def test_hybrid_with_cnsa1_classical_half_passes(self) -> None:
-        assert cnsa2.check_signature("P-384+ML-DSA-87").ok
+    def test_p384_hybrid_is_partial_too(self) -> None:
+        assert cnsa2.check_signature("P-384+ML-DSA-87").finding is cnsa2.Finding.PARTIAL
 
     @pytest.mark.parametrize(
         "alg", ["RSA-1024+ML-DSA-87", "Ed448+Ed25519+ML-DSA-87", "x+ML-DSA-87"]

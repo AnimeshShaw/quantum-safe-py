@@ -60,15 +60,26 @@ CNSA2_HASHES = ("SHA-384", "SHA-512")
 # signing. Not implemented by this library; see UNSUPPORTED_REQUIREMENTS.
 CNSA2_CODE_SIGNING = ("LMS", "XMSS")
 
-# Hybrid operation is optional under CNSA 2.0: NSA accepts standalone
-# ML-KEM-1024 / ML-DSA-87. Where a National Security System does use a hybrid,
-# its classical half must itself be a CNSA (1.0) algorithm, i.e. ECDH / ECDSA
-# on P-384. X25519, P-256 and Ed25519 are not CNSA algorithms, so a hybrid
-# built on them meets the post-quantum requirement but not the suite as a whole
-# and is reported PARTIAL. Classical names outside both sets are reported
-# NON_COMPLIANT rather than guessed.
-_CNSA1_CLASSICAL = frozenset({"P-384"})
-_NON_CNSA_CLASSICAL = frozenset({"X25519", "X448", "P-256", "Ed25519", "Ed448"})
+# Hybrid operation is outside what CNSA 2.0 prescribes. NSA's CNSA 2.0 FAQ
+# (December 2024, Ver. 2.1, "Hybrids") says NSA will not require hybrid
+# products for security purposes and that a hybrid or other non-standardized
+# solution should not be used on NSS mission systems except for exceptions NSA
+# specifically recommends. The one exception it names is IKEv2, where NSA's
+# profile keeps CNSA 1.0 key establishment, "fortified by key establishment
+# using ML-KEM-1024". So a hybrid whose post-quantum half is the required
+# parameter set is reported PARTIAL, whatever its classical half: the parameter
+# set is right, but CNSA 2.0 itself does not call the construction compliant.
+# Standalone ML-KEM-1024 / ML-DSA-87 are the compliant choice. Classical names
+# that are not recognised are reported NON_COMPLIANT rather than guessed.
+_KNOWN_CLASSICAL = frozenset({"X25519", "X448", "P-256", "P-384", "Ed25519", "Ed448"})
+
+#: The FAQ passage the PARTIAL verdict rests on, quoted rather than paraphrased.
+HYBRID_POLICY_NOTE = (
+    "NSA's CNSA 2.0 FAQ (Dec 2024, Ver. 2.1) says NSA will not require hybrid "
+    "products for security purposes and that a hybrid should not be used on NSS "
+    "mission systems except for exceptions NSA specifically recommends (the one "
+    "it names is IKEv2, keeping CNSA 1.0 key establishment fortified by ML-KEM-1024)."
+)
 
 # Classical partners hybrid_kem() can build. HybridKEM implements X25519 and
 # P-256 only; P-384 is not offered until it is implemented. Note that these
@@ -185,9 +196,8 @@ def _check_pqc_selection(
     """Evaluate a pure or ``classical+pqc`` algorithm name against one requirement.
 
     The whole name is validated: the PQC half must be the required parameter
-    set, and a hybrid's classical half must be a CNSA 1.0 algorithm (P-384) to
-    pass, a known non-CNSA algorithm to be PARTIAL, and anything else is
-    NON_COMPLIANT.
+    set; a hybrid with a recognised classical half is PARTIAL (see
+    HYBRID_POLICY_NOTE), and anything else is NON_COMPLIANT.
     """
     parts = algorithm.split("+")
     if len(parts) > 2 or any(not p for p in parts):
@@ -216,26 +226,20 @@ def _check_pqc_selection(
             actual=pqc,
         )
     classical = parts[0]
-    if classical in _CNSA1_CLASSICAL:
-        return CheckResult(
-            requirement=requirement,
-            finding=Finding.COMPLIANT,
-            detail=(
-                f"{algorithm} pairs {required} with {classical}, a CNSA 1.0 algorithm. "
-                f"(Hybrids with {classical} are not implemented by this library.)"
-            ),
-            expected=required,
-            actual=algorithm,
+    if classical in _KNOWN_CLASSICAL:
+        shape = (
+            f" {classical} is a CNSA 1.0 algorithm, the shape of NSA's IKEv2 exception, "
+            "but that exception is specific to IKEv2."
+            if classical == "P-384"
+            else ""
         )
-    if classical in _NON_CNSA_CLASSICAL:
         return CheckResult(
             requirement=requirement,
             finding=Finding.PARTIAL,
             detail=(
-                f"{algorithm}: the post-quantum half is {required}, as required, but "
-                f"{classical} is not a CNSA algorithm. Hybrid operation is optional "
-                f"under CNSA 2.0; where used, the classical half must be CNSA 1.0 "
-                f"(P-384). Standalone {required} meets the requirement."
+                f"{algorithm}: the post-quantum half is {required}, as required, but a "
+                f"hybrid is outside what CNSA 2.0 prescribes.{shape} {HYBRID_POLICY_NOTE} "
+                f"Standalone {required} meets the requirement."
             ),
             expected=required,
             actual=algorithm,
@@ -415,7 +419,9 @@ def enforce(
 def pqc_kem(backend: str = "auto") -> KEM:
     """Return a standalone ML-KEM-1024 KEM: the compliant key-establishment choice.
 
-    CNSA 2.0 accepts standalone ML-KEM-1024; hybrid operation is optional.
+    CNSA 2.0 accepts standalone ML-KEM-1024 and does not require hybrid
+    operation. Pair it with envelope v2 (``Envelope.seal``) for a SHA-384 key
+    derivation.
     """
     from quantum_safe.kem.core import KEM
 
@@ -436,9 +442,9 @@ def hybrid_kem(classical: str = "X25519", backend: str = "auto") -> HybridKEM:
     parameter set pinned so that a future change to the library default cannot
     silently move a CNSA-2.0-targeted deployment below the suite.
 
-    The result is reported PARTIAL, not compliant: CNSA 2.0 requires a hybrid's
-    classical half to be a CNSA 1.0 algorithm (P-384), which HybridKEM does not
-    implement. Use :func:`pqc_kem` for a compliant configuration.
+    The result is reported PARTIAL, not compliant: hybrids are outside what
+    CNSA 2.0 prescribes (see :data:`HYBRID_POLICY_NOTE`). Use :func:`pqc_kem`
+    for a compliant configuration.
 
     Args:
         classical: classical partner; a value from :data:`CNSA2_HYBRID_CLASSICAL`.
@@ -460,9 +466,10 @@ def hybrid_sign(
     """Return a HybridSign with ML-DSA-87 as its post-quantum half.
 
     Equivalent to ``HybridSign(classical=classical, pqc="ML-DSA-87")`` with the
-    parameter set pinned. Reported PARTIAL, not compliant: Ed25519 and P-256
-    are not CNSA algorithms. Use :func:`pqc_sign` for a compliant
-    configuration. Hedged signing is left enabled by default.
+    parameter set pinned. Reported PARTIAL, not compliant: hybrids are outside
+    what CNSA 2.0 prescribes (see :data:`HYBRID_POLICY_NOTE`). Use
+    :func:`pqc_sign` for a compliant configuration. Hedged signing is left
+    enabled by default.
     """
     from quantum_safe.signatures.hybrid import HybridSign
 
@@ -485,9 +492,10 @@ def describe() -> str:
             f'  Sign("{CNSA2_SIGNATURE}")',
             "",
             "Hybrids (cnsa2.hybrid_kem(), cnsa2.hybrid_sign()) carry the required",
-            "post-quantum parameter set but are reported PARTIAL: CNSA 2.0 makes",
-            "hybrid optional and requires a hybrid's classical half to be CNSA 1.0",
-            "(P-384); X25519, P-256 and Ed25519 are not.",
+            "post-quantum parameter set but are reported PARTIAL: NSA's CNSA 2.0 FAQ",
+            "says hybrids are not required and should not be used on NSS mission",
+            "systems except for exceptions NSA specifically recommends (IKEv2 is the",
+            "one it names).",
             "",
             f"Use {' or '.join(CNSA2_HASHES)} for hashing and {CNSA2_SYMMETRIC} for",
             "symmetric encryption.",
