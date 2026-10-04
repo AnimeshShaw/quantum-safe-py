@@ -51,6 +51,11 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- Leakage harness: a positive control (deliberate secret-dependent delay, with a
+  zero point) that reports the smallest detectable leak, and public-data
+  calibrations (fixed secret with varying ciphertext; encapsulation with a fixed vs
+  fresh public key, no secret involved). On the development host the
+  no-secret calibration reproduces the fixed-vs-random decapsulation signal.
 - ``StandardJwt`` (RFC 9964): ML-DSA JWTs any compliant JOSE library can verify,
   verified against quantum-safe-ts in both directions. Public ``AKP`` JWKs only
   (liboqs cannot derive a key from RFC 9964's seed).

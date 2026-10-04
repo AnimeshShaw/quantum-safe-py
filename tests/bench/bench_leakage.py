@@ -65,26 +65,32 @@ Methodology notes that matter for interpretation
   the compiled backend, ``ct-verif``) remains the stronger instrument, and
   this screen is intended to run cheaply and often, ahead of it.
 
-Controls present, and known limitations
----------------------------------------
-Present: a fixed-vs-fixed control (the apparatus is quiet), a random-vs-random
-control (both classes vary their key), and equal-size object pools in both
-classes, so cache footprint is not what distinguishes them.
+Controls
+--------
+Negative controls: fixed-vs-fixed (the apparatus is quiet) and random-vs-random
+(both classes vary their key). Equal-size object pools in both classes, so cache
+footprint is not what distinguishes them.
 
-Not present, so read a fixed-vs-random signal with care:
+Public-data calibrations. ``decap_public_calibration``: the secret key is the
+same in both classes and only the public ciphertext differs. The FIXED class of
+fixed-vs-random repeats the same secret key *and* the same ciphertext, and much
+of ML-KEM decapsulation depends on public data and on cache and branch state, so
+a fixed class can run faster with no secret dependence at all. Random-vs-random
+rules out apparatus noise, not that; this calibration shows how much of a
+fixed-vs-random signal public inputs alone can produce.
+``encap_public_key_calibration``: encapsulation, which uses only the public
+key, with a fixed vs fresh public key. No secret is involved in either class, so
+a class difference there is not secret dependence. (An ML-KEM secret key embeds
+the public key.)
 
-* **No public-data calibration.**  The FIXED class repeats the same *secret
-  key and the same ciphertext / public key*.  Much of ML-KEM decapsulation
-  depends on public data (matrix expansion from the public seed, the
-  re-encryption over the ciphertext) and on cache and branch-predictor state,
-  so a FIXED class can run faster with no secret dependence at all.  The
-  random-vs-random control rules out apparatus noise, not this.  A
-  calibration that holds the secret fixed and varies only the public inputs
-  would separate the two; it is not implemented.
-* **No positive control.**  There is no deliberately leaky operation run
-  through the same harness to show that it detects a known leak at the
-  configured iteration count.  A clean result is therefore also bounded by
-  the harness's unmeasured sensitivity.
+Positive control (``positive_control_sensitivity``): a genuine decapsulation plus
+a deliberate secret-dependent delay of known size, run through the same harness
+at several magnitudes. It reports the smallest leak this harness detects at the
+configured iteration count on this host, which bounds what a clean result means.
+
+Remaining limitation: everything is measured through the Python binding, so a
+leak smaller than the binding's own jitter is below the detection threshold
+whatever the compiled backend does.
 """
 
 from __future__ import annotations
@@ -642,6 +648,214 @@ def hybrid_decap_fixed_vs_random(iterations: int, pool_size: int = 256) -> list[
 
 
 # ---------------------------------------------------------------------------
+# Calibration - public inputs only: the SECRET is fixed in both classes
+# ---------------------------------------------------------------------------
+
+
+def decap_public_calibration(iterations: int, pool_size: int = 256) -> list[LeakageResult]:
+    """Same secret key in both classes; only the *public* ciphertext differs.
+
+    Much of ML-KEM decapsulation depends on public data (the re-encryption over
+    the ciphertext) and on cache and branch-predictor state, so a FIXED class
+    can run faster with no secret dependence at all. This calibration holds the
+    secret key identical in both classes and varies only the ciphertext:
+
+        class A: pool of objects with the same key, all decapsulating the SAME ciphertext
+        class B: pool of objects with the same key, each decapsulating a DIFFERENT valid ciphertext
+
+    Nothing secret differs between the classes, so any |t| here is explained by
+    public inputs and microarchitectural state. If fixed-vs-random reaches a
+    similar |t|, the signal need not involve the secret at all.
+    """
+    import oqs
+
+    seed = oqs.KeyEncapsulation("ML-KEM-768")
+    try:
+        pk = seed.generate_keypair()
+        sk = bytes(seed.export_secret_key())
+        same_ct, _ = seed.encap_secret(pk)
+        fresh_cts = [bytes(seed.encap_secret(pk)[0]) for _ in range(pool_size)]
+    finally:
+        seed.free()
+
+    pool_same = [_kem_from_material(sk, bytes(same_ct)) for _ in range(pool_size)]
+    pool_fresh = [_kem_from_material(sk, ct) for ct in fresh_cts]
+
+    def do_same(i: int) -> None:
+        kem, ct = pool_same[i % pool_size]
+        kem.decap_secret(ct)
+
+    def do_fresh(i: int) -> None:
+        kem, ct = pool_fresh[i % pool_size]
+        kem.decap_secret(ct)
+
+    notes = [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext "
+        "differs. Any |t| is therefore explained by public inputs and cache or branch "
+        "state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        f"Both classes cycle {pool_size} distinct objects and buffers (equal footprint).",
+    ]
+    out = measure_two_class(
+        "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext",
+        do_same,
+        do_fresh,
+        "same ciphertext",
+        "fresh ciphertexts",
+        iterations=iterations,
+        notes=notes,
+    )
+    for kem, _ in pool_same + pool_fresh:
+        kem.free()
+    return out
+
+
+def encap_public_key_calibration(iterations: int, pool_size: int = 256) -> list[LeakageResult]:
+    """Encapsulation (no secret anywhere), fixed public key vs fresh public keys.
+
+    Encapsulation uses only the public key, so nothing secret is involved in
+    either class. If this shows a class difference of the same kind as the
+    fixed-vs-random decapsulation test, then a fixed-vs-random signal does not
+    need a secret at all: it tracks the content or repetition of key-shaped
+    data. (An ML-KEM secret key embeds the public key, so a fixed secret key is
+    also a fixed public key.)
+
+        class A: pool of distinct buffers all holding the SAME public key
+        class B: pool of distinct buffers holding DIFFERENT public keys
+    """
+    import oqs
+
+    kem = oqs.KeyEncapsulation("ML-KEM-768")
+    try:
+        pks = [
+            bytes(oqs.KeyEncapsulation("ML-KEM-768").generate_keypair()) for _ in range(pool_size)
+        ]
+        same = pks[0]
+        # bytes(bytearray(...)) forces distinct buffers so both pools have the same footprint.
+        pool_same = [bytes(bytearray(same)) for _ in range(pool_size)]
+        pool_fresh = [bytes(bytearray(pk)) for pk in pks]
+
+        def do_same(i: int) -> None:
+            kem.encap_secret(pool_same[i % pool_size])
+
+        def do_fresh(i: int) -> None:
+            kem.encap_secret(pool_fresh[i % pool_size])
+
+        return measure_two_class(
+            "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret)",
+            do_same,
+            do_fresh,
+            "same public key",
+            "fresh public keys",
+            iterations=iterations,
+            notes=[
+                "Encapsulation uses only the public key: NO SECRET is involved in either "
+                "class. A class difference here is explained by public key content or "
+                "repetition, not by secret dependence.",
+                f"Both classes cycle {pool_size} distinct buffers (equal footprint).",
+            ],
+        )
+    finally:
+        kem.free()
+
+
+# ---------------------------------------------------------------------------
+# Positive control - a deliberately leaky operation through the same harness
+# ---------------------------------------------------------------------------
+
+#: Secret-dependent delays (microseconds) the positive control injects.
+LEAK_MAGNITUDES_US = (0.0, 0.25, 0.5, 1.0, 2.0, 5.0)
+
+
+def _spin_us(microseconds: float) -> None:
+    """Busy-wait: a delay that does not yield to the scheduler."""
+    end = time.perf_counter_ns() + int(microseconds * 1000)
+    while time.perf_counter_ns() < end:
+        pass
+
+
+def positive_control_sensitivity(
+    iterations: int, pool_size: int = 256, magnitudes: Sequence[float] = LEAK_MAGNITUDES_US
+) -> list[LeakageResult]:
+    """Run the same two-class harness on an operation that really leaks.
+
+    Baseline: BOTH classes cycle pools of random keys (the random-vs-random
+    arrangement, which carries no fixed-key artifact). Class A does a plain
+    ML-KEM-768 decapsulation. Class B does the same decapsulation and then spins
+    for ``magnitude`` microseconds when a per-key "secret" bit is set (half of its
+    keys), so the true mean difference is ``magnitude / 2``. A magnitude of 0 is
+    included as a zero point: it must NOT be flagged, otherwise the baseline is
+    contaminated and the other rows mean nothing.
+
+    Running several magnitudes shows the smallest leak this harness, at this
+    iteration count on this host, actually detects. A clean result elsewhere in
+    the report can only be read as bounded by that sensitivity.
+    """
+    material_a = [_kem_material() for _ in range(pool_size)]
+    material_b = [_kem_material() for _ in range(pool_size)]
+    rng = random.Random(20260927)
+    secret_bits = [rng.random() < 0.5 for _ in range(pool_size)]
+
+    pool_a = [_kem_from_material(sk, ct) for sk, ct in material_a]
+    pool_b = [_kem_from_material(sk, ct) for sk, ct in material_b]
+
+    out: list[LeakageResult] = []
+    try:
+        for magnitude in magnitudes:
+
+            def do_a(i: int) -> None:
+                kem, ct = pool_a[i % pool_size]
+                kem.decap_secret(ct)
+
+            def do_b(i: int, magnitude: float = magnitude) -> None:
+                kem, ct = pool_b[i % pool_size]
+                kem.decap_secret(ct)
+                if secret_bits[i % pool_size]:  # secret-dependent extra work
+                    _spin_us(magnitude)
+
+            out.extend(
+                measure_two_class(
+                    f"POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay {magnitude:.2f}us",
+                    do_a,
+                    do_b,
+                    "random keys",
+                    "random keys + delay on half",
+                    iterations=iterations,
+                    crop_sweep=(0.0, 0.5),
+                    notes=[
+                        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of "
+                        f"{magnitude:.2f}us on half of class B's keys (true mean difference "
+                        f"{magnitude / 2:.3f}us). 0.00us is the zero point and must not be flagged."
+                    ],
+                )
+            )
+    finally:
+        for kem, _ in pool_a + pool_b:
+            kem.free()
+    return out
+
+
+def detection_threshold_us(
+    results: Sequence[LeakageResult],
+) -> tuple[float | None, float | None, bool]:
+    """(smallest non-zero magnitude flagged at every crop level, largest tried, zero-point flagged).
+
+    ``zero-point flagged`` True means the 0us row exceeded the threshold: the
+    baseline is contaminated and the sensitivity figure must not be trusted.
+    """
+    by_magnitude: dict[float, list[float]] = {}
+    for r in results:
+        if not r.name.startswith("POSITIVE CONTROL"):
+            continue
+        magnitude = float(r.name.split("delay ")[1].split("us")[0])
+        by_magnitude.setdefault(magnitude, []).append(abs(r.t_statistic))
+    if not by_magnitude:
+        return None, None, False
+    zero_flagged = any(t > T_SUSPICIOUS for t in by_magnitude.get(0.0, []))
+    detected = [m for m, ts in by_magnitude.items() if m > 0 and all(t > T_CLEAR for t in ts)]
+    return (min(detected) if detected else None), max(by_magnitude), zero_flagged
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -666,6 +880,18 @@ def run_all(iterations: int = 10_000, save_json: str | None = None) -> list[Leak
             control_random_vs_random,
         ),
         ("ML-KEM-768 decapsulation - key dependence", decap_fixed_vs_random),
+        (
+            "CALIBRATION - public inputs only (secret fixed, ciphertext varies)",
+            decap_public_calibration,
+        ),
+        (
+            "CALIBRATION - public key only (encapsulation, no secret)",
+            encap_public_key_calibration,
+        ),
+        (
+            "POSITIVE CONTROL - detection sensitivity (deliberate leak)",
+            positive_control_sensitivity,
+        ),
         ("ML-KEM-768 decapsulation - ciphertext validity", decap_valid_vs_invalid),
         ("ML-DSA-65 signing - key dependence", sign_fixed_vs_random),
         ("HybridKEM decapsulation - key dependence", hybrid_decap_fixed_vs_random),
@@ -683,7 +909,11 @@ def run_all(iterations: int = 10_000, save_json: str | None = None) -> list[Leak
 
     print("\n" + "=" * 96)
     controls = [r for r in results if r.name.startswith("CONTROL")]
-    tests = [r for r in results if not r.name.startswith("CONTROL")]
+    positive = [r for r in results if r.name.startswith("POSITIVE CONTROL")]
+    calibration = [r for r in results if r.name.startswith("CALIBRATION")]
+    tests = [
+        r for r in results if not r.name.startswith(("CONTROL", "POSITIVE CONTROL", "CALIBRATION"))
+    ]
     control_floor = max((abs(r.t_statistic) for r in controls), default=0.0)
 
     if controls:
@@ -731,13 +961,57 @@ def run_all(iterations: int = 10_000, save_json: str | None = None) -> list[Leak
             f"\nINTERPRETATION: fixed-vs-random reaches |t| = {max(fvr):.2f} while "
             f"random-vs-random stays at |t| = {max(rvr):.2f}.\n"
             "  Varying the key alone produces no class difference, so the positive\n"
-            "  result does not track key values. What separates the classes is that\n"
-            "  the fixed class re-executes on byte-identical inputs and settles into a\n"
-            "  microarchitectural steady state the varying class never reaches.\n"
-            "  Read it as an artifact of the two-class design at this level of\n"
-            "  abstraction, NOT as a key-recovery channel. A fixed-vs-random t taken\n"
-            "  on its own would have been a false positive here."
+            "  result is not explained by key values. What separates the classes is that\n"
+            "  the fixed class repeats byte-identical key and ciphertext data. The\n"
+            "  mechanism is not established by this harness (repetition reaching a\n"
+            "  microarchitectural steady state is one candidate). The calibrations below\n"
+            "  test whether data with NO secret reproduces the signal. A fixed-vs-random\n"
+            "  t taken on its own would have been a false positive here."
         )
+
+    # Positive control: what the harness can actually detect.
+    if positive:
+        found, largest, zero_flagged = detection_threshold_us(positive)
+        if zero_flagged:
+            print(
+                "\nPOSITIVE CONTROL: the 0us zero point was flagged, so the baseline is "
+                "contaminated on this host and no sensitivity figure can be trusted."
+            )
+        elif found is None:
+            print(
+                f"\nPOSITIVE CONTROL: no deliberate leak up to {largest}us per affected "
+                "call was flagged. This run could not have detected a leak of that size, "
+                "so a clean result above is NOT evidence of absence at that scale."
+            )
+        else:
+            print(
+                f"\nPOSITIVE CONTROL: a secret-dependent delay of {found}us (mean "
+                f"difference {found / 2:.3f}us between classes) was flagged at every crop "
+                "level and the 0us zero point was not. Leakage smaller than that is not "
+                "excluded by a clean result."
+            )
+
+    # Calibrations: can data with NO secret (or a fixed secret) reproduce the signal?
+    if fvr:
+        for r_group in (
+            [r for r in calibration if "same vs fresh ciphertext" in r.name],
+            [r for r in calibration if "PUBLIC key" in r.name],
+        ):
+            if not r_group:
+                continue
+            cal_t = [abs(r.t_statistic) for r in r_group]
+            label = r_group[0].name.split(" [")[0]
+            print(
+                f"\n{label}:\n  |t| = {min(cal_t):.2f}-{max(cal_t):.2f} "
+                f"(fixed-vs-random decapsulation: |t| = {min(fvr):.2f}-{max(fvr):.2f})"
+            )
+            if max(cal_t) > floor:
+                print(
+                    "  This arrangement reaches the threshold with no secret varying, so a "
+                    "fixed-vs-random signal of similar size need not involve the secret."
+                )
+            else:
+                print("  This arrangement does not reach the threshold.")
 
     if flagged:
         print("\nExceeded the threshold at EVERY crop level (robust signal):")
