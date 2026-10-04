@@ -261,7 +261,7 @@ class TestEnvelopeSealOpen:
             aad=b"tampered",  # different aad
         )
         with pytest.raises(InvalidTag):
-            Envelope.open(tampered, kp.secret, kem=kem)
+            Envelope.open(tampered, kp.secret, kem=kem, expected_aad=b"tampered")
 
     def test_tampered_ciphertext_fails(self):
         from cryptography.exceptions import InvalidTag

@@ -176,6 +176,7 @@ addopts = [
 # only the test that exercises the deprecated path may omit it (pytest.warns).
 filterwarnings = [
     "error:verify\\(\\) without context=:DeprecationWarning",
+    "error:Envelope.open\\(\\) without expected_aad=:DeprecationWarning",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",

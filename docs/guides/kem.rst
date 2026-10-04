@@ -140,11 +140,10 @@ encrypt data:
 
    # With authenticated additional data (visible but authenticated)
    sealed = Envelope.seal(b"payload", kp.public, aad=b"recipient:user-42")
-   plain  = Envelope.open(sealed, kp.secret)
-   # open() authenticates the AAD carried in the message but does not compare
-   # it with anything: check it yourself before trusting the plaintext.
-   if sealed.aad != b"recipient:user-42":
-       raise ValueError("envelope was sealed for a different context")
+   # State the AAD you expect: the message's AAD must equal it, otherwise
+   # open() raises cryptography.exceptions.InvalidTag.  A message sealed for
+   # another recipient or record therefore cannot be opened in this context.
+   plain  = Envelope.open(sealed, kp.secret, expected_aad=b"recipient:user-42")
 
    # Serialize for transport
    wire   = sealed.to_bytes()
@@ -153,8 +152,12 @@ encrypt data:
 .. note::
 
    An envelope is public-key encryption: anyone holding the recipient's
-   public key can seal a message, with any AAD.  It does **not** authenticate
-   the sender; sign the payload separately when the sender matters.
+   public key can seal a message, with any AAD, and the AAD travels inside
+   the message.  Pass ``expected_aad=`` to ``Envelope.open`` to bind a
+   message to a context; omitting it while the message carries AAD is
+   deprecated (``DeprecationWarning``) and will be an error-by-default in the
+   next minor release.  An envelope does **not** authenticate the sender;
+   sign the payload separately when the sender matters.
 
 Key serialization
 -----------------

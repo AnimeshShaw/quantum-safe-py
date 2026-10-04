@@ -53,10 +53,13 @@ which sealed messages need upgrading — scan for version=1, algo=old_algo.
 
 from __future__ import annotations
 
+import hmac
 import os
+import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from quantum_safe._internal import serialization as _ser
@@ -290,8 +293,16 @@ class Envelope:
         sealed: SealedMessage,
         recipient_secret_key: SecretKey,
         kem: HybridKEM | None = None,
+        expected_aad: bytes | None = None,
     ) -> bytes:
         """Decrypt a SealedMessage.
+
+        An envelope is anonymous public-key encryption: anyone holding the
+        recipient's public key can seal a message with any AAD, and the AAD
+        travels inside the message. It is authenticated against tampering, but
+        it only binds the message to a context (a user id, a record id) if the
+        opener says which AAD it expects: pass ``expected_aad``. An envelope
+        does not tell you who sent it; sign the payload separately for that.
 
         Args:
             sealed:               SealedMessage from Envelope.seal() or
@@ -299,17 +310,37 @@ class Envelope:
             recipient_secret_key: The recipient's HybridKEM secret key.
             kem:                  HybridKEM instance. If None, auto-created
                                   from the envelope's algorithm field.
+            expected_aad:         The AAD this opener expects. The message's
+                                  AAD must equal it. Omitting it while the
+                                  message carries AAD is deprecated (it emits
+                                  a DeprecationWarning); it will be required
+                                  (default ``b""``) in the next minor release.
 
         Returns:
             Original plaintext bytes.
 
         Raises:
             DecapsulationError:  if KEM decapsulation fails.
-            cryptography.exceptions.InvalidTag: if the ciphertext is tampered
-                                  or the wrong key is used (GCM authentication
-                                  failure). We let this propagate from
+            cryptography.exceptions.InvalidTag: if the ciphertext is tampered,
+                                  the wrong key is used, or the message's AAD
+                                  differs from ``expected_aad`` (the same
+                                  authentication failure, with no detail on
+                                  which). We let this propagate from
                                   cryptography directly — don't catch it.
         """
+        if expected_aad is None:
+            if sealed.aad:
+                warnings.warn(
+                    "Envelope.open() without expected_aad= is deprecated: the AAD travels "
+                    "inside the message and anyone with the recipient's public key can set "
+                    "it, so pass the AAD you expect. expected_aad= will be required "
+                    "(default b'') in the next minor release.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+        elif not hmac.compare_digest(bytes(sealed.aad), bytes(expected_aad)):
+            raise InvalidTag
+
         if kem is None:
             kem = cls._kem_for_algorithm(sealed.algorithm)
 

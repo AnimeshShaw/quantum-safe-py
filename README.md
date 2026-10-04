@@ -190,6 +190,10 @@ sealed = SealedMessage.from_bytes(wire)  # or .from_hex()
 
 # With authenticated metadata (visible but authenticated)
 sealed = Envelope.seal(b"payload", pub, aad=b"recipient-id:user-42")
+
+# On open, state the AAD you expect: a message sealed for another context
+# (user, record) will not open here. Envelopes do not authenticate the sender.
+plain = Envelope.open(sealed, kp.secret, expected_aad=b"recipient-id:user-42")
 ```
 
 ---

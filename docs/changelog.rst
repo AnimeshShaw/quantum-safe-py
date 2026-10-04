@@ -50,6 +50,10 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- ``Envelope.open(..., expected_aad=...)``: the opener states the AAD it expects
+  (otherwise ``InvalidTag``). A message sealed for one context no longer opens
+  in another. Omitting it while the message carries AAD emits a
+  ``DeprecationWarning``.
 - ``cnsa2.pqc_kem()``, ``cnsa2.pqc_sign()`` and ``cnsa2.enforce(strict=True)``.
 - Interoperability tests against data written by quantum-safe-ts.
 

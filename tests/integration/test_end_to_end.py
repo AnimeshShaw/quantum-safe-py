@@ -200,7 +200,7 @@ class TestEnvelopeWorkflow:
             kem=kem,
         )
         assert sealed.aad == b"recipient-id:user-42"
-        recovered = Envelope.open(sealed, kp.secret, kem=kem)
+        recovered = Envelope.open(sealed, kp.secret, kem=kem, expected_aad=b"recipient-id:user-42")
         assert recovered == b"protected payload"
 
     def test_envelope_large_payload(self):

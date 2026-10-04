@@ -107,7 +107,8 @@ def test_kem_decapsulates(k) -> None:
 def test_envelope_opens(e) -> None:
     sk = SecretKey(raw=bytes.fromhex(e["secret_key"]), algorithm=e["algorithm"])
     sealed = SealedMessage.from_bytes(bytes.fromhex(e["sealed"]))
-    assert Envelope.open(sealed, sk).hex() == e["plaintext"]
+    aad = bytes.fromhex(e["aad"])
+    assert Envelope.open(sealed, sk, expected_aad=aad).hex() == e["plaintext"]
 
 
 @pytest.mark.parametrize("k", V["keys"], ids=_ids(V["keys"]))
@@ -152,7 +153,9 @@ def test_jwt_verifies(t) -> None:
 @pytest.mark.parametrize("e", JV["envelope"], ids=_ids(JV["envelope"]))
 def test_facade_envelope_opens(e) -> None:
     sk = SecretKey(raw=bytes.fromhex(e["secret_key"]), algorithm=e["algorithm"])
-    assert Envelope.open(SealedMessage.from_hex(e["sealed"]), sk).hex() == e["plaintext"]
+    sealed = SealedMessage.from_hex(e["sealed"])
+    aad = bytes.fromhex(e["aad"])
+    assert Envelope.open(sealed, sk, expected_aad=aad).hex() == e["plaintext"]
 
 
 @pytest.mark.parametrize("u", JV["upgrade_kem"], ids=_ids(JV["upgrade_kem"]))
