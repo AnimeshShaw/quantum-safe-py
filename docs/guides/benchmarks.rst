@@ -536,6 +536,25 @@ trustworthy answer needs:
   decapsulation while random-vs-random stayed under 2 — proving the signal
   tracked repetition, not key material, which a naive test without that
   control would have reported as a real leak.
+- **A public-data calibration.** The fixed class repeats the same secret key
+  *and* the same ciphertext, and much of ML-KEM decapsulation depends on public
+  data and on cache and branch state, so a fixed class can run faster with no
+  secret dependence at all. Two calibrations isolate this: the *same secret key*
+  with a fixed vs fresh ciphertext, and *encapsulation* (which uses only the
+  public key, so no secret is involved in either class) with a fixed vs fresh
+  public key. On the development host the second reproduces the fixed-vs-random
+  decapsulation signal (:math:`|t|` 15-23 against 21-43, a mean difference of
+  about +2.7 µs in both), so that signal is not secret dependence.
+- **A positive control.** A real decapsulation plus a deliberate
+  secret-dependent delay, at several magnitudes, on a random-vs-random
+  baseline, with a 0 µs zero point that must not be flagged. It reports the
+  smallest leak the harness detects at the configured iteration count: about
+  1 µs of mean difference (a 2 µs delay on half the keys, roughly 7% of the
+  operation) at 20,000 iterations on the development host. A clean result
+  elsewhere in the report is bounded by that sensitivity, and it says nothing
+  about leaks smaller than it. Everything is measured through the Python
+  binding, so a leak below the binding's own jitter is below the threshold
+  whatever the compiled backend does.
 
 .. code-block:: bash
 
