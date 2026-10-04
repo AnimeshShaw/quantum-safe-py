@@ -24,6 +24,11 @@ All notable changes to quantum-safe are documented here.
   bytes, and their algorithm names must match the verifier's components.
   Previously extra entries were ignored, so different byte strings verified
   as the same signature.
+- Key loaders require the key-type tag (`ktype`) and that it matches the
+  loader (`"pub"` for `PublicKey`, `"sec"` for `SecretKey`, in CBOR, PEM and
+  bundles), require `kty: "AKP"` for JWKs, and require the version to be an
+  integer (`v: true` is no longer read as version 1). Every key this library
+  has written carries these fields.
 
 ## [0.3.0] - 2026-09-28
 

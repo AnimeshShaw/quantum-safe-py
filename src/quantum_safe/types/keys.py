@@ -321,10 +321,18 @@ class BaseKey(ABC):
     # ------------------------------------------------------------------
 
     @classmethod
-    def _parse_cbor_dict(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Validate and return a parsed CBOR dict. Raises KeyParseError on bad input."""
+    def _parse_cbor_dict(cls, data: dict[str, Any], expected_ktype: str) -> dict[str, Any]:
+        """Validate and return a parsed CBOR dict. Raises KeyParseError on bad input.
+
+        ``expected_ktype`` is "pub" or "sec". The key-type tag is required and
+        must match: an optional tag would leave the loader one length
+        collision away from reading a secret key as a public key (or the
+        reverse). Every key this library writes carries it.
+        """
         version = data.get("v")
-        if not isinstance(version, int):
+        # type() rather than isinstance(): bool is an int subclass, so
+        # isinstance(True, int) would accept ``v: true`` as version 1.
+        if type(version) is not int:
             raise KeyParseError("cbor", "missing or non-integer 'v' field")
         # Reject both too-new (unsupported features) and too-old (below floor,
         # which would indicate a downgrade attack against future format changes).
@@ -336,6 +344,13 @@ class BaseKey(ABC):
             raise KeyParseError("cbor", "missing 'algo' field")
         if "key" not in data:
             raise KeyParseError("cbor", "missing 'key' field")
+        ktype = data.get("ktype")
+        if ktype != expected_ktype:
+            if ktype is None:
+                detail = "missing 'ktype' field"
+            else:
+                detail = f"'ktype' is {ktype!r}, expected {expected_ktype!r}"
+            raise KeyParseError("cbor", detail)
         return data
 
     @classmethod
@@ -481,7 +496,7 @@ class PublicKey(BaseKey):
         except Exception as exc:
             raise KeyParseError("pem", f"CBOR decode failed: {exc}") from exc
 
-        parsed = cls._parse_cbor_dict(cbor_dict)
+        parsed = cls._parse_cbor_dict(cbor_dict, "pub")
 
         try:
             ms = MigrationState(parsed.get("ms", "hybrid_transition"))
@@ -496,15 +511,18 @@ class PublicKey(BaseKey):
 
     @classmethod
     def from_cbor(cls, data: bytes) -> PublicKey:
-        """Parse a public key from CBOR bytes."""
+        """Parse a public key from CBOR bytes.
+
+        The CBOR decoder accepts non-minimal integer and length encodings, so
+        two different byte strings can decode to the same key. Compare keys
+        by value or fingerprint, never by their serialized bytes.
+        """
         try:
             cbor_dict = _ser.loads(data)
         except Exception as exc:
             raise KeyParseError("cbor", f"CBOR decode failed: {exc}") from exc
 
-        parsed = cls._parse_cbor_dict(cbor_dict)
-        if parsed.get("ktype") == "sec":
-            raise KeyParseError("cbor", "data contains a secret key, not a public key")
+        parsed = cls._parse_cbor_dict(cbor_dict, "pub")
 
         try:
             ms = MigrationState(parsed.get("ms", "hybrid_transition"))
@@ -519,7 +537,12 @@ class PublicKey(BaseKey):
 
     @classmethod
     def from_jwk(cls, jwk: dict[str, Any]) -> PublicKey:
-        """Parse a public key from a JWK dict."""
+        """Parse a public key from a JWK dict.
+
+        ``kty`` must be ``"AKP"`` (the key type this library writes, RFC 9964).
+        """
+        if jwk.get("kty") != "AKP":
+            raise KeyParseError("jwk", f"'kty' must be 'AKP', got {jwk.get('kty')!r}")
         if "pub" not in jwk:
             raise KeyParseError("jwk", "missing 'pub' field")
         if "alg" not in jwk:
@@ -655,9 +678,7 @@ class SecretKey(BaseKey):
         except Exception as exc:
             raise KeyParseError("pem", f"CBOR decode failed: {exc}") from exc
 
-        parsed = cls._parse_cbor_dict(cbor_dict)
-        if parsed.get("ktype") == "pub":
-            raise KeyParseError("pem", "data contains a public key, not a secret key")
+        parsed = cls._parse_cbor_dict(cbor_dict, "sec")
 
         try:
             ms = MigrationState(parsed.get("ms", "hybrid_transition"))
@@ -672,15 +693,17 @@ class SecretKey(BaseKey):
 
     @classmethod
     def from_cbor(cls, data: bytes) -> SecretKey:
-        """Parse a secret key from CBOR bytes."""
+        """Parse a secret key from CBOR bytes.
+
+        Non-minimal CBOR encodings are accepted (see PublicKey.from_cbor);
+        do not use serialized bytes as a key identifier.
+        """
         try:
             cbor_dict = _ser.loads(data)
         except Exception as exc:
             raise KeyParseError("cbor", f"CBOR decode failed: {exc}") from exc
 
-        parsed = cls._parse_cbor_dict(cbor_dict)
-        if parsed.get("ktype") == "pub":
-            raise KeyParseError("cbor", "data contains a public key, not a secret key")
+        parsed = cls._parse_cbor_dict(cbor_dict, "sec")
 
         try:
             ms = MigrationState(parsed.get("ms", "hybrid_transition"))
