@@ -177,26 +177,32 @@ class TestSigBlobPacking:
         prefix = os.urandom(32)
         raw_sig = b"\xab" * 3293
         blob = Sign._pack_sig_blob(prefix, raw_sig)
-        p2, s2 = Sign._unpack_sig_blob(blob)
+        p2, s2 = Sign._unpack_sig_blob(blob, 32)
         assert p2 == prefix
         assert s2 == raw_sig
 
     def test_round_trip_no_prefix(self):
         raw_sig = b"\xcd" * 3293
         blob = Sign._pack_sig_blob(b"", raw_sig)
-        prefix, s2 = Sign._unpack_sig_blob(blob)
+        prefix, s2 = Sign._unpack_sig_blob(blob, 0)
         assert prefix == b""
         assert s2 == raw_sig
 
     def test_empty_blob_raises(self):
         with pytest.raises(VerificationError):
-            Sign._unpack_sig_blob(b"")
+            Sign._unpack_sig_blob(b"", 32)
 
     def test_truncated_blob_raises(self):
         # Claim prefix is 32 bytes but provide only 10
         blob = bytes([32]) + b"\x00" * 10
         with pytest.raises(VerificationError):
-            Sign._unpack_sig_blob(blob)
+            Sign._unpack_sig_blob(blob, 32)
+
+    @pytest.mark.parametrize(("prefix_len", "expected"), [(32, 0), (0, 32), (33, 32), (31, 32)])
+    def test_prefix_length_other_than_expected_raises(self, prefix_len, expected):
+        blob = Sign._pack_sig_blob(b"\x00" * prefix_len, b"\xab" * 100)
+        with pytest.raises(VerificationError):
+            Sign._unpack_sig_blob(blob, expected)
 
 
 # ---------------------------------------------------------------------------
@@ -353,7 +359,7 @@ class TestHybridSignEd25519:
         kp = hs.generate_keypair()
         sm = hs.sign(b"hello", kp.secret)
         # Unpack the blob to get the HybridSignature
-        rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature)
+        rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature, 32)
         hybrid_sig = HybridSignature.from_bytes(hs_bytes)
         assert len(hybrid_sig.classical_sig) == 64  # Ed25519 sig is always 64 bytes
         assert hybrid_sig.classical_algo == "Ed25519"
@@ -527,7 +533,7 @@ class TestHybridSignWithRealBackend:
         hs = HybridSign()
         kp = hs.generate_keypair()
         sm = hs.sign(b"test", kp.secret, context=b"ctx")
-        rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature)
+        rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature, 32)
         hybrid_sig = HybridSignature.from_bytes(hs_bytes)
         # ML-DSA-65 signatures are 3293 bytes per FIPS 204.
         # Liboqs >= 0.15 may produce slightly different sizes due to internal

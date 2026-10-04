@@ -4,6 +4,22 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+### ⚠ Changed behaviour
+
+- **Signatures made with `hedged=False` now need a verifier built with
+  `hedged=False`.** This applies to `Sign`, `HybridSign` and `JWTVerifier`
+  (which gains a `hedged` argument, default `True`). Hedged signatures, the
+  default, are unaffected. Nothing is re-encoded: every signature 0.3.0
+  wrote still verifies on a verifier in the matching mode.
+
+### Fixed
+
+- Signature verification now requires the signature prefix length to match
+  the verifier's hedging mode (`hedged=True`, the default: 32 bytes;
+  `hedged=False`: 0). Previously the length was read from the signature
+  blob, where it is not covered by the signature. Use one hedging mode per
+  key.
+
 ## [0.3.0] - 2026-09-28
 
 ### ⚠ Breaking

@@ -70,7 +70,10 @@ class Sign:
         algorithm:  PQC signature algorithm. Defaults to ML-DSA-65.
         backend:    Backend name: "auto", "liboqs", "rustcrypto".
         hedged:     If True (default), prepend 32 random bytes before signing
-                    to prevent fault injection attacks.
+                    to prevent fault injection attacks. A verifier accepts
+                    only signatures made in its own mode: construct it with
+                    the same ``hedged`` value as the signer, and use one mode
+                    per key.
         strict:     If True, raise instead of warn for non-standard configs.
 
     Example::
@@ -268,7 +271,9 @@ class Sign:
                 available=[self._algorithm],
             )
 
-        rand_prefix, raw_sig = self._unpack_sig_blob(signed_message.signature)
+        rand_prefix, raw_sig = self._unpack_sig_blob(
+            signed_message.signature, self._expected_prefix_len()
+        )
         msg_to_verify = rand_prefix + signed_message.message
 
         ok = self._backend.verify(
@@ -297,8 +302,11 @@ class Sign:
 
         For fully external signatures (produced by liboqs directly or another
         tool), use verify_raw() instead.
+
+        The prefix length must match this verifier's hedging mode: 32 bytes
+        when hedged (the default), 0 when constructed with ``hedged=False``.
         """
-        rand_prefix, raw_sig = self._unpack_sig_blob(signature_blob)
+        rand_prefix, raw_sig = self._unpack_sig_blob(signature_blob, self._expected_prefix_len())
         msg_to_verify = rand_prefix + message
         ok = self._backend.verify(
             self._algorithm,
@@ -349,13 +357,25 @@ class Sign:
             raise ValueError("rand_prefix too long")
         return bytes([len(rand_prefix)]) + rand_prefix + raw_sig
 
+    def _expected_prefix_len(self) -> int:
+        """Prefix length this verifier accepts: 32 if hedged, else 0."""
+        return HEDGED_RANDOMNESS_BYTES if self._hedged else 0
+
     @staticmethod
-    def _unpack_sig_blob(blob: bytes) -> tuple[bytes, bytes]:
-        """Unpack a signature blob into (rand_prefix, raw_sig)."""
+    def _unpack_sig_blob(blob: bytes, expected_prefix_len: int) -> tuple[bytes, bytes]:
+        """Unpack a signature blob into (rand_prefix, raw_sig).
+
+        The prefix length byte is not covered by the signature, so it cannot
+        be trusted to say where the prefix ends and the message begins: if it
+        could vary, bytes could be moved between the prefix and the message
+        and the signature would still verify for a different message. The
+        caller therefore states the length it expects (from its own hedging
+        mode) and any other value is rejected.
+        """
         if len(blob) < 1:
             raise VerificationError()
         prefix_len = blob[0]
-        if len(blob) < 1 + prefix_len:
+        if prefix_len != expected_prefix_len or len(blob) < 1 + prefix_len:
             raise VerificationError()
         rand_prefix = blob[1 : 1 + prefix_len]
         raw_sig = blob[1 + prefix_len :]

@@ -197,6 +197,9 @@ class JWTVerifier:
         issuer:       If set, the `iss` claim must match this value.
         audience:     If set, the `aud` claim must include this value.
         backend:      Signature backend.
+        hedged:       Must match the JWTSigner that produced the token
+                      (default True). Tokens signed with hedged=False verify
+                      only on a verifier constructed with hedged=False.
 
     Example::
 
@@ -211,23 +214,25 @@ class JWTVerifier:
         issuer: str | None = None,
         audience: str | None = None,
         backend: str = "auto",
+        hedged: bool = True,
     ) -> None:
         self._public_key = public_key
         self._issuer = issuer
         self._audience = audience
         self._algorithm = public_key.algorithm
-        self._verifier = self._build_verifier(public_key.algorithm, backend)
+        self._hedged = hedged
+        self._verifier = self._build_verifier(public_key.algorithm, backend, hedged)
 
-    def _build_verifier(self, algorithm: str, backend: str) -> Sign | HybridSign:
+    def _build_verifier(self, algorithm: str, backend: str, hedged: bool) -> Sign | HybridSign:
         if "+" in algorithm:
             # Use the normal constructor to ensure validate_hybrid_combination()
             # runs and unapproved algorithm pairs are rejected.
             from quantum_safe.signatures.algorithms import parse_hybrid_name
 
             classical, pqc = parse_hybrid_name(algorithm)
-            return HybridSign(classical=classical, pqc=pqc, backend=backend)
+            return HybridSign(classical=classical, pqc=pqc, backend=backend, hedged=hedged)
         else:
-            return Sign(algorithm=algorithm, backend=backend)
+            return Sign(algorithm=algorithm, backend=backend, hedged=hedged)
 
     def verify(
         self,

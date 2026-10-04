@@ -107,7 +107,9 @@ class HybridSign:
         pqc:        PQC signature algorithm. Default: "ML-DSA-65".
         backend:    PQC backend: "auto", "liboqs", "rustcrypto".
         hedged:     Hedged signing mode (default True). Prepends 32 random
-                    bytes before signing to prevent fault injection.
+                    bytes before signing to prevent fault injection. A
+                    verifier accepts only signatures made in its own mode;
+                    use the signer's ``hedged`` value and one mode per key.
         validate:   Validate that the combination is approved (default True).
 
     Example::
@@ -298,8 +300,11 @@ class HybridSign:
             public_key.raw_bytes, context=self._algorithm
         )
 
-        # Unpack the blob to get rand_prefix and the HybridSignature payload
-        rand_prefix, hs_bytes = Sign._unpack_sig_blob(signed_message.signature)
+        # Unpack the blob to get rand_prefix and the HybridSignature payload.
+        # The prefix length must match this verifier's hedging mode; see
+        # Sign._unpack_sig_blob for why it cannot be read from the blob.
+        expected_prefix_len = HEDGED_RANDOMNESS_BYTES if self._hedged else 0
+        rand_prefix, hs_bytes = Sign._unpack_sig_blob(signed_message.signature, expected_prefix_len)
         msg_to_verify = rand_prefix + signed_message.message
 
         # Decode the HybridSignature
