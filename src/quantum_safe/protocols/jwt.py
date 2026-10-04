@@ -4,6 +4,19 @@ quantum_safe.protocols.jwt
 
 PQC-aware JSON Web Token (JWT) support.
 
+Interoperability, stated plainly
+--------------------------------
+Tokens from this module can be verified **only by quantum-safe** (or a
+byte-compatible implementation such as quantum-safe-ts), in either hedging
+mode. They are not RFC 9964 ML-DSA JWS: the signature field is this
+library's signature blob (a prefix-length byte, the optional 32-byte hedge
+prefix, then the ML-DSA signature, or a CBOR payload for hybrids), and what is
+signed is ``len(context) || context || prefix || header.payload`` with
+context ``b"jwt"`` by default, not ``header.payload`` with an empty FIPS 204
+context. A standard JOSE library will reject them even with ``hedged=False``.
+An RFC 9964-compliant mode (``AKP`` JWK, empty context, raw signature) is not
+offered.
+
 Algorithm identifiers follow draft-ietf-jose-pqc-signatures, which defines
 algorithm strings for use in the JWT `alg` header:
 
@@ -38,10 +51,10 @@ signing input). This is different from standard JWT signing, where the input
 is deterministic. The hedged prefix is NOT stored in the JWT — it's embedded
 in the signature blob using Sign._pack_sig_blob format.
 
-The tradeoff: hedged JWTs cannot be verified by standard JWT libraries.
-They can only be verified by quantum-safe. If you need interoperability
-with standard JWT verifiers, pass hedged=False, but understand that this
-removes fault-injection protection.
+``hedged=False`` makes signing deterministic and removes the hedge prefix,
+but it does **not** make tokens verifiable by standard JWT libraries (see
+"Interoperability" above); it only removes fault-injection protection. A
+verifier must be built with the same ``hedged`` value as the signer.
 
 Expiration and claims
 ---------------------
