@@ -11,14 +11,35 @@ class TestKemChecks:
     def test_required_parameter_set_passes(self) -> None:
         assert cnsa2.check_kem("ML-KEM-1024").ok
 
-    def test_hybrid_with_compliant_pqc_half_passes(self) -> None:
-        assert cnsa2.check_kem("X25519+ML-KEM-1024").ok
+    @pytest.mark.parametrize("alg", ["X25519+ML-KEM-1024", "P-256+ML-KEM-1024"])
+    def test_hybrid_with_non_cnsa_classical_half_is_partial(self, alg: str) -> None:
+        """Hybrid is optional; a hybrid's classical half must be CNSA 1.0 (P-384).
+
+        X25519 and P-256 are not CNSA algorithms, so the PQC half meets the
+        requirement but the configuration as a whole is only PARTIAL.
+        """
+        result = cnsa2.check_kem(alg)
+        assert result.finding is cnsa2.Finding.PARTIAL
+        assert not result.ok
+        assert "ML-KEM-1024" in result.detail and "P-384" in result.detail
+
+    def test_hybrid_with_cnsa1_classical_half_passes(self) -> None:
+        result = cnsa2.check_kem("P-384+ML-KEM-1024")
+        assert result.ok
+        assert "not implemented" in result.detail
+
+    @pytest.mark.parametrize(
+        "alg",
+        ["RSA-1024+ML-KEM-1024", "FOO+ML-KEM-1024", "X25519+P-384+ML-KEM-1024", "+ML-KEM-1024"],
+    )
+    def test_unrecognised_classical_half_is_non_compliant(self, alg: str) -> None:
+        assert cnsa2.check_kem(alg).finding is cnsa2.Finding.NON_COMPLIANT
 
     @pytest.mark.parametrize("alg", ["ML-KEM-512", "ML-KEM-768", "X25519+ML-KEM-768"])
     def test_lower_parameter_sets_fail(self, alg: str) -> None:
         """A FIPS 203 algorithm below ML-KEM-1024 is not CNSA 2.0."""
         result = cnsa2.check_kem(alg)
-        assert not result.ok
+        assert result.finding is cnsa2.Finding.NON_COMPLIANT
         assert "ML-KEM-1024" in result.detail
 
 
@@ -26,12 +47,24 @@ class TestSignatureChecks:
     def test_required_parameter_set_passes(self) -> None:
         assert cnsa2.check_signature("ML-DSA-87").ok
 
-    def test_hybrid_with_compliant_pqc_half_passes(self) -> None:
-        assert cnsa2.check_signature("Ed25519+ML-DSA-87").ok
+    @pytest.mark.parametrize("alg", ["Ed25519+ML-DSA-87", "P-256+ML-DSA-87"])
+    def test_hybrid_with_non_cnsa_classical_half_is_partial(self, alg: str) -> None:
+        result = cnsa2.check_signature(alg)
+        assert result.finding is cnsa2.Finding.PARTIAL
+        assert not result.ok
+
+    def test_hybrid_with_cnsa1_classical_half_passes(self) -> None:
+        assert cnsa2.check_signature("P-384+ML-DSA-87").ok
+
+    @pytest.mark.parametrize(
+        "alg", ["RSA-1024+ML-DSA-87", "Ed448+Ed25519+ML-DSA-87", "x+ML-DSA-87"]
+    )
+    def test_unrecognised_classical_half_is_non_compliant(self, alg: str) -> None:
+        assert cnsa2.check_signature(alg).finding is cnsa2.Finding.NON_COMPLIANT
 
     @pytest.mark.parametrize("alg", ["ML-DSA-44", "ML-DSA-65", "Ed25519+ML-DSA-65"])
     def test_lower_parameter_sets_fail(self, alg: str) -> None:
-        assert not cnsa2.check_signature(alg).ok
+        assert cnsa2.check_signature(alg).finding is cnsa2.Finding.NON_COMPLIANT
 
 
 class TestHashChecks:
@@ -68,8 +101,8 @@ class TestReport:
         also requires key generation inside a validated module, and XMSS is absent.
         """
         rep = cnsa2.report(
-            kem="X25519+ML-KEM-1024",
-            signature="Ed25519+ML-DSA-87",
+            kem="ML-KEM-1024",
+            signature="ML-DSA-87",
             hash_algorithm="SHA-512",
             include_code_signing=True,
         )
@@ -114,7 +147,32 @@ class TestEnforce:
             cnsa2.enforce(kem="ML-KEM-768", signature="ML-DSA-87")
 
     def test_passes_at_requirements(self) -> None:
-        cnsa2.enforce(kem="X25519+ML-KEM-1024", signature="Ed25519+ML-DSA-87")
+        cnsa2.enforce(kem="ML-KEM-1024", signature="ML-DSA-87")
+
+    def test_raises_for_non_cnsa_hybrid(self) -> None:
+        """PARTIAL counts against compliance, so enforce() refuses it."""
+        with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):
+            cnsa2.enforce(kem="X25519+ML-KEM-1024", signature="Ed25519+ML-DSA-87")
+
+
+class TestConstructors:
+    def test_hybrid_kem_no_longer_offers_p384(self) -> None:
+        """HybridKEM does not implement P-384, so the helper must not offer it."""
+        assert "P-384" not in cnsa2.CNSA2_HYBRID_CLASSICAL
+        with pytest.raises(ValueError):
+            cnsa2.hybrid_kem(classical="P-384")
+
+    @pytest.mark.requires_liboqs
+    def test_pure_constructors_use_the_required_parameter_sets(self) -> None:
+        assert cnsa2.pqc_kem().algorithm == "ML-KEM-1024"
+        assert cnsa2.pqc_sign().algorithm == "ML-DSA-87"
+
+    def test_describe_leads_with_the_compliant_pure_configuration(self) -> None:
+        text = cnsa2.describe()
+        assert "pqc_kem()" in text and "pqc_sign()" in text
+        assert "PARTIAL" in text
+        # LMS has been available since 0.3.0; the text must not say otherwise.
+        assert "implements neither" not in text
 
 
 class TestFips205Mapping:

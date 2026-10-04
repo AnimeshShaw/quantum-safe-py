@@ -29,8 +29,22 @@ Quickest path to a compliant configuration:
 
    from quantum_safe.compliance import cnsa2
 
-   kem    = cnsa2.hybrid_kem()    # X25519 + ML-KEM-1024
-   signer = cnsa2.hybrid_sign()   # Ed25519 + ML-DSA-87
+   kem    = cnsa2.pqc_kem()       # ML-KEM-1024
+   signer = cnsa2.pqc_sign()      # ML-DSA-87
+
+Hybrid operation is optional under CNSA 2.0, and where a National Security
+System uses a hybrid, its classical half must be a CNSA 1.0 algorithm (ECDH /
+ECDSA on P-384). The hybrid helpers therefore carry the required post-quantum
+parameter set but are reported **PARTIAL**, because X25519, P-256 and Ed25519
+are not CNSA algorithms (P-384 hybrids are not implemented by this library):
+
+.. code-block:: python
+
+   kem    = cnsa2.hybrid_kem()    # X25519 + ML-KEM-1024  -> PARTIAL
+   signer = cnsa2.hybrid_sign()   # Ed25519 + ML-DSA-87   -> PARTIAL
+
+A hybrid name whose classical half is not recognised (for example
+``RSA-1024+ML-DSA-87``) is reported NON-COMPLIANT rather than guessed.
 
 Checking an arbitrary configuration:
 
@@ -66,6 +80,10 @@ To fail hard instead of just reporting:
 .. autofunction:: quantum_safe.compliance.cnsa2.report
 
 .. autofunction:: quantum_safe.compliance.cnsa2.enforce
+
+.. autofunction:: quantum_safe.compliance.cnsa2.pqc_kem
+
+.. autofunction:: quantum_safe.compliance.cnsa2.pqc_sign
 
 .. autofunction:: quantum_safe.compliance.cnsa2.hybrid_kem
 

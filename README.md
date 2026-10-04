@@ -412,8 +412,14 @@ print(report.render())
 # [FAIL] Signatures ... requires ML-DSA-87
 # OVERALL: NOT compliant
 
-kem    = cnsa2.hybrid_kem()   # X25519 + ML-KEM-1024, compliant
-signer = cnsa2.hybrid_sign()  # Ed25519 + ML-DSA-87, compliant
+kem    = cnsa2.pqc_kem()      # ML-KEM-1024, compliant
+signer = cnsa2.pqc_sign()     # ML-DSA-87, compliant
+
+# Hybrids carry the required PQC parameter set but are reported PARTIAL:
+# CNSA 2.0 makes hybrid optional and requires a hybrid's classical half to be
+# CNSA 1.0 (P-384). X25519, P-256 and Ed25519 are not.
+kem    = cnsa2.hybrid_kem()   # X25519 + ML-KEM-1024, PARTIAL
+signer = cnsa2.hybrid_sign()  # Ed25519 + ML-DSA-87, PARTIAL
 ```
 
 Or from the CLI: `qs-audit cnsa2` (defaults to checking this library's own

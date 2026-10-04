@@ -11,6 +11,11 @@ All notable changes to quantum-safe are documented here.
   (which gains a `hedged` argument, default `True`). Hedged signatures, the
   default, are unaffected. Nothing is re-encoded: every signature 0.3.0
   wrote still verifies on a verifier in the matching mode.
+- **CNSA 2.0: X25519, P-256 and Ed25519 hybrids are now reported `PARTIAL`,
+  not compliant, so `cnsa2.enforce()` raises for them.** CNSA 2.0 makes
+  hybrid operation optional and requires a hybrid's classical half to be a
+  CNSA 1.0 algorithm (P-384). Standalone ML-KEM-1024 / ML-DSA-87 are the
+  compliant choice; use the new `cnsa2.pqc_kem()` / `cnsa2.pqc_sign()`.
 
 ### Fixed
 
@@ -40,6 +45,16 @@ All notable changes to quantum-safe are documented here.
   bytes (ML-DSA-44 / 65 / 87) and signatures 2420 / 3309 / 4627 bytes. Keys
   and signatures themselves were always correct (they come from liboqs);
   only the reported numbers were wrong.
+- CNSA 2.0 checks validate the whole algorithm name: a hybrid with an
+  unrecognised classical half (e.g. `RSA-1024+ML-DSA-87`) is no longer
+  reported compliant. `P-384` is removed from `CNSA2_HYBRID_CLASSICAL`
+  because `HybridKEM` does not implement it. `cnsa2.describe()` no longer
+  says LMS is unimplemented.
+
+### Added
+
+- `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
+  ML-DSA-87, the CNSA 2.0-compliant configurations.
 
 ## [0.3.0] - 2026-09-28
 
