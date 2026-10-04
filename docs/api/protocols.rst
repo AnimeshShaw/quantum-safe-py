@@ -25,6 +25,10 @@ JWT
    :members:
    :show-inheritance:
 
+.. autoclass:: quantum_safe.protocols.standard_jwt.StandardJwt
+   :members:
+   :show-inheritance:
+
 TLS
 ---
 

@@ -51,6 +51,9 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- ``StandardJwt`` (RFC 9964): ML-DSA JWTs any compliant JOSE library can verify,
+  verified against quantum-safe-ts in both directions. Public ``AKP`` JWKs only
+  (liboqs cannot derive a key from RFC 9964's seed).
 - **Signature format** ``-v2`` (``Sign("ML-DSA-65-v2")``,
   ``HybridSign("Ed25519", "ML-DSA-65-v2")``): no prefix, plain FIPS 204 with the
   native context ``quantum-safe-sig-v2`` for the ML-DSA half, algorithm and context

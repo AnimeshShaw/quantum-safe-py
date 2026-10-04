@@ -14,8 +14,8 @@ prefix, then the ML-DSA signature, or a CBOR payload for hybrids), and what is
 signed is ``len(context) || context || prefix || header.payload`` with
 context ``b"jwt"`` by default, not ``header.payload`` with an empty FIPS 204
 context. A standard JOSE library will reject them even with ``hedged=False``.
-An RFC 9964-compliant mode (``AKP`` JWK, empty context, raw signature) is not
-offered.
+For tokens any JOSE library can verify (RFC 9964), use
+:class:`quantum_safe.protocols.standard_jwt.StandardJwt` instead.
 
 Algorithm identifiers follow draft-ietf-jose-pqc-signatures, which defines
 algorithm strings for use in the JWT `alg` header:

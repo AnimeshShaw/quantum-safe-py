@@ -46,7 +46,41 @@ verify only with ``JWTVerifier(..., hedged=False)``.
    not RFC 9964 ML-DSA JWS: the signature field is this library's signature
    blob, and what is signed is ``len(context) || context || prefix ||
    header.payload``.  A standard JOSE library will reject them, including with
-   ``hedged=False``.  An RFC 9964-compliant mode is not offered.
+   ``hedged=False``.  Use ``StandardJwt`` (below) for tokens any JOSE library
+   can verify.
+
+Standard (RFC 9964) ML-DSA JWTs
+-------------------------------
+
+:class:`~quantum_safe.protocols.standard_jwt.StandardJwt` produces and verifies
+tokens that **any compliant JOSE implementation can verify**: the header is
+``{"alg": "ML-DSA-65", "typ": "JWT"}`` and the signature is a raw FIPS 204
+ML-DSA signature over ``header.payload`` with an empty context.  The public key
+is an ``AKP`` JWK.  quantum-safe-ts implements the same format, so the two
+libraries verify each other's tokens.
+
+.. code-block:: python
+
+   from quantum_safe.protocols import StandardJwt
+
+   kp    = StandardJwt.generate_keypair("ML-DSA-65")     # ML-DSA-44 / 65 / 87
+   token = StandardJwt.sign({"sub": "user123"}, kp.secret, issuer="auth.myapp.com")
+
+   jwk    = StandardJwt.public_jwk(kp.public, kid="2026-10")   # publish this
+   claims = StandardJwt.verify(token, jwk, issuer="auth.myapp.com", require_exp=True)
+
+Verification is strict: the key's algorithm must equal the header ``alg``,
+``crit`` headers are rejected, and the signature must be canonical unpadded
+base64url.  Only the pure ML-DSA algorithms are defined by the RFC; hybrids are
+not.
+
+.. note::
+
+   RFC 9964's private JWK member ``priv`` is the 32-byte ML-DSA *seed*.  The
+   liboqs backend cannot derive a key pair from a seed, so this class neither
+   writes nor reads private AKP JWKs: keys are ordinary quantum-safe key pairs,
+   and a private JWK made elsewhere (for example by quantum-safe-ts) cannot be
+   used to sign here.  Its public JWK verifies as usual.
 
 TLS hybrid key exchange
 -----------------------
