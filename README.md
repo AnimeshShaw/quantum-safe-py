@@ -432,7 +432,10 @@ defaults — which fail, on purpose, so you see it immediately).
 published test vectors — ML-KEM keyGen (75/75, exact `ek`+`dk`), ML-KEM
 encapsulation (75/75), ML-KEM decapsulation (30/30, including
 implicit-rejection cases), ML-DSA sigVer (45/45, both acceptance and
-rejection). No other Python PQC library publishes this.
+rejection). Testing against ACVP vectors is not unique to this library
+(noble-post-quantum, for one, does too; see
+[the production-readiness rubric](docs/production_readiness_rubric.md)); what
+is reported here is the result for this library's own backend.
 
 **This is conformance evidence, not a CAVP or CMVP validation** — validation
 is performed by an accredited laboratory and produces a certificate; nothing
