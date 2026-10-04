@@ -63,6 +63,7 @@ All notable changes to quantum-safe are documented here.
 
 ### Added
 
+- A missing `cbor2` now raises `ImportError` at import instead of silently switching to a JSON+base64 format that no CBOR reader (including another installation of this library and quantum-safe-ts) can read. The fallback is removed.
 - `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
   ML-DSA-87, the CNSA 2.0-compliant configurations.
 - `cnsa2.enforce(..., strict=True)`: also refuse configurations that

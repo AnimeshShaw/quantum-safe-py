@@ -249,7 +249,7 @@ class HybridSignature:
         documented types and no trailing bytes. Anything else would let
         several byte strings verify as the same signature.
         """
-        if _ser.BACKEND == "cbor2" and (not data or data[0] != _CBOR_MAP_OF_FOUR):
+        if not data or data[0] != _CBOR_MAP_OF_FOUR:
             raise VerificationError()
         try:
             d = _ser.loads_single(data)
