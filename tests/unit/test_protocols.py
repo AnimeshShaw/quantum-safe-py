@@ -115,6 +115,8 @@ def make_hybrid_sign() -> HybridSign:
     hs = HybridSign.__new__(HybridSign)
     hs._classical = "Ed25519"
     hs._pqc = "ML-DSA-65"
+    hs._pqc_base = "ML-DSA-65"
+    hs._v2 = False
     hs._algorithm = "Ed25519+ML-DSA-65"
     hs._hedged = True
     hs._backend = MockSigBackend()

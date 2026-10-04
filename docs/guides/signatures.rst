@@ -160,6 +160,47 @@ Disable with ``hedged=False`` only when you need deterministic signatures:
       HybridSign(hedged=False).verify(sm, kp.public, context=b"")   # OK
       HybridSign().verify(sm, kp.public, context=b"")               # VerificationError
 
+Signature format v2 (``-v2``)
+-----------------------------
+
+The default signatures (above) sign ``len(context) || context || prefix ||
+message`` under an empty FIPS 204 context, with an optional 32-byte hedging
+prefix.  The ``-v2`` format is a cleaner construction, byte-compatible with
+quantum-safe-ts, selected by an identifier suffix:
+
+.. code-block:: python
+
+   from quantum_safe import HybridSign
+   from quantum_safe.signatures import Sign
+
+   signer = Sign("ML-DSA-65-v2")                    # pure ML-DSA
+   hybrid = HybridSign("Ed25519", "ML-DSA-65-v2")   # Ed25519+ML-DSA-65-v2
+   kp = hybrid.generate_keypair()
+   sm = hybrid.sign(b"document", kp.secret, context=b"myapp-v1")
+   hybrid.verify(sm, kp.public, context=b"myapp-v1")
+
+Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``
+and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
+
+- **No prefix and no prefix length** in the signature, so there is no
+  message/prefix boundary to move.  A hybrid signature is exactly
+  ``classical signature (64 bytes) || ML-DSA signature``.
+- The ML-DSA half is **plain FIPS 204** ``ML-DSA.Sign`` with the *native*
+  context ``quantum-safe-sig-v2`` over
+  ``M2 = u8(len(algo)) || algo || u8(len(ctx)) || ctx || message``, so any
+  FIPS 204 library can verify it given ``M2``.  The algorithm identifier and
+  your context are inside the signed bytes.
+- The classical half signs ``"quantum-safe-sig-v2" || 0x00 || M2`` (Ed25519, or
+  ECDSA P-256/SHA-256 as raw ``r || s``, low-S only).
+- ML-DSA signing is always hedged inside ML-DSA, so ``hedged=False`` does not
+  exist for ``-v2``.
+- Keys carry the ``-v2`` tag, but the tag is advisory: v1 and v2 keys have
+  identical bytes.  **Never use the same key in both formats.**
+
+``-v2`` is not the default in this release; the default will move to it in the
+next minor release.  Versions of quantum-safe before this one cannot read
+``-v2`` signatures.
+
 SignedMessage
 -------------
 

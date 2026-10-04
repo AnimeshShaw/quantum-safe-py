@@ -496,6 +496,52 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
             # we normalise to bool return
             return False
 
+    def sign_native_context(
+        self,
+        algorithm: str,
+        secret_key: bytes,
+        message: bytes,
+        context: bytes,
+    ) -> bytes:
+        """ML-DSA.Sign with FIPS 204's native context (liboqs ``sign_with_ctx_str``)."""
+        from quantum_safe.exceptions import CryptoError
+
+        oqs = _import_oqs()
+        liboqs_name = self._liboqs_name(algorithm)
+        if len(context) > 255:
+            raise ValueError(f"context must be <=255 bytes, got {len(context)}")
+        sk_buf = bytearray(secret_key)
+        try:
+            sig_obj = oqs.Signature(liboqs_name, secret_key=bytes(sk_buf))
+            return bytes(sig_obj.sign_with_ctx_str(message, context))
+        except Exception as exc:
+            raise CryptoError(
+                f"liboqs native-context signing failed for {algorithm}: {exc}",
+                algorithm=algorithm,
+            ) from exc
+        finally:
+            n = len(sk_buf)
+            if n:
+                ctypes.memset((ctypes.c_char * n).from_buffer(sk_buf), 0, n)
+
+    def verify_native_context(
+        self,
+        algorithm: str,
+        public_key: bytes,
+        message: bytes,
+        signature: bytes,
+        context: bytes,
+    ) -> bool:
+        oqs = _import_oqs()
+        liboqs_name = self._liboqs_name(algorithm)
+        if len(context) > 255:
+            return False
+        try:
+            sig_obj = oqs.Signature(liboqs_name)
+            return bool(sig_obj.verify_with_ctx_str(message, signature, context, public_key))
+        except Exception:  # noqa: BLE001
+            return False
+
     def is_available(self) -> bool:
         try:
             oqs = _import_oqs()

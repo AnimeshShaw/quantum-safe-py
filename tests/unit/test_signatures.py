@@ -107,6 +107,7 @@ def make_sign(hedged: bool = True) -> Sign:
     s._algorithm = "ML-DSA-65"
     s._hedged = hedged
     s._strict = False
+    s._v2 = False
     s._spec = get_algorithm_spec("ML-DSA-65")
     s._backend = MockSignatureBackend()
     return s
@@ -116,6 +117,8 @@ def make_hybrid_sign(hedged: bool = True) -> HybridSign:
     hs = HybridSign.__new__(HybridSign)
     hs._classical = "Ed25519"
     hs._pqc = "ML-DSA-65"
+    hs._pqc_base = "ML-DSA-65"
+    hs._v2 = False
     hs._algorithm = "Ed25519+ML-DSA-65"
     hs._hedged = hedged
     hs._backend = MockSignatureBackend()

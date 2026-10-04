@@ -51,6 +51,11 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- **Signature format** ``-v2`` (``Sign("ML-DSA-65-v2")``,
+  ``HybridSign("Ed25519", "ML-DSA-65-v2")``): no prefix, plain FIPS 204 with the
+  native context ``quantum-safe-sig-v2`` for the ML-DSA half, algorithm and context
+  inside the signed bytes. Byte-compatible with quantum-safe-ts. Not the default in
+  this release.
 - **Envelope v2 (CNSA 2.0 profile):** sealing to a pure ``ML-KEM-1024`` key
   produces a version-2 envelope with an HKDF-SHA-384 key derivation (hybrid
   keys still produce unchanged version-1 envelopes). Same bytes as

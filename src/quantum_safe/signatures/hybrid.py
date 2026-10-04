@@ -61,6 +61,7 @@ from quantum_safe.exceptions import (
     UnsupportedAlgorithm,
     VerificationError,
 )
+from quantum_safe.signatures import _v2
 from quantum_safe.signatures.algorithms import (
     DEFAULT_HYBRID_CLASSICAL,
     DEFAULT_HYBRID_PQC,
@@ -130,11 +131,25 @@ class HybridSign:
         hedged: bool = True,
         validate: bool = True,
     ) -> None:
+        # A ``-v2`` suffix on the PQC half selects the v2 signature format.
+        self._v2 = _v2.is_v2(pqc)
+        if self._v2:
+            if _v2.base_of(f"{classical}+{pqc}") is None:
+                raise UnsupportedAlgorithm(f"{classical}+{pqc}", available=_v2.all_identifiers())
+            if not hedged:
+                raise ValueError(
+                    "v2 signatures are always hedged inside ML-DSA (FIPS 204); "
+                    "hedged=False does not exist for them"
+                )
+            pqc_base = pqc[: -len(_v2.SUFFIX)]
+        else:
+            pqc_base = pqc
         if validate:
-            validate_hybrid_combination(classical, pqc)
+            validate_hybrid_combination(classical, pqc_base)
 
         self._classical = classical
         self._pqc = pqc
+        self._pqc_base = pqc_base  # the registry / backend name of the ML-DSA half
         self._algorithm = canonical_hybrid_name(classical, pqc)
         self._hedged = hedged
         self._backend: AbstractSignatureBackend = get_signature_backend(backend)
@@ -171,7 +186,7 @@ class HybridSign:
             sub-keys, packed with a length prefix.
         """
         classical_pub, classical_sec = self._gen_classical_keypair()
-        pqc_pub, pqc_sec = self._backend.keygen(self._pqc)
+        pqc_pub, pqc_sec = self._backend.keygen(self._pqc_base)
 
         combined_pub = _pack_components(classical_pub, pqc_pub)
         combined_sec = _pack_components(classical_sec, pqc_sec)
@@ -216,6 +231,18 @@ class HybridSign:
             raise UnsupportedAlgorithm(secret_key.algorithm, available=[self._algorithm])
         if len(context) > 255:
             raise ValueError(f"context must be <=255 bytes, got {len(context)}")
+
+        if self._v2:
+            blob = _v2.sign(self._algorithm, secret_key.raw_bytes, message, context, self._backend)
+            return SignedMessage(
+                message=message,
+                signature=blob,
+                algorithm=self._algorithm,
+                context=context,
+                signer_fingerprint="",
+                signed_at=time.time(),
+                is_hybrid=True,
+            )
 
         classical_sec_bytes, pqc_sec_bytes = _unpack_components(
             secret_key.raw_bytes, context=self._algorithm
@@ -305,6 +332,17 @@ class HybridSign:
             raise UnsupportedAlgorithm(signed_message.algorithm, available=[self._algorithm])
         if public_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(public_key.algorithm, available=[self._algorithm])
+
+        if self._v2:
+            _v2.verify(
+                self._algorithm,
+                public_key.raw_bytes,
+                signed_message.message,
+                signed_message.signature,
+                signed_message.context,
+                self._backend,
+            )
+            return
 
         classical_pub_bytes, pqc_pub_bytes = _unpack_components(
             public_key.raw_bytes, context=self._algorithm

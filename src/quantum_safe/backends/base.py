@@ -204,6 +204,45 @@ class AbstractSignatureBackend(ABC):
         """
         ...
 
+    def sign_native_context(
+        self,
+        algorithm: str,
+        secret_key: bytes,
+        message: bytes,
+        context: bytes,
+    ) -> bytes:
+        """ML-DSA signing with FIPS 204's *native* context string.
+
+        Unlike :meth:`sign` (which signs a length-prefixed message under an
+        empty FIPS 204 context), this passes ``context`` as the ``ctx`` input of
+        ML-DSA.Sign. Used by the ``-v2`` signature format. Optional: backends
+        that cannot do it raise BackendError.
+        """
+        from quantum_safe.exceptions import BackendError
+
+        raise BackendError(
+            f"{self.name} backend does not support FIPS 204 native contexts "
+            "(needed for -v2 signatures)",
+            backend=self.name,
+        )
+
+    def verify_native_context(
+        self,
+        algorithm: str,
+        public_key: bytes,
+        message: bytes,
+        signature: bytes,
+        context: bytes,
+    ) -> bool:
+        """Verify a signature made with :meth:`sign_native_context`."""
+        from quantum_safe.exceptions import BackendError
+
+        raise BackendError(
+            f"{self.name} backend does not support FIPS 204 native contexts "
+            "(needed for -v2 signatures)",
+            backend=self.name,
+        )
+
     def is_available(self) -> bool:
         """Return True if this backend is installed and functional."""
         try:

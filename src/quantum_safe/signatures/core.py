@@ -55,6 +55,7 @@ from typing import TYPE_CHECKING
 
 from quantum_safe.backends import get_signature_backend
 from quantum_safe.exceptions import InsecureOperationError, UnsupportedAlgorithm, VerificationError
+from quantum_safe.signatures import _v2
 from quantum_safe.signatures.algorithms import (
     HEDGED_RANDOMNESS_BYTES,
     get_algorithm_spec,
@@ -121,7 +122,21 @@ class Sign:
         self._algorithm = algorithm
         self._hedged = hedged
         self._strict = strict
-        self._spec = get_algorithm_spec(algorithm)
+        self._v2 = _v2.is_v2(algorithm)
+        # v2 identifiers (``ML-DSA-65-v2``) select the -v2 signature format; the
+        # registry spec is that of the base ML-DSA suite.
+        if self._v2:
+            base = _v2.require_base(algorithm)
+            if "+" in base:
+                raise UnsupportedAlgorithm(algorithm, available=list(_v2.V2_ML_DSA))
+            if not hedged:
+                raise ValueError(
+                    "v2 signatures are always hedged inside ML-DSA (FIPS 204); "
+                    "hedged=False does not exist for them"
+                )
+            self._spec = get_algorithm_spec(base)
+        else:
+            self._spec = get_algorithm_spec(algorithm)
         self._backend: AbstractSignatureBackend = get_signature_backend(backend)
 
         if not self._spec.is_nist_standard:
@@ -156,7 +171,9 @@ class Sign:
             KeyPair with .public and .secret. The secret key is needed to
             sign; the public key is needed to verify.
         """
-        pub_bytes, sec_bytes = self._backend.keygen(self._algorithm)
+        pub_bytes, sec_bytes = self._backend.keygen(
+            _v2.require_base(self._algorithm) if self._v2 else self._algorithm
+        )
         pub = PublicKey(
             raw=pub_bytes,
             algorithm=self._algorithm,
@@ -207,6 +224,18 @@ class Sign:
             )
         if len(context) > 255:
             raise ValueError(f"context must be <=255 bytes, got {len(context)}")
+
+        if self._v2:
+            blob = _v2.sign(self._algorithm, secret_key.raw_bytes, message, context, self._backend)
+            return SignedMessage(
+                message=message,
+                signature=blob,
+                algorithm=self._algorithm,
+                context=context,
+                signer_fingerprint="",
+                signed_at=time.time(),
+                is_hybrid=False,
+            )
 
         # Hedged mode: prepend random bytes so two signings of the same message
         # with the same key produce different signatures AND resist fault attacks.
@@ -310,6 +339,17 @@ class Sign:
                 available=[self._algorithm],
             )
 
+        if self._v2:
+            _v2.verify(
+                self._algorithm,
+                public_key.raw_bytes,
+                signed_message.message,
+                signed_message.signature,
+                signed_message.context,
+                self._backend,
+            )
+            return
+
         rand_prefix, raw_sig = self._unpack_sig_blob(
             signed_message.signature, self._expected_prefix_len()
         )
@@ -345,6 +385,16 @@ class Sign:
         The prefix length must match this verifier's hedging mode: 32 bytes
         when hedged (the default), 0 when constructed with ``hedged=False``.
         """
+        if self._v2:
+            _v2.verify(
+                self._algorithm,
+                public_key.raw_bytes,
+                message,
+                signature_blob,
+                context,
+                self._backend,
+            )
+            return
         rand_prefix, raw_sig = self._unpack_sig_blob(signature_blob, self._expected_prefix_len())
         msg_to_verify = rand_prefix + message
         ok = self._backend.verify(
@@ -370,6 +420,11 @@ class Sign:
         Note: hedged mode doesn't apply here — you're verifying a raw
         (non-hedged) signature.
         """
+        if self._v2:
+            raise ValueError(
+                "verify_raw does not apply to v2: rebuild M2 and verify with FIPS 204 "
+                "context quantum-safe-sig-v2 (see quantum_safe.signatures._v2)"
+            )
         ok = self._backend.verify(
             self._algorithm,
             public_key.raw_bytes,
