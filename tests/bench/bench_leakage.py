@@ -64,6 +64,27 @@ Methodology notes that matter for interpretation
   proof of constant-time behaviour.  Formal verification (``dudect`` against
   the compiled backend, ``ct-verif``) remains the stronger instrument, and
   this screen is intended to run cheaply and often, ahead of it.
+
+Controls present, and known limitations
+---------------------------------------
+Present: a fixed-vs-fixed control (the apparatus is quiet), a random-vs-random
+control (both classes vary their key), and equal-size object pools in both
+classes, so cache footprint is not what distinguishes them.
+
+Not present, so read a fixed-vs-random signal with care:
+
+* **No public-data calibration.**  The FIXED class repeats the same *secret
+  key and the same ciphertext / public key*.  Much of ML-KEM decapsulation
+  depends on public data (matrix expansion from the public seed, the
+  re-encryption over the ciphertext) and on cache and branch-predictor state,
+  so a FIXED class can run faster with no secret dependence at all.  The
+  random-vs-random control rules out apparatus noise, not this.  A
+  calibration that holds the secret fixed and varies only the public inputs
+  would separate the two; it is not implemented.
+* **No positive control.**  There is no deliberately leaky operation run
+  through the same harness to show that it detects a known leak at the
+  configured iteration count.  A clean result is therefore also bounded by
+  the harness's unmeasured sensitivity.
 """
 
 from __future__ import annotations
