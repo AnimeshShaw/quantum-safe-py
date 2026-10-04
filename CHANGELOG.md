@@ -7,8 +7,10 @@ All notable changes to quantum-safe are documented here.
 ### ⚠ Changed behaviour
 
 - **Signatures made with `hedged=False` now need a verifier built with
-  `hedged=False`.** This applies to `Sign`, `HybridSign` and `JWTVerifier`
-  (which gains a `hedged` argument, default `True`). Hedged signatures, the
+  `hedged=False`.** This applies to `Sign`, `HybridSign`, `JWTVerifier` and
+  `HybridCertificateBuilder.verify_cosig` (the last two gain a `hedged`
+  argument, default `True`, for tokens and co-signatures made with a
+  `hedged=False` signer). Hedged signatures, the
   default, are unaffected. Nothing is re-encoded: every signature 0.3.0
   wrote still verifies on a verifier in the matching mode.
 - **CNSA 2.0: X25519, P-256 and Ed25519 hybrids are now reported `PARTIAL`,

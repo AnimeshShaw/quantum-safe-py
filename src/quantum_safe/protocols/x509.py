@@ -260,6 +260,7 @@ class HybridCertificateBuilder:
         cert_pem: bytes,
         cosig_bundle: bytes,
         pqc_public_key: PublicKey,
+        hedged: bool = True,
     ) -> None:
         """Verify a hybrid certificate's PQC co-signature.
 
@@ -267,6 +268,10 @@ class HybridCertificateBuilder:
             cert_pem:       PEM-encoded certificate.
             cosig_bundle:   Co-signature bundle from build().
             pqc_public_key: The signer's PQC public key.
+            hedged:         Must match the signer passed to build() (default
+                            True, as is build()'s own signer). Co-signatures
+                            made with a hedged=False signer verify only with
+                            hedged=False.
 
         Raises:
             VerificationError: if the co-signature is invalid.
@@ -304,9 +309,9 @@ class HybridCertificateBuilder:
             from quantum_safe.signatures.algorithms import parse_hybrid_name
 
             classical, pqc = parse_hybrid_name(algo)
-            verifier = HybridSign(classical=classical, pqc=pqc)
+            verifier = HybridSign(classical=classical, pqc=pqc, hedged=hedged)
         else:
-            verifier = Sign(algorithm=algo)
+            verifier = Sign(algorithm=algo, hedged=hedged)
 
         cosig_input = _COSIG_INFO_PREFIX + cert_der
 

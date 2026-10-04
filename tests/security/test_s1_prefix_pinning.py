@@ -150,6 +150,27 @@ def test_jwt_round_trip_with_matching_mode(hedged: bool) -> None:
     assert JWTVerifier(kp.public, hedged=hedged).verify(token)["sub"] == "u1"
 
 
+@pytest.mark.parametrize("hedged", [True, False])
+def test_x509_cosig_verifies_in_the_signer_mode(kind: str, hedged: bool) -> None:
+    """HybridCertificateBuilder.build(signer=...) accepts any signer, so the
+    co-signature verifier must be told the mode, like JWTVerifier."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from quantum_safe.protocols.x509 import HybridCertificateBuilder
+
+    signer = _signer(kind, hedged)
+    kp = signer.generate_keypair()
+    builder = HybridCertificateBuilder(
+        subject_cn="svc.internal",
+        classical_private_key=Ed25519PrivateKey.generate(),
+        pqc_keypair=kp,
+    )
+    cert_pem, bundle = builder.build(signer=signer)
+    HybridCertificateBuilder.verify_cosig(cert_pem, bundle, kp.public, hedged=hedged)
+    with pytest.raises(VerificationError):
+        HybridCertificateBuilder.verify_cosig(cert_pem, bundle, kp.public, hedged=not hedged)
+
+
 def test_jwt_unhedged_token_needs_unhedged_verifier() -> None:
     from quantum_safe.protocols.jwt import JWTSigner, JWTVerifier
 
