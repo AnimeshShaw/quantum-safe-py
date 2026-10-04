@@ -34,8 +34,8 @@ Limitations
     - Dynamic imports (importlib.import_module) are not resolved.
     - Obfuscated code or eval() are not analyzed.
     - Third-party library internals are not followed.
-    - Only Python files are supported in this version. TypeScript/Rust
-      scanning is planned for v0.2.
+    - Only Python files are scanned. JavaScript, TypeScript and Rust
+      sources are not analysed by this scanner.
 """
 
 from __future__ import annotations
