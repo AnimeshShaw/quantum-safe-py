@@ -65,7 +65,7 @@ def test_honest_signature_verifies_on_matching_verifier(kind: str, hedged: bool)
     signer = _signer(kind, hedged)
     kp = signer.generate_keypair()
     sm = signer.sign(MESSAGE, kp.secret)
-    signer.verify(sm, kp.public)
+    signer.verify(sm, kp.public, context=b"")
 
 
 @pytest.mark.parametrize("hedged", [True, False])
@@ -77,7 +77,7 @@ def test_suffix_forgery_is_rejected_for_every_shift(kind: str, hedged: bool) -> 
     # refuses at construction; that case is covered through verify_bytes.
     for k in range(1, len(MESSAGE)):
         with pytest.raises(VerificationError):
-            signer.verify(_shift(sm, k), kp.public)
+            signer.verify(_shift(sm, k), kp.public, context=b"")
 
 
 def test_prefixed_message_forgery_is_rejected(kind: str) -> None:
@@ -87,7 +87,7 @@ def test_prefixed_message_forgery_is_rejected(kind: str) -> None:
     sm = signer.sign(MESSAGE, kp.secret)
     for k in (1, 16, 32):
         with pytest.raises(VerificationError):
-            signer.verify(_unshift(sm, k), kp.public)
+            signer.verify(_unshift(sm, k), kp.public, context=b"")
 
 
 def test_hedged_signature_fails_on_unhedged_verifier(kind: str) -> None:
@@ -95,7 +95,7 @@ def test_hedged_signature_fails_on_unhedged_verifier(kind: str) -> None:
     kp = signer.generate_keypair()
     sm = signer.sign(MESSAGE, kp.secret)
     with pytest.raises(VerificationError):
-        _signer(kind, False).verify(sm, kp.public)
+        _signer(kind, False).verify(sm, kp.public, context=b"")
 
 
 def test_unhedged_signature_fails_on_hedged_verifier(kind: str) -> None:
@@ -103,7 +103,7 @@ def test_unhedged_signature_fails_on_hedged_verifier(kind: str) -> None:
     kp = signer.generate_keypair()
     sm = signer.sign(MESSAGE, kp.secret)
     with pytest.raises(VerificationError):
-        _signer(kind, True).verify(sm, kp.public)
+        _signer(kind, True).verify(sm, kp.public, context=b"")
 
 
 @pytest.mark.parametrize("hedged", [True, False])

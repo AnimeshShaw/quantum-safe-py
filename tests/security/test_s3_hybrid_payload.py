@@ -45,7 +45,7 @@ def _payload(sm) -> bytes:
 
 def test_honest_signature_verifies(signed) -> None:
     h, kp, sm = signed
-    h.verify(sm, kp.public)
+    h.verify(sm, kp.public, context=b"")
 
 
 def test_extra_entry_is_rejected(signed) -> None:
@@ -53,7 +53,7 @@ def test_extra_entry_is_rejected(signed) -> None:
     d = cbor2.loads(_payload(sm))
     d["extra"] = b"unsigned"
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public)
+        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public, context=b"")
 
 
 @pytest.mark.parametrize("missing", ["classical_sig", "pqc_sig", "classical_algo", "pqc_algo"])
@@ -62,7 +62,7 @@ def test_missing_entry_is_rejected(signed, missing: str) -> None:
     d = cbor2.loads(_payload(sm))
     del d[missing]
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public)
+        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public, context=b"")
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ def test_wrong_algorithm_name_is_rejected(signed, field: str, value: str) -> Non
     d = cbor2.loads(_payload(sm))
     d[field] = value
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public)
+        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public, context=b"")
 
 
 @pytest.mark.parametrize(
@@ -86,13 +86,13 @@ def test_wrong_field_type_is_rejected(signed, field: str, value: object) -> None
     d = cbor2.loads(_payload(sm))
     d[field] = value
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public)
+        h.verify(_with_payload(sm, cbor2.dumps(d)), kp.public, context=b"")
 
 
 def test_trailing_bytes_are_rejected(signed) -> None:
     h, kp, sm = signed
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, _payload(sm) + b"\x00"), kp.public)
+        h.verify(_with_payload(sm, _payload(sm) + b"\x00"), kp.public, context=b"")
 
 
 def test_duplicate_key_is_rejected(signed) -> None:
@@ -102,7 +102,7 @@ def test_duplicate_key_is_rejected(signed) -> None:
     assert raw[0] == 0xA4
     dup = bytes([0xA5]) + raw[1:] + cbor2.dumps("pqc_algo") + cbor2.dumps("ML-DSA-44")
     with pytest.raises(VerificationError):
-        h.verify(_with_payload(sm, dup), kp.public)
+        h.verify(_with_payload(sm, dup), kp.public, context=b"")
 
 
 def test_from_bytes_round_trip_and_rejections() -> None:

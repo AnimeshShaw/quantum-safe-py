@@ -172,6 +172,11 @@ addopts = [
     "--strict-markers",
     "-ra",
 ]
+# The library's own tests must state the context they expect when verifying;
+# only the test that exercises the deprecated path may omit it (pytest.warns).
+filterwarnings = [
+    "error:verify\\(\\) without context=:DeprecationWarning",
+]
 markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",
     "requires_liboqs: needs liboqs-python installed",

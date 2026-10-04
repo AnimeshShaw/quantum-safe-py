@@ -525,7 +525,7 @@ class TestWithRealBackend:
         signer = HybridSign()
         kp = signer.generate_keypair()
         sm = signer.sign(b"integration test message", kp.secret, context=b"test-v1")
-        signer.verify(sm, kp.public)
+        signer.verify(sm, kp.public, context=b"test-v1")
 
     def test_envelope_with_real_kem(self):
         kem = HybridKEM()

@@ -401,7 +401,7 @@ class TestHybridSignEd25519:
         kp = hs.generate_keypair()
         sm = hs.sign(b"full verify test", kp.secret, context=b"test-ctx")
         # Should not raise — Ed25519 is real, mock PQC returns True
-        hs.verify(sm, kp.public)
+        hs.verify(sm, kp.public, context=b"test-ctx")
 
     def test_verify_fails_on_tampered_message(self):
         hs = make_hybrid_sign()
@@ -416,7 +416,7 @@ class TestHybridSignEd25519:
             signed_at=sm.signed_at,
         )
         with pytest.raises(VerificationError):
-            hs.verify(tampered, kp.public)
+            hs.verify(tampered, kp.public, context=b"ctx")
 
     def test_verify_fails_on_wrong_public_key(self):
         hs = make_hybrid_sign()
@@ -424,7 +424,7 @@ class TestHybridSignEd25519:
         kp2 = hs.generate_keypair()
         sm = hs.sign(b"doc", kp1.secret, context=b"ctx")
         with pytest.raises(VerificationError):
-            hs.verify(sm, kp2.public)
+            hs.verify(sm, kp2.public, context=b"ctx")
 
     def test_verify_fails_on_context_mismatch(self):
         hs = make_hybrid_sign()
@@ -439,7 +439,7 @@ class TestHybridSignEd25519:
             signed_at=sm_orig.signed_at,
         )
         with pytest.raises(VerificationError):
-            hs.verify(wrong_ctx, kp.public)
+            hs.verify(wrong_ctx, kp.public, context=b"context-b")
 
     def test_hedged_signatures_differ(self):
         hs = make_hybrid_sign(hedged=True)
@@ -467,7 +467,7 @@ class TestHybridSignEd25519:
         sm = hs.sign(b"msg", kp.secret)
         wrong_pk = PublicKey(raw=b"\x00" * 50, algorithm="P-256+ML-DSA-65")
         with pytest.raises(UnsupportedAlgorithm):
-            hs.verify(sm, wrong_pk)
+            hs.verify(sm, wrong_pk, context=b"")
 
     def test_repr(self):
         hs = make_hybrid_sign()
@@ -527,7 +527,7 @@ class TestHybridSignWithRealBackend:
         hs = HybridSign()
         kp = hs.generate_keypair()
         sm = hs.sign(b"real document", kp.secret, context=b"integration-test")
-        hs.verify(sm, kp.public)
+        hs.verify(sm, kp.public, context=b"integration-test")
 
     def test_sign_produces_real_ml_dsa_signature(self):
         hs = HybridSign()
@@ -543,7 +543,7 @@ class TestHybridSignWithRealBackend:
         s = Sign()
         kp = s.generate_keypair()
         sm = s.sign(b"hello pqc", kp.secret, context=b"unit-test")
-        s.verify(sm, kp.public)
+        s.verify(sm, kp.public, context=b"unit-test")
 
     @pytest.mark.slow
     def test_1000_sign_verify_cycles(self):
@@ -552,4 +552,4 @@ class TestHybridSignWithRealBackend:
         for i in range(1000):
             msg = f"message {i}".encode()
             sm = hs.sign(msg, kp.secret, context=b"stress-test")
-            hs.verify(sm, kp.public)
+            hs.verify(sm, kp.public, context=b"stress-test")
