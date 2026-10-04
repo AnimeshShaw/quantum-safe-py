@@ -92,8 +92,11 @@ Context strings
 ---------------
 
 The ``context`` parameter provides domain separation between applications
-and protocol versions, following FIPS 204 §5.2.  Always use a unique
-context string for each signing context:
+and protocol versions.  It is bound by prefixing ``len(context) || context``
+to the signed bytes; it is not FIPS 204's native context input (the ML-DSA
+signature uses an empty FIPS 204 context), so other ML-DSA implementations
+verify these signatures only if they reproduce the same prefix.  Always use
+a unique context string for each signing context:
 
 .. code-block:: python
 

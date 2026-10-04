@@ -432,15 +432,17 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
     ) -> bytes:
         """Sign a message.
 
-        FIPS 204 §5.2 specifies that the context is prepended to the message
-        before hashing. liboqs-python's Signature.sign() doesn't directly
-        expose the context parameter in older versions, so we prepend it
-        manually using the format::
+        Domain separation is done by a message prefix, not by FIPS 204's
+        native context. This backend signs, with plain ML-DSA and an
+        **empty** FIPS 204 context string, the bytes::
 
             context_len (1 byte) || context || message
 
-        This is consistent with the HashML-DSA construction in FIPS 204 §5.4.
-        When liboqs exposes context natively (v0.11+), we'll use that instead.
+        This is neither FIPS 204's native context (the ``ctx`` input of
+        ML-DSA.Sign, §5.2) nor HashML-DSA (§5.4); a verifier that passes the
+        context natively will not accept these signatures. Moving to the
+        native context would change what is signed, so it would be a new,
+        separately identified signature format, not a silent switch.
         """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)

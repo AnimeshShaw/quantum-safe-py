@@ -31,11 +31,13 @@ demonstrated on lattice signatures in lab conditions.
 
 Context strings
 ---------------
-FIPS 204 §5.2 defines a context parameter (up to 255 bytes) that is
-mixed into the signing hash. We use it for domain separation:
+The context (up to 255 bytes) is used for domain separation. It is bound
+by a message prefix rather than FIPS 204's native context input: the PQC
+signature is plain ML-DSA with an empty FIPS 204 context over
 
-    signature = ML-DSA.Sign(sk, message, context)
+    len(context) || context || prefix || message
 
+(``prefix`` is the 32-byte hedging randomness, or empty when unhedged).
 This prevents cross-protocol attacks where a signature from one application
 is replayed as valid in another. Always pass a context that uniquely
 identifies your application and protocol version:
