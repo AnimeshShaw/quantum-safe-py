@@ -87,11 +87,17 @@ signatures — this is intentional and does not affect verification:
    sm1 = signer.sign(b"same", kp.secret)
    sm2 = signer.sign(b"same", kp.secret)
    assert sm1.signature != sm2.signature  # different random prefix
-   signer.verify(sm1, kp.public)          # both are valid
-   signer.verify(sm2, kp.public)
+   signer.verify(sm1, kp.public, context=b"")   # both are valid
+   signer.verify(sm2, kp.public, context=b"")
 
 Disable with ``hedged=False`` only when deterministic signatures are
-required (e.g., reproducible test vectors).
+required (e.g., reproducible test vectors).  A verifier accepts only
+signatures made in its own mode (a 32-byte prefix when hedged, none when
+not), so build it with the signer's ``hedged`` value and use one mode per key.
+
+Pass the context you expect to ``verify(..., context=...)``.  The context in
+a ``SignedMessage`` comes from whoever supplied it; omitting ``context=`` is
+deprecated.
 
 Serialization format
 --------------------
@@ -103,20 +109,34 @@ Keys use a PEM envelope with custom headers that carry metadata:
    -----BEGIN QUANTUM SAFE PUBLIC KEY-----
    qs-version: 1
    qs-algo: X25519+ML-KEM-768
-   qs-migration: HYBRID_TRANSITION
+   qs-migration: hybrid_transition
 
    <base64-encoded payload>
    -----END QUANTUM SAFE PUBLIC KEY-----
 
-The payload is a CBOR-encoded struct:
+The payload (also the whole of a key's ``to_cbor()`` output) is a CBOR map:
 
 .. code-block:: text
 
    {
+     "v":     1,                      # format version (an integer)
      "algo":  "X25519+ML-KEM-768",
-     "pub":   <2-byte-length-prefix + classical bytes + PQC bytes>,
-     "v":     1,
+     "ms":    "hybrid_transition",    # migration state
+     "ktype": "pub" | "sec",
+     "key":   <2-byte-length-prefix + classical bytes + PQC bytes>,
    }
+
+Loaders are strict.  ``ktype`` is required and must match the loader
+(``"pub"`` for ``PublicKey``, ``"sec"`` for ``SecretKey``), ``v`` must be an
+integer (``true`` is not version 1), ``algo`` a text string and ``key`` a byte
+string.  A public-key JWK must have ``"kty": "AKP"``.  Malformed input of any
+kind raises :class:`~quantum_safe.exceptions.KeyParseError`; a key of the
+wrong length for its algorithm raises ``ValueError``.  Every key the library
+has written since 0.1.0 meets these rules.
+
+The CBOR decoder accepts non-minimal integer and length encodings, so two
+different byte strings can decode to the same key: compare keys by value or
+fingerprint, never by their serialized bytes.
 
 Payloads larger than **10 MB** are rejected by the serialization layer before
 parsing, guarding against memory-exhaustion via deeply nested or padded

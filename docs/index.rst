@@ -20,7 +20,7 @@ and a CI-ready audit scanner — all in one library.
    signer = HybridSign()
    kp     = signer.generate_keypair()
    sm     = signer.sign(b"document", kp.secret, context=b"myapp-v1")
-   signer.verify(sm, kp.public)
+   signer.verify(sm, kp.public, context=b"myapp-v1")
 
 
 .. admonition:: Why hybrid?

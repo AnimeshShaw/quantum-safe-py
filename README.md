@@ -53,7 +53,7 @@ assert shared_secret == ss2
 signer = HybridSign()
 kp     = signer.generate_keypair()
 sm     = signer.sign(b"important document", kp.secret, context=b"myapp-v1")
-signer.verify(sm, kp.public)  # raises VerificationError if invalid
+signer.verify(sm, kp.public, context=b"myapp-v1")  # raises VerificationError if invalid
 ```
 
 ---
@@ -204,7 +204,7 @@ from quantum_safe.types import SignedMessage
 signer = HybridSign()
 kp     = signer.generate_keypair()
 sm     = signer.sign(b"document", kp.secret, context=b"myapp-v2-docs")
-signer.verify(sm, kp.public)  # raises VerificationError if invalid
+signer.verify(sm, kp.public, context=b"myapp-v2-docs")  # raises VerificationError if invalid
 
 # Hedged mode is on by default — two signings of the same message differ
 sm1 = signer.sign(b"same", kp.secret)

@@ -35,6 +35,19 @@ naming scheme.
    # Custom expiry (default: 1 hour)
    token = signer.sign({"sub": "user123"}, expires_in=3600)
 
+``JWTVerifier`` verifies with its own ``context`` (default ``b"jwt"``), never
+one read from the token.  Tokens from a ``JWTSigner(..., hedged=False)``
+verify only with ``JWTVerifier(..., hedged=False)``.
+
+.. important::
+
+   **These tokens verify only with quantum-safe** (or a byte-compatible
+   implementation such as quantum-safe-ts), in either hedging mode.  They are
+   not RFC 9964 ML-DSA JWS: the signature field is this library's signature
+   blob, and what is signed is ``len(context) || context || prefix ||
+   header.payload``.  A standard JOSE library will reject them, including with
+   ``hedged=False``.  An RFC 9964-compliant mode is not offered.
+
 TLS hybrid key exchange
 -----------------------
 
@@ -109,6 +122,10 @@ Verifying the co-signature:
        cosig_bundle,
        hybrid_kp.public,             # raises VerificationError if invalid
    )
+
+``verify_cosig`` requires the fixed co-signature context rather than reading
+it from the bundle.  If ``build(signer=...)`` was given a ``hedged=False``
+signer, verify with ``verify_cosig(..., hedged=False)``.
 
 Issuing from a CA certificate:
 

@@ -46,7 +46,18 @@ HybridKEM
 ---------
 
 :class:`~quantum_safe.kem.hybrid.HybridKEM` is the high-level hybrid KEM.
-It combines X25519 with an ML-KEM variant and uses an HKDF-SHA256 combiner.
+It combines X25519 (or P-256) with an ML-KEM variant and derives the shared
+secret with a library-specific HKDF-SHA256 combiner::
+
+   HKDF-SHA256(ikm  = ss_classical || ss_pqc,
+               salt = ct_classical || ct_pqc,
+               info = "quantum-safe hybrid KEM v1" || 0x00 || algorithm)
+
+This is not the TLS 1.3 hybrid construction (RFC 10024 concatenates the two
+secrets into the TLS key schedule) and not X-Wing, so ciphertexts and
+envelopes from this library are readable only by implementations of this
+construction, such as quantum-safe-ts.  The default pair, X25519 +
+ML-KEM-768, uses the same component algorithms as TLS's X25519MLKEM768.
 
 .. code-block:: python
 
@@ -129,11 +140,21 @@ encrypt data:
 
    # With authenticated additional data (visible but authenticated)
    sealed = Envelope.seal(b"payload", kp.public, aad=b"recipient:user-42")
-   plain  = Envelope.open(sealed, kp.secret, aad=b"recipient:user-42")
+   plain  = Envelope.open(sealed, kp.secret)
+   # open() authenticates the AAD carried in the message but does not compare
+   # it with anything: check it yourself before trusting the plaintext.
+   if sealed.aad != b"recipient:user-42":
+       raise ValueError("envelope was sealed for a different context")
 
    # Serialize for transport
    wire   = sealed.to_bytes()
    sealed = sealed.__class__.from_bytes(wire)
+
+.. note::
+
+   An envelope is public-key encryption: anyone holding the recipient's
+   public key can seal a message, with any AAD.  It does **not** authenticate
+   the sender; sign the payload separately when the sender matters.
 
 Key serialization
 -----------------

@@ -1,3 +1,64 @@
+Unreleased
+----------
+
+Changed behaviour
+~~~~~~~~~~~~~~~~~
+
+- **Signatures made with** ``hedged=False`` **now need a verifier built with**
+  ``hedged=False``. This applies to ``Sign``, ``HybridSign``, ``JWTVerifier``
+  and ``HybridCertificateBuilder.verify_cosig`` (the last two gain a
+  ``hedged`` argument, default ``True``). Hedged signatures, the default, are
+  unaffected, and nothing is re-encoded: every signature 0.3.0 wrote still
+  verifies on a verifier in the matching mode.
+- **CNSA 2.0:** ``cnsa2.report()`` and ``qs-audit cnsa2`` report X25519, P-256
+  and Ed25519 hybrids as ``PARTIAL``, not compliant. CNSA 2.0 makes hybrid
+  optional and requires a hybrid's classical half to be CNSA 1.0 (P-384).
+  Use ``cnsa2.pqc_kem()`` / ``cnsa2.pqc_sign()`` for a compliant
+  configuration. ``cnsa2.enforce()`` still guards the post-quantum parameter
+  set by default; ``strict=True`` also refuses ``PARTIAL``.
+
+Fixed
+~~~~~
+
+- The signature prefix length must match the verifier's hedging mode (32 bytes
+  hedged, 0 unhedged). It was read from the signature blob, where it is not
+  covered by the signature, so bytes could be moved between prefix and
+  message to forge a signature on a different message.
+- Hybrid signature payloads must be exactly the four documented entries with
+  the documented types, no duplicate keys or trailing bytes, and algorithm
+  names matching the verifier.
+- Key loaders require ``ktype`` (matching the loader), ``kty: "AKP"`` for JWKs
+  and an integer version.
+- Malformed keys, signed messages and sealed messages raise ``KeyParseError``
+  instead of ``AttributeError`` / ``TypeError`` / ``KeyError`` /
+  ``IndexError``, and wrong-typed fields are rejected rather than coerced.
+- ML-DSA sizes reported by the registry and backends are FIPS 204's (secret
+  keys 2560 / 4032 / 4896, signatures 2420 / 3309 / 4627 bytes); they were
+  round-3 Dilithium sizes. Keys and signatures were always correct.
+- CNSA 2.0 checks validate the whole algorithm name (``RSA-1024+ML-DSA-87`` is
+  no longer compliant); ``P-384`` is removed from ``CNSA2_HYBRID_CLASSICAL``.
+- ``Upgrader`` reports ``backward_compat=False``: classical-only software
+  cannot parse the upgraded key and keeps using the original.
+- Documentation: the context is a message prefix, not FIPS 204's native
+  context; the hybrid combiner is library-specific, not TLS's; JWTs verify
+  only with quantum-safe; cbor2 is required and the JSON fallback is not
+  portable; envelope AAD is not compared on open; migration-store
+  concurrency and durability limits.
+
+Added
+~~~~~
+
+- ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
+  states the context it expects (constant-time comparison).
+- ``cnsa2.pqc_kem()``, ``cnsa2.pqc_sign()`` and ``cnsa2.enforce(strict=True)``.
+- Interoperability tests against data written by quantum-safe-ts.
+
+Deprecated
+~~~~~~~~~~
+
+- ``verify()`` without ``context=`` emits a ``DeprecationWarning``; it will be
+  required (default ``b""``) in the next minor release.
+
 0.3.0
 -----
 

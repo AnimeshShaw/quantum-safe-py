@@ -91,7 +91,12 @@ a per-key state machine tracking where each key sits in the migration path:
    same ``key_id`` are safe.  For multi-process deployments (multiple workers
    sharing a Redis or database store) you must additionally hold an external
    distributed lock (e.g. Redis ``SETNX``, a ``SELECT … FOR UPDATE`` row lock)
-   on the ``key_id`` before calling ``transition()``.
+   on the ``key_id`` before calling ``transition()``: the store interface has
+   no compare-and-set, so the manager cannot detect a concurrent writer.
+
+   **Durability**: ``<key_id>_current`` and ``<key_id>_history`` are written as
+   two separate operations, so a crash between them leaves the history one
+   record behind the current state.
 
 .. code-block:: python
 
