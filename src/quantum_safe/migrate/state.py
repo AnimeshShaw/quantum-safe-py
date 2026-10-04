@@ -143,9 +143,21 @@ class MigrationStateManager:
 
     Args:
         store:  A dict-like object for persistent state storage.
-                Keys are string key_ids; values are MigrationRecord bytes.
+                Keys are ``<key_id>_current`` and ``<key_id>_history``;
+                values are MigrationRecord bytes and a CBOR history list.
                 In production, back this with Redis, DynamoDB, Postgres, etc.
                 In tests, a plain dict works fine.
+
+    Concurrency and durability:
+        transition() holds a per-key ``threading.Lock`` across its
+        read-check-write, which covers threads in one process only. With
+        several processes or hosts sharing a store, hold an external
+        distributed lock on the key_id around transition() (e.g. Redis
+        ``SETNX``, a ``SELECT ... FOR UPDATE`` row lock); the store interface
+        has no compare-and-set, so the manager cannot detect a concurrent
+        writer itself. ``<key_id>_current`` and ``<key_id>_history`` are
+        written as two separate operations, so a crash between them leaves
+        the history one record behind the current state.
 
     Example::
 
