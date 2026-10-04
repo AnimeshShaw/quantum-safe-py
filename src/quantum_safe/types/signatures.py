@@ -43,6 +43,27 @@ _SIGNED_MSG_VERSION = 1
 _HYBRID_SIG_FIELDS = frozenset({"classical_sig", "pqc_sig", "classical_algo", "pqc_algo"})
 _CBOR_MAP_OF_FOUR = 0xA4
 
+_MISSING = object()
+
+
+def _field(d: dict[str, Any], name: str, kind: type, default: Any = _MISSING) -> Any:  # noqa: ANN401
+    """Return d[name] if it has exactly type ``kind``; raise KeyParseError otherwise.
+
+    Exact type match (not isinstance) so that bool is not accepted as int.
+    A missing field takes ``default`` when one is given.
+    """
+    if name not in d:
+        if default is _MISSING:
+            raise KeyParseError("cbor", f"SignedMessage missing field '{name}'")
+        return default
+    value = d[name]
+    if type(value) is not kind:
+        got = type(value).__name__
+        raise KeyParseError(
+            "cbor", f"SignedMessage field '{name}' must be {kind.__name__}, got {got}"
+        )
+    return value
+
 
 @dataclass(frozen=True)
 class SignedMessage:
@@ -117,26 +138,47 @@ class SignedMessage:
 
     @classmethod
     def from_cbor(cls, data: bytes) -> SignedMessage:
-        """Deserialize from CBOR bytes."""
+        """Deserialize from CBOR bytes.
+
+        Raises:
+            KeyParseError: if the data is not a SignedMessage map of the
+                expected version with correctly typed fields. Field types are
+                checked rather than coerced (``bytes(5)`` would silently turn
+                an integer into five zero bytes).
+        """
         try:
             d = _ser.loads(data)
         except Exception as exc:
             raise KeyParseError("cbor", f"SignedMessage decode failed: {exc}") from exc
 
-        if d.get("v", 0) != _SIGNED_MSG_VERSION:
+        if not isinstance(d, dict):
+            raise KeyParseError("cbor", f"SignedMessage must be a CBOR map, got {type(d).__name__}")
+        version = d.get("v")
+        if type(version) is not int or version != _SIGNED_MSG_VERSION:
             raise KeyParseError(
                 "cbor",
-                f"unsupported SignedMessage version {d.get('v')}, expected {_SIGNED_MSG_VERSION}",
+                f"unsupported SignedMessage version {version!r}, expected {_SIGNED_MSG_VERSION}",
             )
 
+        message = _field(d, "msg", bytes)
+        signature = _field(d, "sig", bytes)
+        algorithm = _field(d, "algo", str)
+        context = _field(d, "ctx", bytes, default=b"")
+        fingerprint = _field(d, "fp", str, default="")
+        signed_at = d.get("ts", 0.0)
+        # bool is an int subclass; a timestamp of True is not a timestamp.
+        if type(signed_at) not in (int, float):
+            raise KeyParseError("cbor", "SignedMessage field 'ts' must be a number")
+        is_hybrid = _field(d, "hybrid", bool, default=False)
+
         return cls(
-            message=bytes(d["msg"]),
-            signature=bytes(d["sig"]),
-            algorithm=d["algo"],
-            context=bytes(d.get("ctx", b"")),
-            signer_fingerprint=d.get("fp", ""),
-            signed_at=float(d.get("ts", 0.0)),
-            is_hybrid=bool(d.get("hybrid", False)),
+            message=message,
+            signature=signature,
+            algorithm=algorithm,
+            context=context,
+            signer_fingerprint=fingerprint,
+            signed_at=float(signed_at),
+            is_hybrid=is_hybrid,
         )
 
     def to_jwt_payload(self) -> dict[str, Any]:

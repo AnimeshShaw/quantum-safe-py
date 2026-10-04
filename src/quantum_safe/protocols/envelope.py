@@ -126,24 +126,46 @@ class SealedMessage:
 
     @classmethod
     def from_bytes(cls, data: bytes) -> SealedMessage:
-        """Deserialize from bytes produced by to_bytes()."""
+        """Deserialize from bytes produced by to_bytes().
+
+        Raises:
+            KeyParseError: if the data is not an envelope map with correctly
+                typed fields. Types are checked, not coerced.
+        """
         try:
             d = _ser.loads(data)
         except Exception as exc:
             raise KeyParseError("envelope", f"CBOR/JSON decode failed: {exc}") from exc
 
-        required = ("v", "algo", "kct", "n", "ct")
-        for key in required:
+        if not isinstance(d, dict):
+            raise KeyParseError("envelope", f"expected a map, got {type(d).__name__}")
+
+        # Exact types (not isinstance): bool must not pass as the int version.
+        required: tuple[tuple[str, type], ...] = (
+            ("v", int),
+            ("algo", str),
+            ("kct", bytes),
+            ("n", bytes),
+            ("ct", bytes),
+        )
+        for key, kind in required:
             if key not in d:
                 raise KeyParseError("envelope", f"missing field '{key}'")
+            if type(d[key]) is not kind:
+                raise KeyParseError("envelope", f"field '{key}' must be {kind.__name__}")
+        aad = d.get("aad", b"")
+        if type(aad) is not bytes:
+            raise KeyParseError("envelope", "field 'aad' must be bytes")
 
+        # Value checks (e.g. nonce length) still raise ValueError from the
+        # constructor, as before.
         return cls(
             version=d["v"],
             algorithm=d["algo"],
-            kem_ct=bytes(d["kct"]),
-            nonce=bytes(d["n"]),
-            ciphertext=bytes(d["ct"]),
-            aad=bytes(d.get("aad", b"")),
+            kem_ct=d["kct"],
+            nonce=d["n"],
+            ciphertext=d["ct"],
+            aad=aad,
         )
 
     def to_hex(self) -> str:

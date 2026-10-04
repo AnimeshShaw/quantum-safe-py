@@ -328,7 +328,12 @@ class BaseKey(ABC):
         must match: an optional tag would leave the loader one length
         collision away from reading a secret key as a public key (or the
         reverse). Every key this library writes carries it.
+
+        Field types are checked before use so malformed input raises
+        KeyParseError rather than AttributeError/TypeError.
         """
+        if not isinstance(data, dict):
+            raise KeyParseError("cbor", f"expected a CBOR map, got {type(data).__name__}")
         version = data.get("v")
         # type() rather than isinstance(): bool is an int subclass, so
         # isinstance(True, int) would accept ``v: true`` as version 1.
@@ -342,8 +347,12 @@ class BaseKey(ABC):
             raise IncompatibleKeyVersion(version, _MAX_SUPPORTED_KEY_VERSION)
         if "algo" not in data:
             raise KeyParseError("cbor", "missing 'algo' field")
+        if not isinstance(data["algo"], str):
+            raise KeyParseError("cbor", "'algo' must be a text string")
         if "key" not in data:
             raise KeyParseError("cbor", "missing 'key' field")
+        if not isinstance(data["key"], bytes):
+            raise KeyParseError("cbor", "'key' must be a byte string")
         ktype = data.get("ktype")
         if ktype != expected_ktype:
             if ktype is None:
@@ -359,8 +368,14 @@ class BaseKey(ABC):
 
         Handles both public and secret key labels.
         """
+        if not isinstance(pem, str):
+            raise KeyParseError("pem", f"expected a str, got {type(pem).__name__}")
         lines = pem.strip().splitlines()
-        if not lines[0].startswith("-----BEGIN") or not lines[-1].startswith("-----END"):
+        if (
+            not lines
+            or not lines[0].startswith("-----BEGIN")
+            or not lines[-1].startswith("-----END")
+        ):
             raise KeyParseError("pem", "missing BEGIN/END markers")
 
         # Split headers from body (blank line separator)
@@ -485,7 +500,7 @@ class PublicKey(BaseKey):
         headers, raw_cbor = cls._parse_pem_body(pem)
 
         # Sanity-check the label told us it's a public key
-        if _PEM_SECRET_LABEL in pem.splitlines()[0]:
+        if _PEM_SECRET_LABEL in pem.strip().splitlines()[0]:
             raise KeyParseError(
                 "pem",
                 "attempted to load a SECRET KEY as a PublicKey — use SecretKey.from_pem() instead",
@@ -541,12 +556,18 @@ class PublicKey(BaseKey):
 
         ``kty`` must be ``"AKP"`` (the key type this library writes, RFC 9964).
         """
+        if not isinstance(jwk, dict):
+            raise KeyParseError("jwk", f"expected a JSON object, got {type(jwk).__name__}")
         if jwk.get("kty") != "AKP":
             raise KeyParseError("jwk", f"'kty' must be 'AKP', got {jwk.get('kty')!r}")
         if "pub" not in jwk:
             raise KeyParseError("jwk", "missing 'pub' field")
+        if not isinstance(jwk["pub"], str):
+            raise KeyParseError("jwk", "'pub' must be a base64url string")
         if "alg" not in jwk:
             raise KeyParseError("jwk", "missing 'alg' field")
+        if not isinstance(jwk["alg"], str):
+            raise KeyParseError("jwk", "'alg' must be a string")
 
         try:
             # Add padding back before decoding
@@ -665,13 +686,14 @@ class SecretKey(BaseKey):
         Warning: the PEM string itself contains secret material — ensure
         it's handled appropriately (not logged, not stored in plaintext).
         """
-        if _PEM_PUBLIC_LABEL in pem.splitlines()[0]:
+        # Parse (and validate the input type and markers) before reading the label.
+        _headers, raw_cbor = cls._parse_pem_body(pem)
+
+        if _PEM_PUBLIC_LABEL in pem.strip().splitlines()[0]:
             raise KeyParseError(
                 "pem",
                 "attempted to load a PUBLIC KEY as a SecretKey — use PublicKey.from_pem() instead",
             )
-
-        _headers, raw_cbor = cls._parse_pem_body(pem)
 
         try:
             cbor_dict = _ser.loads(raw_cbor)
@@ -767,8 +789,10 @@ class KeyPair:
         except Exception as exc:
             raise KeyParseError("cbor", f"bundle decode failed: {exc}") from exc
 
-        if bundle.get("bundle") != "keypair":
+        if not isinstance(bundle, dict) or bundle.get("bundle") != "keypair":
             raise KeyParseError("cbor", "not a keypair bundle")
+        if not isinstance(bundle.get("pub"), dict) or not isinstance(bundle.get("sec"), dict):
+            raise KeyParseError("cbor", "bundle must contain 'pub' and 'sec' key maps")
 
         pub = PublicKey.from_cbor(_ser.dumps(bundle["pub"]))
         sec = SecretKey.from_cbor(_ser.dumps(bundle["sec"]))

@@ -29,6 +29,12 @@ All notable changes to quantum-safe are documented here.
   bundles), require `kty: "AKP"` for JWKs, and require the version to be an
   integer (`v: true` is no longer read as version 1). Every key this library
   has written carries these fields.
+- Malformed keys (CBOR, PEM, JWK, bundles), signed messages and sealed
+  messages raise `KeyParseError` instead of `AttributeError`, `TypeError`,
+  `KeyError` or `IndexError`. Field types are checked rather than coerced:
+  previously an integer `msg` or `kct` was silently read as that many zero
+  bytes, and `SignedMessage` and `SealedMessage` accepted a non-integer
+  version.
 
 ## [0.3.0] - 2026-09-28
 
