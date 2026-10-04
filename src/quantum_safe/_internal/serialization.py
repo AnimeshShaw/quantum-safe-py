@@ -22,6 +22,7 @@ The public API mirrors cbor2's: dumps(obj) -> bytes, loads(data) -> obj.
 from __future__ import annotations
 
 import base64
+import io
 import json
 from typing import Any
 
@@ -45,6 +46,23 @@ try:
                 f"Payload size {len(data)} exceeds maximum allowed {_MAX_PAYLOAD_BYTES} bytes"
             )
         return _cbor2.loads(data)
+
+    def loads_single(data: bytes) -> Any:  # noqa: ANN401
+        """Decode exactly one CBOR item; reject trailing bytes.
+
+        cbor2.loads() stops after the first item and ignores anything after
+        it, which lets two different byte strings decode to the same value.
+        Use this for data whose bytes must have a single spelling.
+        """
+        if len(data) > _MAX_PAYLOAD_BYTES:
+            raise ValueError(
+                f"Payload size {len(data)} exceeds maximum allowed {_MAX_PAYLOAD_BYTES} bytes"
+            )
+        fp = io.BytesIO(data)
+        obj = _cbor2.CBORDecoder(fp).decode()
+        if fp.tell() != len(data):
+            raise ValueError("trailing bytes after the CBOR item")
+        return obj
 
     BACKEND = "cbor2"
 
@@ -98,5 +116,9 @@ except ImportError:
             return _decode(wrapper["d"])
         # Plain JSON (no envelope) — decode as-is, best effort
         return _decode(wrapper)
+
+    def loads_single(data: bytes) -> Any:  # noqa: ANN401
+        """Same as loads(); json.loads already rejects trailing data."""
+        return loads(data)
 
     BACKEND = "json-b64"

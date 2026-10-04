@@ -19,6 +19,11 @@ All notable changes to quantum-safe are documented here.
   `hedged=False`: 0). Previously the length was read from the signature
   blob, where it is not covered by the signature. Use one hedging mode per
   key.
+- Hybrid signature payloads must contain exactly the four documented
+  entries, with the documented types, no duplicate keys and no trailing
+  bytes, and their algorithm names must match the verifier's components.
+  Previously extra entries were ignored, so different byte strings verified
+  as the same signature.
 
 ## [0.3.0] - 2026-09-28
 

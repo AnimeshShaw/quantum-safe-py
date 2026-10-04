@@ -39,6 +39,10 @@ _MAX_CONTEXT_LEN = 255
 # CBOR-serializable version for SignedMessage storage
 _SIGNED_MSG_VERSION = 1
 
+# HybridSignature payload: exactly these entries, as a definite CBOR map of four.
+_HYBRID_SIG_FIELDS = frozenset({"classical_sig", "pqc_sig", "classical_algo", "pqc_algo"})
+_CBOR_MAP_OF_FOUR = 0xA4
+
 
 @dataclass(frozen=True)
 class SignedMessage:
@@ -194,21 +198,36 @@ class HybridSignature:
 
     @classmethod
     def from_bytes(cls, data: bytes) -> HybridSignature:
-        """Decode from CBOR bytes."""
+        """Decode from CBOR bytes.
+
+        Strict, because none of the payload except the two sub-signatures is
+        covered by a signature: it must be a definite-length map of exactly
+        the four documented entries (a duplicated key would make the header
+        count five, which cbor2 hides by keeping the last value), with the
+        documented types and no trailing bytes. Anything else would let
+        several byte strings verify as the same signature.
+        """
+        if _ser.BACKEND == "cbor2" and (not data or data[0] != _CBOR_MAP_OF_FOUR):
+            raise VerificationError()
         try:
-            d = _ser.loads(data)
+            d = _ser.loads_single(data)
         except Exception as exc:
             raise VerificationError() from exc
 
-        if not isinstance(d, dict):
+        if not isinstance(d, dict) or set(d) != _HYBRID_SIG_FIELDS:
             raise VerificationError()
-
-        try:
-            return cls(
-                classical_sig=bytes(d["classical_sig"]),
-                pqc_sig=bytes(d["pqc_sig"]),
-                classical_algo=d["classical_algo"],
-                pqc_algo=d["pqc_algo"],
-            )
-        except KeyError as exc:
-            raise VerificationError() from exc
+        classical_sig, pqc_sig = d["classical_sig"], d["pqc_sig"]
+        classical_algo, pqc_algo = d["classical_algo"], d["pqc_algo"]
+        if not (
+            isinstance(classical_sig, bytes)
+            and isinstance(pqc_sig, bytes)
+            and isinstance(classical_algo, str)
+            and isinstance(pqc_algo, str)
+        ):
+            raise VerificationError()
+        return cls(
+            classical_sig=classical_sig,
+            pqc_sig=pqc_sig,
+            classical_algo=classical_algo,
+            pqc_algo=pqc_algo,
+        )

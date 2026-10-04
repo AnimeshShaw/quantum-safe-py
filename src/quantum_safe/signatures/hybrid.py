@@ -313,6 +313,12 @@ class HybridSign:
         except Exception as exc:
             raise VerificationError(algo=self._algorithm) from exc
 
+        # The algorithm names in the payload are not signed; they must name
+        # this verifier's own components. (Public data, so an early exit here
+        # reveals nothing.)
+        if hs.classical_algo != self._classical or hs.pqc_algo != self._pqc:
+            raise VerificationError(algo=self._algorithm)
+
         # Verify BOTH sub-signatures unconditionally before checking results.
         # Early return on classical failure would leak timing information that
         # reveals which sub-key is compromised (an oracle for a quantum attacker
