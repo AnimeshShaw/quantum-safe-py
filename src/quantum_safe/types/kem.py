@@ -15,16 +15,17 @@ or vice versa. This has happened in real implementations.
 For hybrid KEMs, we have HybridCipherText which carries both the classical
 (X25519) and PQC (ML-KEM) ciphertexts, and derives a combined shared secret.
 
-The combination follows the IETF hybrid KEM construction:
+The combination is a library-specific HKDF combiner (inspired by, but not
+identical to, the TLS 1.3 hybrid design, which concatenates the secrets):
   combined_ss = HKDF-SHA256(
       ikm  = classical_ss || pqc_ss,
-      salt = "",
-      info = "quantum-safe hybrid KEM v1" || algorithm_string
+      salt = classical_ct || pqc_ct,
+      info = "quantum-safe hybrid KEM v1" || 0x00 || algorithm_string
   )
 
 References:
   - FIPS 203 §6.2 — ML-KEM.Encaps / ML-KEM.Decaps
-  - draft-ietf-tls-hybrid-design §3 — combiner construction
+  - draft-ietf-tls-hybrid-design — hybrid design this combiner draws on
   - RFC 5869 — HKDF
 """
 
@@ -296,12 +297,15 @@ def combine_shared_secrets(
 ) -> SharedSecret:
     """Combine classical and PQC shared secrets using the hybrid KEM combiner.
 
-    Implements the construction from draft-ietf-tls-hybrid-design §3.2:
+    A library-specific construction. draft-ietf-tls-hybrid-design (and the
+    TLS hybrid groups in RFC 10024) concatenate the two secrets and leave
+    derivation to the TLS key schedule; this combiner instead derives the
+    secret directly:
 
         combined = HKDF-SHA256(
             ikm  = classical_ss || pqc_ss,
             salt = classical_ct || pqc_ct,
-            info = info_string || algo_name
+            info = "quantum-safe hybrid KEM v1" || 0x00 || algo_name
         )
 
     Using the concatenated ciphertexts as the salt binds the shared secret

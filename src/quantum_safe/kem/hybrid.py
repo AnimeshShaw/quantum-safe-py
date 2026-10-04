@@ -5,9 +5,14 @@ quantum_safe.kem.hybrid
 HybridKEM: combines a classical Diffie-Hellman KEM (X25519 or P-256) with
 a PQC KEM (ML-KEM) into a single hybrid operation.
 
-The construction is based on draft-ietf-tls-hybrid-design and is exactly
-what TLS 1.3 hybrid key exchange uses (the X25519MLKEM768 group in RFC 9001
-and the IANA TLS group registry).
+The construction is inspired by the TLS 1.3 hybrid design
+(draft-ietf-tls-hybrid-design; the hybrid groups such as X25519MLKEM768 are
+specified in RFC 10024) but it is **not** the same: TLS feeds the plain
+concatenation of the two shared secrets into its key schedule, and X-Wing
+uses its own SHA3-256 combiner, whereas this library combines them with a
+custom HKDF (see "The combiner" below). Hybrid ciphertexts and envelopes
+produced here can be read only by implementations of this construction, not
+by TLS or X-Wing implementations.
 
 Why hybrid?
 -----------
@@ -36,7 +41,10 @@ Encapsulate:
   3. Run ML-KEM encapsulate: (ct_m, ss_m) = MLKEMEncap(pk_m)
   4. Combined ciphertext: ct = len(epk_x) || epk_x || ct_m
      (ephemeral public key replaces a traditional ciphertext for X25519)
-  5. Combined secret: ss = HKDF(ikm=ss_x||ss_m, salt=ct_x||ct_m, info=...)
+  5. Combined secret:
+       ss = HKDF-SHA256(ikm  = ss_x || ss_m,
+                        salt = ct_x || ct_m,
+                        info = "quantum-safe hybrid KEM v1" || 0x00 || algorithm)
 
 Decapsulate:
   1. Split ct into epk_x and ct_m.
@@ -125,9 +133,10 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
 class HybridKEM:
     """Hybrid KEM: classical Diffie-Hellman + post-quantum KEM.
 
-    Default configuration: X25519 + ML-KEM-768. This matches the TLS 1.3
-    hybrid group X25519MLKEM768 and is recommended by all major standards
-    bodies for the current transition period.
+    Default configuration: X25519 + ML-KEM-768, the same component
+    algorithms as the TLS 1.3 hybrid group X25519MLKEM768 (RFC 10024). The
+    combiner differs from TLS's (see the module docstring), so the outputs
+    are not interchangeable with a TLS implementation.
 
     Args:
         classical:      Classical KEM algorithm. Currently "X25519" or "P-256".
