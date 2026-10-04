@@ -50,6 +50,10 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- **Envelope v2 (CNSA 2.0 profile):** sealing to a pure ``ML-KEM-1024`` key
+  produces a version-2 envelope with an HKDF-SHA-384 key derivation (hybrid
+  keys still produce unchanged version-1 envelopes). Same bytes as
+  quantum-safe-ts. ``SharedSecret.derive_key()`` gains ``hash_algorithm``.
 - ``Envelope.open(..., expected_aad=...)``: the opener states the AAD it expects
   (otherwise ``InvalidTag``). A message sealed for one context no longer opens
   in another. Omitting it while the message carries AAD emits a

@@ -108,17 +108,22 @@ class SharedSecret:
         length: int = 32,
         salt: bytes | None = None,
         info: bytes = b"",
+        hash_algorithm: str = "SHA-256",
     ) -> bytes:
-        """Derive a key from this shared secret using HKDF-SHA256.
+        """Derive a key from this shared secret using HKDF.
 
         This is a convenience wrapper. For full control, use
         cryptography.hazmat.primitives.kdf.hkdf directly.
 
         Args:
-            length: Desired output length in bytes (max 255 * 32 = 8160).
+            length: Desired output length in bytes (max 255 * hash length:
+                    8160 for SHA-256, 12240 for SHA-384, 16320 for SHA-512).
             salt:   Optional salt. Defaults to a zero-filled string if None.
             info:   Application-specific context. Include your app name
                     and version to prevent cross-context key reuse.
+            hash_algorithm: ``"SHA-256"`` (default), ``"SHA-384"`` or
+                    ``"SHA-512"``. CNSA 2.0 requires SHA-384 or SHA-512 for
+                    key derivation.
 
         Returns:
             Raw key bytes of the requested length.
@@ -130,8 +135,16 @@ class SharedSecret:
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+        hashes_by_name: dict[str, type[hashes.SHA256 | hashes.SHA384 | hashes.SHA512]] = {
+            "SHA-256": hashes.SHA256,
+            "SHA-384": hashes.SHA384,
+            "SHA-512": hashes.SHA512,
+        }
+        if hash_algorithm not in hashes_by_name:
+            names = sorted(hashes_by_name)
+            raise ValueError(f"unsupported hash_algorithm {hash_algorithm!r}; choose from {names}")
         hkdf = HKDF(
-            algorithm=hashes.SHA256(),
+            algorithm=hashes_by_name[hash_algorithm](),
             length=length,
             salt=salt,
             info=info,

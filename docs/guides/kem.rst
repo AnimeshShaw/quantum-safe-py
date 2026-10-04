@@ -151,6 +151,12 @@ encrypt data:
 
 .. note::
 
+   **Envelope v2.**  Sealing to a pure ``ML-KEM-1024`` public key (no hybrid)
+   produces a version-2 envelope: the AES-256-GCM key is derived with
+   HKDF-SHA-384, as CNSA 2.0 requires for key derivation, instead of the
+   HKDF-SHA-256 used by hybrid (version-1) envelopes.  quantum-safe-ts writes
+   and reads the same bytes.  Only ``ML-KEM-1024`` is accepted for v2.
+
    An envelope is public-key encryption: anyone holding the recipient's
    public key can seal a message, with any AAD, and the AAD travels inside
    the message.  Pass ``expected_aad=`` to ``Envelope.open`` to bind a

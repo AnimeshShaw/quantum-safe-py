@@ -73,6 +73,12 @@ from quantum_safe.types import HybridCipherText, PublicKey, SecretKey
 # Envelope format version. Bump for backward-incompatible changes.
 _ENVELOPE_VERSION = 1
 
+# Envelope v2, the CNSA 2.0 profile: pure ML-KEM-1024 with HKDF-SHA-384 (CNSA 2.0
+# requires SHA-384 or SHA-512 for key derivation). Same bytes as quantum-safe-ts.
+_ENVELOPE_VERSION_CNSA2 = 2
+_CNSA2_ENVELOPE_ALGORITHM = "ML-KEM-1024"
+_ML_KEM_1024_CT_LEN = 1568
+
 # AES-GCM parameters
 _NONCE_LEN = 12  # bytes — GCM standard nonce
 _KEY_LEN = 32  # bytes — AES-256
@@ -80,6 +86,7 @@ _GCM_TAG_LEN = 16  # bytes — appended to ciphertext by AESGCM
 
 # HKDF info strings for key derivation — version-pinned for domain separation
 _ENC_KEY_INFO = b"qs-envelope-enc-v1"
+_ENC_KEY_INFO_V2 = b"qs-envelope-enc-v2-cnsa2"
 _MAC_KEY_INFO = b"qs-envelope-mac-v1"
 
 
@@ -251,17 +258,38 @@ class Envelope:
             UnsupportedAlgorithm: if the key's algorithm isn't a known
                                   hybrid KEM combination.
         """
-        if kem is None:
-            kem = cls._kem_for_key(recipient_public_key)
+        version = cls._version_for(recipient_public_key.algorithm)
 
-        # KEM encapsulation — this is the core of the construction
-        kem_ct, shared_secret = kem.encapsulate(recipient_public_key)
+        if version == _ENVELOPE_VERSION_CNSA2:
+            # v2: pure ML-KEM-1024, key derived with HKDF-SHA-384.
+            if kem is not None:
+                raise ValueError(
+                    "kem= is for hybrid (v1) envelopes; a v2 envelope uses ML-KEM-1024"
+                )
+            from quantum_safe.kem.core import KEM
 
-        # Derive AES key from the shared secret
-        enc_key = shared_secret.derive_key(
-            length=_KEY_LEN,
-            info=_ENC_KEY_INFO,
-        )
+            pure_ct, shared_secret = KEM(_CNSA2_ENVELOPE_ALGORITHM).encapsulate(
+                recipient_public_key
+            )
+            kem_ct_bytes = pure_ct.data
+            enc_key = shared_secret.derive_key(
+                length=_KEY_LEN,
+                info=_ENC_KEY_INFO_V2,
+                hash_algorithm="SHA-384",
+            )
+        else:
+            if kem is None:
+                kem = cls._kem_for_key(recipient_public_key)
+
+            # KEM encapsulation — this is the core of the construction
+            kem_ct, shared_secret = kem.encapsulate(recipient_public_key)
+            kem_ct_bytes = kem_ct.to_bytes()
+
+            # Derive AES key from the shared secret
+            enc_key = shared_secret.derive_key(
+                length=_KEY_LEN,
+                info=_ENC_KEY_INFO,
+            )
 
         # Random nonce — 12 bytes for AES-GCM
         nonce = os.urandom(_NONCE_LEN)
@@ -269,7 +297,7 @@ class Envelope:
         # Build AAD: version byte || algo string, plus any caller-supplied aad.
         # This binds the version and algorithm into the authentication tag.
         built_aad = cls._build_aad(
-            version=_ENVELOPE_VERSION,
+            version=version,
             algorithm=recipient_public_key.algorithm,
             extra=aad,
         )
@@ -279,9 +307,9 @@ class Envelope:
         ciphertext = aes.encrypt(nonce, plaintext, built_aad)
 
         return SealedMessage(
-            version=_ENVELOPE_VERSION,
+            version=version,
             algorithm=recipient_public_key.algorithm,
-            kem_ct=kem_ct.to_bytes(),
+            kem_ct=kem_ct_bytes,
             nonce=nonce,
             ciphertext=ciphertext,
             aad=aad,  # store the caller's aad (not the built one)
@@ -341,23 +369,53 @@ class Envelope:
         elif not hmac.compare_digest(bytes(sealed.aad), bytes(expected_aad)):
             raise InvalidTag
 
-        if kem is None:
-            kem = cls._kem_for_algorithm(sealed.algorithm)
+        # The version is bound to the algorithm: a relabelled version would
+        # select a different key derivation for the same ciphertext.
+        expected_version = cls._version_for(sealed.algorithm)
+        if sealed.version != expected_version:
+            from quantum_safe.exceptions import UnsupportedAlgorithm
 
-        # Reconstruct the HybridCipherText from wire bytes
-        try:
-            kem_ct = HybridCipherText.from_bytes(sealed.kem_ct, algorithm=sealed.algorithm)
-        except Exception as exc:
-            raise DecapsulationError(algo=sealed.algorithm) from exc
+            raise UnsupportedAlgorithm(
+                f"{sealed.algorithm} (envelope version {sealed.version})",
+                available=[f"version {expected_version} for {sealed.algorithm}"],
+            )
 
-        # KEM decapsulation — recovers the shared secret
-        shared_secret = kem.decapsulate(recipient_secret_key, kem_ct)
+        if expected_version == _ENVELOPE_VERSION_CNSA2:
+            from quantum_safe.kem.core import KEM
+            from quantum_safe.types import CipherText
 
-        # Derive the same AES key
-        enc_key = shared_secret.derive_key(
-            length=_KEY_LEN,
-            info=_ENC_KEY_INFO,
-        )
+            if kem is not None:
+                raise ValueError(
+                    "kem= is for hybrid (v1) envelopes; a v2 envelope uses ML-KEM-1024"
+                )
+            if len(sealed.kem_ct) != _ML_KEM_1024_CT_LEN:
+                raise DecapsulationError(algo=sealed.algorithm)
+            shared_secret = KEM(_CNSA2_ENVELOPE_ALGORITHM).decapsulate(
+                recipient_secret_key, CipherText(sealed.kem_ct, _CNSA2_ENVELOPE_ALGORITHM)
+            )
+            enc_key = shared_secret.derive_key(
+                length=_KEY_LEN,
+                info=_ENC_KEY_INFO_V2,
+                hash_algorithm="SHA-384",
+            )
+        else:
+            if kem is None:
+                kem = cls._kem_for_algorithm(sealed.algorithm)
+
+            # Reconstruct the HybridCipherText from wire bytes
+            try:
+                kem_ct = HybridCipherText.from_bytes(sealed.kem_ct, algorithm=sealed.algorithm)
+            except Exception as exc:
+                raise DecapsulationError(algo=sealed.algorithm) from exc
+
+            # KEM decapsulation — recovers the shared secret
+            shared_secret = kem.decapsulate(recipient_secret_key, kem_ct)
+
+            # Derive the same AES key
+            enc_key = shared_secret.derive_key(
+                length=_KEY_LEN,
+                info=_ENC_KEY_INFO,
+            )
 
         # Rebuild AAD — must match what was used during seal()
         built_aad = cls._build_aad(
@@ -370,6 +428,20 @@ class Envelope:
         # AESGCM.decrypt() raises InvalidTag if tampered — let it propagate.
         aes = AESGCM(enc_key)
         return aes.decrypt(sealed.nonce, sealed.ciphertext, built_aad)
+
+    @staticmethod
+    def _version_for(algorithm: str) -> int:
+        """Envelope version for a KEM algorithm: v1 hybrid, v2 pure ML-KEM-1024."""
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        if "+" in algorithm:
+            return _ENVELOPE_VERSION
+        if algorithm == _CNSA2_ENVELOPE_ALGORITHM:
+            return _ENVELOPE_VERSION_CNSA2
+        raise UnsupportedAlgorithm(
+            algorithm,
+            available=["X25519+ML-KEM-768", "X25519+ML-KEM-1024", _CNSA2_ENVELOPE_ALGORITHM],
+        )
 
     @staticmethod
     def _build_aad(version: int, algorithm: str, extra: bytes) -> bytes:

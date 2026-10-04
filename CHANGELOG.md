@@ -63,6 +63,7 @@ All notable changes to quantum-safe are documented here.
 
 ### Added
 
+- **Envelope v2, the CNSA 2.0 profile:** `Envelope.seal()` of a pure `ML-KEM-1024` public key (no `kem=`) produces a version-2 envelope whose AES-256-GCM key is derived with HKDF-SHA-384 (info `qs-envelope-enc-v2-cnsa2`); hybrid keys still produce version-1 envelopes (HKDF-SHA-256), unchanged. Same bytes as quantum-safe-ts's envelope v2, checked in both directions. `Envelope.open()` now requires the envelope version to match its algorithm (a relabelled version is refused with `UnsupportedAlgorithm`). `SharedSecret.derive_key()` gains `hash_algorithm` (`SHA-256` default, `SHA-384`, `SHA-512`).
 - `Envelope.open(..., expected_aad=...)`: the opener states the AAD it expects and the message's AAD must equal it, otherwise `InvalidTag` is raised. Anyone holding a recipient's public key can seal a message with any AAD and the AAD travels inside the message, so a message sealed for one user opened in another's context. Omitting it while the message carries AAD emits a `DeprecationWarning`; it will be required (default `b""`) in the next minor release. Mirrors `expectedAad` in quantum-safe-ts.
 - A missing `cbor2` now raises `ImportError` at import instead of silently switching to a JSON+base64 format that no CBOR reader (including another installation of this library and quantum-safe-ts) can read. The fallback is removed.
 - `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
