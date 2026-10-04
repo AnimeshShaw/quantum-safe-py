@@ -134,6 +134,36 @@ class MigrationRecord:
         return cls.from_dict(_ser.loads(data))
 
 
+#: How many times transition() re-reads and retries after losing a compare-and-set.
+_MAX_CAS_ATTEMPTS = 20
+
+
+class MemoryMigrationStore(dict):  # type: ignore[type-arg]
+    """An in-memory store with an atomic ``compare_and_set``, for tests and single-process tools.
+
+    A dict (so it works anywhere a store dict does) whose ``compare_and_set`` is
+    atomic within the process. It shows the contract a real store must meet to
+    make :class:`MigrationStateManager` safe across processes: see the manager's
+    "Concurrency" notes.
+    """
+
+    def __init__(self, initial: dict[str, bytes] | None = None) -> None:
+        super().__init__(initial or {})
+        self._cas_lock = threading.Lock()
+
+    def compare_and_set(self, key: str, expected: bytes | None, value: bytes) -> bool:
+        """Set ``key`` to ``value`` only if its current value is exactly ``expected``.
+
+        ``expected=None`` means "the key must not exist". Returns whether the
+        write happened.
+        """
+        with self._cas_lock:
+            if self.get(key) != expected:
+                return False
+            self[key] = value
+            return True
+
+
 class MigrationStateManager:
     """Manages migration state for a collection of keys.
 
@@ -149,15 +179,27 @@ class MigrationStateManager:
                 In tests, a plain dict works fine.
 
     Concurrency and durability:
-        transition() holds a per-key ``threading.Lock`` across its
-        read-check-write, which covers threads in one process only. With
-        several processes or hosts sharing a store, hold an external
+        If the store has a ``compare_and_set(key, expected, value) -> bool``
+        method (``expected=None`` meaning "the key must not exist"; see
+        :class:`MemoryMigrationStore`), transition() commits through one atomic
+        operation on ``<key_id>_history`` and is safe across any number of
+        processes and hosts sharing the store: exactly one concurrent writer
+        wins and the others get a stale-state ``ValueError``, with no external
+        lock. Recipes: Redis ``WATCH``/``MULTI`` or a Lua script; Postgres
+        ``UPDATE ... WHERE value = expected`` (and ``INSERT ... ON CONFLICT DO
+        NOTHING`` for absent); DynamoDB ``ConditionExpression``. In that mode
+        the history is authoritative and ``<key_id>_current`` is a derived copy
+        written right after the commit; a crash in between leaves it one record
+        behind, and the manager reads the state from the history.
+
+        Without ``compare_and_set`` (a plain dict) transition() holds a per-key
+        ``threading.Lock`` across its read-check-write, which covers threads in
+        one process only. With several processes or hosts, hold an external
         distributed lock on the key_id around transition() (e.g. Redis
-        ``SETNX``, a ``SELECT ... FOR UPDATE`` row lock); the store interface
-        has no compare-and-set, so the manager cannot detect a concurrent
-        writer itself. ``<key_id>_current`` and ``<key_id>_history`` are
-        written as two separate operations, so a crash between them leaves
-        the history one record behind the current state.
+        ``SETNX``, a ``SELECT ... FOR UPDATE`` row lock). The two entries are
+        written history first, then ``_current``, so a crash between them
+        leaves ``_current`` one record behind the audit log. Check
+        :attr:`cross_process_safe`.
 
     Example::
 
@@ -178,12 +220,19 @@ class MigrationStateManager:
 
     def __init__(self, store: dict[str, bytes]) -> None:
         self._store = store
-        # Per-key locks prevent concurrent transitions from racing past the
-        # read-then-write check. For multi-process deployments, callers must
-        # additionally hold an external distributed lock (e.g. Redis SETNX,
-        # database row-level lock) on the key_id before calling transition().
+        # A store with compare_and_set makes transition() atomic across processes.
+        self._cas = callable(getattr(store, "compare_and_set", None))
+        # Per-key locks keep threads in this process from contending needlessly
+        # (and are the only protection without compare_and_set; see the class
+        # docstring for multi-process deployments).
         self._key_locks: dict[str, threading.Lock] = {}
         self._meta_lock = threading.Lock()  # guards _key_locks dict itself
+
+    @property
+    def cross_process_safe(self) -> bool:
+        """True if the store provides ``compare_and_set``, so transitions are
+        atomic across processes (given a correct store implementation)."""
+        return self._cas
 
     def _lock_for(self, key_id: str) -> threading.Lock:
         """Return (creating if needed) the per-key lock for key_id."""
@@ -245,6 +294,11 @@ class MigrationStateManager:
                 raise ValueError("Backward transition requires a non-empty reason string")
 
         with self._lock_for(key_id):
+            if self._cas:
+                return self._transition_cas(
+                    key_id, from_state, to_state, algorithm, actor, reason, metadata
+                )
+
             # Check current state matches expected from_state
             current = self.get_current_state(key_id)
             if current is not None and current != from_state:
@@ -254,40 +308,89 @@ class MigrationStateManager:
                     f"Concurrent modification or stale state?"
                 )
 
-            record = MigrationRecord(
-                record_id=str(uuid.uuid4()),
-                key_id=key_id,
-                from_state=from_state,
-                to_state=to_state,
-                algorithm=algorithm,
-                timestamp=time.time(),
-                actor=actor,
-                reason=reason,
-                metadata=metadata or {},
+            record = self._new_record(
+                key_id, from_state, to_state, algorithm, actor, reason, metadata
             )
 
-            # Store current state and append to history
-            self._store[f"{key_id}_current"] = record.to_bytes()
-            history_key = f"{key_id}_history"
+            # History first, then the current state: a crash between the two
+            # leaves _current behind the audit log rather than the log behind
+            # the state.
             history = self._load_history(key_id)
             history.append(record.to_dict())
-            self._store[history_key] = _ser.dumps(history)
+            self._store[f"{key_id}_history"] = _ser.dumps(history)
+            self._store[f"{key_id}_current"] = record.to_bytes()
 
         return record
 
-    def get_current_state(self, key_id: str) -> MigrationState | None:
-        """Return the current migration state for a key, or None if unknown."""
-        current_key = f"{key_id}_current"
-        if current_key not in self._store:
-            return None
-        try:
-            rec = MigrationRecord.from_bytes(self._store[current_key])
-            return rec.to_state
-        except Exception:  # noqa: BLE001
-            return None
+    @staticmethod
+    def _new_record(
+        key_id: str,
+        from_state: MigrationState,
+        to_state: MigrationState,
+        algorithm: str,
+        actor: str,
+        reason: str,
+        metadata: dict[str, Any] | None,
+    ) -> MigrationRecord:
+        return MigrationRecord(
+            record_id=str(uuid.uuid4()),
+            key_id=key_id,
+            from_state=from_state,
+            to_state=to_state,
+            algorithm=algorithm,
+            timestamp=time.time(),
+            actor=actor,
+            reason=reason,
+            metadata=metadata or {},
+        )
 
-    def get_current_record(self, key_id: str) -> MigrationRecord | None:
-        """Return the full current record for a key."""
+    def _transition_cas(
+        self,
+        key_id: str,
+        from_state: MigrationState,
+        to_state: MigrationState,
+        algorithm: str,
+        actor: str,
+        reason: str,
+        metadata: dict[str, Any] | None,
+    ) -> MigrationRecord:
+        """Commit through one atomic compare-and-set on the history entry."""
+        store: Any = self._store  # a store with compare_and_set (checked in __init__)
+        history_key = f"{key_id}_history"
+        for _ in range(_MAX_CAS_ATTEMPTS):
+            raw = store.get(history_key)
+            history = self._parse_history(raw)
+            current = self._state_from(history, key_id)
+            if current is not None and current != from_state:
+                raise ValueError(
+                    f"Key '{key_id}' is in state {current.value!r} but "
+                    f"transition expected {from_state.value!r}. "
+                    f"Concurrent modification or stale state?"
+                )
+            record = self._new_record(
+                key_id, from_state, to_state, algorithm, actor, reason, metadata
+            )
+            if store.compare_and_set(history_key, raw, _ser.dumps([*history, record.to_dict()])):
+                # Committed. _current is a derived copy; the history is authoritative.
+                store[f"{key_id}_current"] = record.to_bytes()
+                return record
+            # Lost a race: re-read and re-validate (the next pass reports a stale
+            # state if the other writer moved the key on).
+        raise ValueError(
+            f"Key '{key_id}' is too contended; giving up after {_MAX_CAS_ATTEMPTS} attempts."
+        )
+
+    def _state_from(self, history: list[dict[str, Any]], key_id: str) -> MigrationState | None:
+        """Current state of a key: the last history record, else the _current entry."""
+        if history:
+            try:
+                return MigrationRecord.from_dict(history[-1]).to_state
+            except Exception:  # noqa: BLE001, S110
+                pass
+        legacy = self._legacy_current(key_id)
+        return legacy.to_state if legacy else None
+
+    def _legacy_current(self, key_id: str) -> MigrationRecord | None:
         current_key = f"{key_id}_current"
         if current_key not in self._store:
             return None
@@ -295,6 +398,36 @@ class MigrationStateManager:
             return MigrationRecord.from_bytes(self._store[current_key])
         except Exception:  # noqa: BLE001
             return None
+
+    @staticmethod
+    def _parse_history(raw: bytes | None) -> list[dict[str, Any]]:
+        if raw is None:
+            return []
+        try:
+            data = _ser.loads(raw)
+        except Exception:  # noqa: BLE001
+            return []
+        return data if isinstance(data, list) else []
+
+    def get_current_state(self, key_id: str) -> MigrationState | None:
+        """Return the current migration state for a key, or None if unknown."""
+        rec = self.get_current_record(key_id)
+        return rec.to_state if rec else None
+
+    def get_current_record(self, key_id: str) -> MigrationRecord | None:
+        """Return the full current record for a key.
+
+        With a compare-and-set store the history is authoritative, so the last
+        history record is returned (the ``_current`` copy may lag after a crash).
+        """
+        if self._cas:
+            history = self._parse_history(self._store.get(f"{key_id}_history"))
+            if history:
+                try:
+                    return MigrationRecord.from_dict(history[-1])
+                except Exception:  # noqa: BLE001, S110
+                    pass
+        return self._legacy_current(key_id)
 
     def get_history(self, key_id: str) -> list[MigrationRecord]:
         """Return full migration history for a key, oldest first."""

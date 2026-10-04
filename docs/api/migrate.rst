@@ -32,6 +32,9 @@ Upgrader
 Migration state
 ---------------
 
+.. autoclass:: quantum_safe.migrate.state.MemoryMigrationStore
+   :members:
+
 .. autoclass:: quantum_safe.migrate.state.MigrationStateManager
    :members:
    :show-inheritance:

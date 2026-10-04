@@ -51,6 +51,10 @@ Added
 
 - ``verify(..., context=...)`` on ``Sign`` and ``HybridSign``: the verifier
   states the context it expects (constant-time comparison).
+- Compare-and-set migration store: a store with ``compare_and_set`` makes
+  ``MigrationStateManager.transition()`` atomic across processes with no external
+  lock (``MemoryMigrationStore``, ``cross_process_safe``); layout unchanged, history
+  authoritative. Without one, history is now written before ``_current``.
 - Leakage harness: a positive control (deliberate secret-dependent delay, with a
   zero point) that reports the smallest detectable leak, and public-data
   calibrations (fixed secret with varying ciphertext; encapsulation with a fixed vs

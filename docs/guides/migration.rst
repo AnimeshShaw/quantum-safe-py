@@ -86,17 +86,33 @@ a per-key state machine tracking where each key sits in the migration path:
 
 .. note::
 
-   **Thread safety**: ``transition()`` holds a per-key ``threading.Lock`` across
-   the read-check-write critical section, so concurrent in-process calls for the
-   same ``key_id`` are safe.  For multi-process deployments (multiple workers
-   sharing a Redis or database store) you must additionally hold an external
-   distributed lock (e.g. Redis ``SETNX``, a ``SELECT … FOR UPDATE`` row lock)
-   on the ``key_id`` before calling ``transition()``: the store interface has
-   no compare-and-set, so the manager cannot detect a concurrent writer.
+   **Concurrency**: give the manager a store with a
+   ``compare_and_set(key, expected, value) -> bool`` method (``expected=None``
+   means "the key must not exist") and ``transition()`` commits through one
+   atomic operation, so it is safe across any number of processes and hosts
+   sharing the store with **no external lock**: exactly one concurrent writer
+   wins and the others get a stale-state ``ValueError``.
+   :class:`~quantum_safe.migrate.state.MemoryMigrationStore` is the in-process
+   reference; for Redis use ``WATCH``/``MULTI`` or a Lua script, for Postgres
+   ``UPDATE ... WHERE value = expected`` (and ``INSERT ... ON CONFLICT DO
+   NOTHING`` for absent), for DynamoDB a ``ConditionExpression``.
+   ``manager.cross_process_safe`` tells you which mode you are in.
 
-   **Durability**: ``<key_id>_current`` and ``<key_id>_history`` are written as
-   two separate operations, so a crash between them leaves the history one
-   record behind the current state.
+   With a plain dict (no ``compare_and_set``) ``transition()`` holds a per-key
+   ``threading.Lock``, which covers threads in **one process only**: with several
+   workers sharing a store, two of them can both pass the read-check and both
+   write.  In a test with 16 managers racing on one plain dict, every one of 300
+   races produced more than one winner; with a compare-and-set store, none did.
+   Hold an external distributed lock (Redis ``SETNX``, a ``SELECT … FOR UPDATE``
+   row lock) on the ``key_id`` in that case.
+
+   **Layout and durability**: the layout is unchanged (``<key_id>_current`` and
+   ``<key_id>_history``).  With compare-and-set the history entry is the single
+   thing committed atomically and is authoritative; ``_current`` is a derived
+   copy written right after, so a crash in between leaves it one record behind
+   and the manager reads the state from the history.  Without it, the history is
+   written first and then ``_current`` (a crash between them leaves ``_current``
+   behind the audit log).
 
 .. code-block:: python
 

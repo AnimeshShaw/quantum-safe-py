@@ -32,7 +32,7 @@ Quick start::
 """
 
 from quantum_safe.migrate.scanner import Finding, Scanner, ScanReport, Severity
-from quantum_safe.migrate.state import MigrationRecord, MigrationStateManager
+from quantum_safe.migrate.state import MemoryMigrationStore, MigrationRecord, MigrationStateManager
 from quantum_safe.migrate.upgrader import Upgrader, UpgradeResult
 
 __all__ = [
@@ -46,5 +46,6 @@ __all__ = [
     "UpgradeResult",
     # State machine
     "MigrationStateManager",
+    "MemoryMigrationStore",
     "MigrationRecord",
 ]
