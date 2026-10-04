@@ -79,6 +79,10 @@ _DEFAULT_VALIDITY_DAYS = 365
 # This binds the co-signature to the exact certificate content.
 _COSIG_INFO_PREFIX = b"qs-x509-cosig-v1\x00"
 
+# Signing context of every co-signature. Fixed: verify_cosig requires it rather
+# than reading it from the bundle, which whoever supplies the bundle controls.
+_COSIG_CONTEXT = b"qs-x509-cosig"
+
 
 @dataclass
 class HybridCertificateBuilder:
@@ -241,7 +245,7 @@ class HybridCertificateBuilder:
             else:
                 signer = Sign(algorithm=algo)
 
-        sm = signer.sign(data, self.pqc_keypair.secret, context=b"qs-x509-cosig")
+        sm = signer.sign(data, self.pqc_keypair.secret, context=_COSIG_CONTEXT)
 
         # Package the co-signature with metadata for distribution
         bundle = _ser.dumps(
@@ -249,7 +253,7 @@ class HybridCertificateBuilder:
                 "v": 1,
                 "algo": algo,
                 "sig": sm.signature,
-                "context": b"qs-x509-cosig",
+                "context": _COSIG_CONTEXT,
                 "cert_fp": self.pqc_keypair.public.fingerprint(),
             }
         )
@@ -297,7 +301,7 @@ class HybridCertificateBuilder:
 
         algo = bundle.get("algo", "")
         sig = bytes(bundle.get("sig", b""))
-        context = bytes(bundle.get("context", b"qs-x509-cosig"))
+        context = bytes(bundle.get("context", _COSIG_CONTEXT))
 
         if not algo or not sig:
             raise KeyParseError("cbor", "cosig bundle missing algo or sig")
@@ -321,7 +325,7 @@ class HybridCertificateBuilder:
             algorithm=algo,
             context=context,
         )
-        verifier.verify(sm, pqc_public_key)
+        verifier.verify(sm, pqc_public_key, context=_COSIG_CONTEXT)
 
 
 def generate_classical_keypair_for_cert(

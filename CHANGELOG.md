@@ -62,6 +62,18 @@ All notable changes to quantum-safe are documented here.
 
 - `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
   ML-DSA-87, the CNSA 2.0-compliant configurations.
+- `Sign.verify(..., context=...)` and `HybridSign.verify(..., context=...)`:
+  the verifier states the context it expects, and a message carrying any
+  other context is rejected (constant-time comparison). The context stored
+  in a `SignedMessage` is supplied by whoever supplies the message, so
+  without this a signature made for one purpose verified for another.
+  `JWTVerifier` and `HybridCertificateBuilder.verify_cosig` now pass their
+  own context instead of reading it from the token or bundle.
+
+### Deprecated
+
+- Calling `verify()` without `context=` emits a `DeprecationWarning`. It
+  will be required (default `b""`) in the next minor release.
 
 ## [0.3.0] - 2026-09-28
 

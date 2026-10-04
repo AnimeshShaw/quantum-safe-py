@@ -47,6 +47,7 @@ identifies your application and protocol version:
 
 from __future__ import annotations
 
+import hmac
 import os
 import time
 import warnings
@@ -63,6 +64,28 @@ from quantum_safe.types.signatures import SignedMessage
 
 if TYPE_CHECKING:
     from quantum_safe.backends.base import AbstractSignatureBackend
+
+
+def check_expected_context(
+    signed_message: SignedMessage, expected: bytes | None, algorithm: str
+) -> None:
+    """Require the message's context to equal the verifier's expected context.
+
+    ``expected=None`` keeps the pre-0.3.1 behaviour (the context is taken from
+    the message) and emits a DeprecationWarning.
+    """
+    if expected is None:
+        warnings.warn(
+            "verify() without context= is deprecated: pass the context you expect. "
+            "The context in the message is attacker-controlled, so without it a "
+            "signature made for one purpose verifies for another. context= will be "
+            "required (default b'') in the next minor release.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return
+    if not hmac.compare_digest(bytes(signed_message.context), bytes(expected)):
+        raise VerificationError(algo=algorithm)
 
 
 class Sign:
@@ -85,7 +108,7 @@ class Sign:
         signer = Sign()                    # ML-DSA-65, hedged
         kp     = signer.generate_keypair()
         sm     = signer.sign(b"hello", kp.secret, context=b"myapp-v1")
-        signer.verify(sm, kp.public)       # raises VerificationError if invalid
+        signer.verify(sm, kp.public, context=b"myapp-v1")  # raises VerificationError
     """
 
     def __init__(
@@ -246,22 +269,36 @@ class Sign:
     # Verification
     # ------------------------------------------------------------------
 
-    def verify(self, signed_message: SignedMessage, public_key: PublicKey) -> None:
+    def verify(
+        self,
+        signed_message: SignedMessage,
+        public_key: PublicKey,
+        context: bytes | None = None,
+    ) -> None:
         """Verify a signed message.
 
         Args:
             signed_message: A SignedMessage returned by sign().
             public_key:     The signer's public key.
+            context:        The context this verifier expects. The
+                            SignedMessage's own context must equal it. Pass
+                            it: the context stored in the message comes from
+                            whoever supplied the message, so without this a
+                            signature made for one purpose verifies for
+                            another. Omitting it is deprecated (it emits a
+                            DeprecationWarning) and will be required, with a
+                            default of b"", in the next minor release.
 
         Returns:
             None on success.
 
         Raises:
-            VerificationError: if the signature is invalid, the algorithm
-                doesn't match, or the context doesn't match.
+            VerificationError: if the signature is invalid or the message's
+                context differs from ``context``.
             UnsupportedAlgorithm: if the SignedMessage's algorithm differs
                 from this Sign instance's algorithm.
         """
+        check_expected_context(signed_message, context, self._algorithm)
         if signed_message.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(
                 signed_message.algorithm,

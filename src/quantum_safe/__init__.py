@@ -19,7 +19,7 @@ Quick start::
     signer  = HybridSign()
     sig_kp  = signer.generate_keypair()
     sm      = signer.sign(b"hello world", sig_kp.secret, context=b"myapp-v1")
-    signer.verify(sm, sig_kp.public)
+    signer.verify(sm, sig_kp.public, context=b"myapp-v1")
 
 See the full documentation at https://quantum-safe-py.readthedocs.io/en/latest/
 """

@@ -299,8 +299,9 @@ class JWTVerifier:
             context=context,
         )
 
-        # This raises VerificationError if invalid
-        self._verifier.verify(sm, self._public_key)
+        # This raises VerificationError if invalid. The context is the one this
+        # verifier was asked for, never one read from the token.
+        self._verifier.verify(sm, self._public_key, context=context)
 
         # Validate standard claims
         now = time.time()

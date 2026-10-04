@@ -68,7 +68,7 @@ from quantum_safe.signatures.algorithms import (
     canonical_hybrid_name,
     validate_hybrid_combination,
 )
-from quantum_safe.signatures.core import Sign
+from quantum_safe.signatures.core import Sign, check_expected_context
 from quantum_safe.types import KeyPair, MigrationState, PublicKey, SecretKey
 from quantum_safe.types.signatures import HybridSignature, SignedMessage
 
@@ -119,7 +119,7 @@ class HybridSign:
         signer = HybridSign()
         kp     = signer.generate_keypair()
         sm     = signer.sign(b"document", kp.secret, context=b"myapp-v1")
-        signer.verify(sm, kp.public)
+        signer.verify(sm, kp.public, context=b"myapp-v1")
     """
 
     def __init__(
@@ -280,17 +280,27 @@ class HybridSign:
     # Verification
     # ------------------------------------------------------------------
 
-    def verify(self, signed_message: SignedMessage, public_key: PublicKey) -> None:
+    def verify(
+        self,
+        signed_message: SignedMessage,
+        public_key: PublicKey,
+        context: bytes | None = None,
+    ) -> None:
         """Verify a hybrid signed message. Both sub-signatures must be valid.
 
         Args:
             signed_message: A SignedMessage from sign().
             public_key:     The signer's hybrid public key.
+            context:        The context this verifier expects; the message's
+                            own context must equal it. Omitting it is
+                            deprecated (see Sign.verify).
 
         Raises:
-            VerificationError: if either sub-signature is invalid.
+            VerificationError: if either sub-signature is invalid, or the
+                message's context differs from ``context``.
             UnsupportedAlgorithm: if algorithm doesn't match.
         """
+        check_expected_context(signed_message, context, self._algorithm)
         if signed_message.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(signed_message.algorithm, available=[self._algorithm])
         if public_key.algorithm != self._algorithm:
