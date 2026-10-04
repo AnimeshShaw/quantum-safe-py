@@ -2,18 +2,22 @@
 quantum_safe._internal.serialization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A thin serialization layer that prefers cbor2 when installed but falls back
-to a JSON+base64 envelope when it isn't.
+A thin serialization layer over cbor2, with a JSON+base64 fallback that is
+used only if cbor2 cannot be imported.
 
-Why not just require cbor2?  Because some users (especially those deploying
-to constrained environments like AWS Lambda layers or Heroku slugs) want to
-keep the dependency tree minimal. cbor2 is listed as an optional dependency
-in pyproject.toml; this module handles both cases transparently.
+cbor2 is a **required** dependency (see ``dependencies`` in pyproject.toml),
+so a correctly installed library always writes CBOR. The fallback is reached
+only in a broken or hand-pruned environment, and it is **not
+interoperable**: it writes a JSON envelope (``{"_qs_fmt": "json-b64-v1",
+...}``) for keys, signed messages and sealed messages that no CBOR reader can
+parse, including a normal installation of this library and quantum-safe-ts.
+The format carries no marker inside individual key or envelope versions, so
+data written while the fallback is active can only be read back by another
+installation in the same state. Do not rely on it; if ``BACKEND`` is not
+``"cbor2"``, fix the installation.
 
 The fallback format is a JSON object where bytes fields are base64url-encoded
-strings with a type tag prefix ("b64:").  It is slightly larger than CBOR
-but fully self-describing and human-readable, which has its own value for
-debugging.
+strings with a type tag prefix ("b64:").
 
 Callers should never import cbor2 directly — always go through this module.
 The public API mirrors cbor2's: dumps(obj) -> bytes, loads(data) -> obj.
