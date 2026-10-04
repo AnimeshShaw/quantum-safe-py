@@ -535,12 +535,9 @@ class TestHybridSignWithRealBackend:
         sm = hs.sign(b"test", kp.secret, context=b"ctx")
         rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature, 32)
         hybrid_sig = HybridSignature.from_bytes(hs_bytes)
-        # ML-DSA-65 signatures are 3293 bytes per FIPS 204.
-        # Liboqs >= 0.15 may produce slightly different sizes due to internal
-        # encoding differences — allow a ±64-byte range around the spec value.
-        assert 3229 <= len(hybrid_sig.pqc_sig) <= 3357, (
-            f"Unexpected ML-DSA-65 signature size: {len(hybrid_sig.pqc_sig)}"
-        )
+        # ML-DSA-65 signatures are exactly 3309 bytes per FIPS 204 (3293 was
+        # the round-3 Dilithium3 size, which this test used to tolerate).
+        assert len(hybrid_sig.pqc_sig) == 3309
 
     def test_single_pqc_sign_verify(self):
         s = Sign()

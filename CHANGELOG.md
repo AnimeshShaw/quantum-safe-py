@@ -35,6 +35,11 @@ All notable changes to quantum-safe are documented here.
   previously an integer `msg` or `kct` was silently read as that many zero
   bytes, and `SignedMessage` and `SealedMessage` accepted a non-integer
   version.
+- ML-DSA sizes reported by the algorithm registry and both backends were
+  round-3 Dilithium sizes, not FIPS 204's: secret keys are 2560 / 4032 / 4896
+  bytes (ML-DSA-44 / 65 / 87) and signatures 2420 / 3309 / 4627 bytes. Keys
+  and signatures themselves were always correct (they come from liboqs);
+  only the reported numbers were wrong.
 
 ## [0.3.0] - 2026-09-28
 

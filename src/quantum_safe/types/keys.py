@@ -75,9 +75,9 @@ _KNOWN_SECRET_KEY_SIZES: dict[str, int] = {
     "ML-KEM-512": 1632,
     "ML-KEM-768": 2400,
     "ML-KEM-1024": 3168,
-    "ML-DSA-44": 2528,
-    "ML-DSA-65": 4000,
-    "ML-DSA-87": 4864,
+    "ML-DSA-44": 2560,
+    "ML-DSA-65": 4032,
+    "ML-DSA-87": 4896,
     "SLH-DSA-SHAKE-128s": 64,
     "SLH-DSA-SHAKE-128f": 64,
 }
