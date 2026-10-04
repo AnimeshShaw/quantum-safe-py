@@ -149,10 +149,26 @@ class TestEnforce:
     def test_passes_at_requirements(self) -> None:
         cnsa2.enforce(kem="ML-KEM-1024", signature="ML-DSA-87")
 
-    def test_raises_for_non_cnsa_hybrid(self) -> None:
-        """PARTIAL counts against compliance, so enforce() refuses it."""
+    def test_default_is_a_parameter_set_guard(self) -> None:
+        """By default only the post-quantum parameter set is enforced, as in
+        quantum-safe-ts: a hybrid with the right PQC half passes, although
+        report() calls it PARTIAL."""
+        cnsa2.enforce(kem="X25519+ML-KEM-1024", signature="Ed25519+ML-DSA-87")
+        assert cnsa2.check_kem("X25519+ML-KEM-1024").finding is cnsa2.Finding.PARTIAL
+
+    def test_strict_refuses_partial(self) -> None:
         with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):
-            cnsa2.enforce(kem="X25519+ML-KEM-1024", signature="Ed25519+ML-DSA-87")
+            cnsa2.enforce(kem="X25519+ML-KEM-1024", strict=True)
+        with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):
+            cnsa2.enforce(signature="Ed25519+ML-DSA-87", strict=True)
+        cnsa2.enforce(kem="ML-KEM-1024", signature="ML-DSA-87", strict=True)
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_unrecognised_names_always_fail(self, strict: bool) -> None:
+        with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):
+            cnsa2.enforce(signature="RSA-1024+ML-DSA-87", strict=strict)
+        with pytest.raises(ValueError, match="not CNSA 2.0 compliant"):
+            cnsa2.enforce(kem="X25519+ML-KEM-768", strict=strict)
 
 
 class TestConstructors:

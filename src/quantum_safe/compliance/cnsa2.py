@@ -335,18 +335,35 @@ def report(
     return rep
 
 
-def enforce(kem: str | None = None, signature: str | None = None) -> None:
+def enforce(
+    kem: str | None = None,
+    signature: str | None = None,
+    strict: bool = False,
+) -> None:
     """Raise if the given selections fall below CNSA 2.0 parameter requirements.
 
-    Intended for a deployment that has decided it must be CNSA 2.0 aligned and
-    wants a hard failure rather than a report. Code signing is not evaluated
-    here: it cannot be satisfied by any selection this library offers, so
-    including it would make every call raise.
+    By default this is a guard on the post-quantum *parameter sets*: it raises
+    for ML-KEM-768 / ML-DSA-65 and for unrecognised names, and lets a hybrid
+    whose post-quantum half is right (``X25519+ML-KEM-1024``) pass, although
+    :func:`report` calls that PARTIAL. Pass ``strict=True`` to also refuse
+    anything :func:`report` does not call compliant, for example in a CI gate.
+    The behaviour matches ``cnsa2.enforce`` in quantum-safe-ts.
+
+    Code signing and key-derivation hashes are not evaluated here; this is not
+    a compliance certificate (see :func:`report`).
+
+    Raises:
+        ValueError: if a selection does not meet the requirement.
     """
-    rep = report(kem=kem, signature=signature, include_code_signing=False)
-    if not rep.compliant:
-        problems = "; ".join(c.detail for c in rep.failures)
-        raise ValueError(f"configuration is not CNSA 2.0 compliant: {problems}")
+    failures: list[str] = []
+    for check, selection in ((check_kem, kem), (check_signature, signature)):
+        if selection is None:
+            continue
+        result = check(selection)
+        if result.finding is Finding.NON_COMPLIANT or (strict and not result.ok):
+            failures.append(result.detail)
+    if failures:
+        raise ValueError(f"configuration is not CNSA 2.0 compliant: {'; '.join(failures)}")
 
 
 # ---------------------------------------------------------------------------

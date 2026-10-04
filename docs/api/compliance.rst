@@ -77,6 +77,12 @@ To fail hard instead of just reporting:
    cnsa2.enforce(kem="ML-KEM-768", signature="ML-DSA-87")
    # ValueError: configuration is not CNSA 2.0 compliant: ...
 
+   # By default enforce() guards the post-quantum parameter set, so a hybrid
+   # with ML-KEM-1024 passes even though report() calls it PARTIAL.
+   # strict=True refuses anything report() does not call compliant:
+   cnsa2.enforce(kem="X25519+ML-KEM-1024", strict=True)
+   # ValueError: configuration is not CNSA 2.0 compliant: ...
+
 .. autofunction:: quantum_safe.compliance.cnsa2.report
 
 .. autofunction:: quantum_safe.compliance.cnsa2.enforce

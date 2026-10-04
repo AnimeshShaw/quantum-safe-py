@@ -13,11 +13,14 @@ All notable changes to quantum-safe are documented here.
   `hedged=False` signer). Hedged signatures, the
   default, are unaffected. Nothing is re-encoded: every signature 0.3.0
   wrote still verifies on a verifier in the matching mode.
-- **CNSA 2.0: X25519, P-256 and Ed25519 hybrids are now reported `PARTIAL`,
-  not compliant, so `cnsa2.enforce()` raises for them.** CNSA 2.0 makes
+- **CNSA 2.0: `cnsa2.report()` and `qs-audit cnsa2` now report X25519,
+  P-256 and Ed25519 hybrids as `PARTIAL`, not compliant.** CNSA 2.0 makes
   hybrid operation optional and requires a hybrid's classical half to be a
   CNSA 1.0 algorithm (P-384). Standalone ML-KEM-1024 / ML-DSA-87 are the
   compliant choice; use the new `cnsa2.pqc_kem()` / `cnsa2.pqc_sign()`.
+  `cnsa2.enforce()` is unchanged for these hybrids by default (it guards the
+  post-quantum parameter set, as in quantum-safe-ts); pass `strict=True` to
+  refuse anything `report()` does not call compliant.
 
 ### Fixed
 
@@ -62,6 +65,8 @@ All notable changes to quantum-safe are documented here.
 
 - `cnsa2.pqc_kem()` and `cnsa2.pqc_sign()`: standalone ML-KEM-1024 and
   ML-DSA-87, the CNSA 2.0-compliant configurations.
+- `cnsa2.enforce(..., strict=True)`: also refuse configurations that
+  `report()` calls `PARTIAL`, for use as a CI gate.
 - `Sign.verify(..., context=...)` and `HybridSign.verify(..., context=...)`:
   the verifier states the context it expects, and a message carrying any
   other context is rejected (constant-time comparison). The context stored
