@@ -308,8 +308,9 @@ result = Upgrader.upgrade_kem_key(
     classical_algorithm="X25519",
     target_pqc="ML-KEM-768",
 )
-# result.new_keypair contains X25519 + ML-KEM-768
-# Old senders using X25519-only can still encrypt to the new public key
+# result.new_keypair contains X25519 + ML-KEM-768. The original X25519 key is
+# retained inside it, but the hybrid key format is not readable by X25519-only
+# senders: keep publishing the original key to them during the transition.
 print(result.notes)
 ```
 

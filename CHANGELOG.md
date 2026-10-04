@@ -50,6 +50,11 @@ All notable changes to quantum-safe are documented here.
   reported compliant. `P-384` is removed from `CNSA2_HYBRID_CLASSICAL`
   because `HybridKEM` does not implement it. `cnsa2.describe()` no longer
   says LMS is unimplemented.
+- `Upgrader` no longer reports `backward_compat=True`. The upgraded key is
+  `u16(len(classical)) || classical || pqc`, which classical-only software
+  cannot parse; the original key is retained inside it, and classical-only
+  clients keep using the original key. Documentation that said old X25519
+  senders could still encrypt to the upgraded key is corrected.
 
 ### Added
 

@@ -426,7 +426,7 @@ class TestMigrationWorkflow:
             _bk.get_kem_backend = orig
 
         assert result.new_algorithm == "X25519+ML-KEM-768"
-        assert result.backward_compat
+        assert result.backward_compat is False  # classical-only clients keep the original key
         new_kp = result.new_keypair
 
         # Track in state machine

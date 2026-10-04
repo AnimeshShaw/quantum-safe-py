@@ -55,8 +55,11 @@ Upgrading an existing key to hybrid
 -------------------------------------
 
 :class:`~quantum_safe.migrate.upgrader.Upgrader` takes an existing
-classical key and produces a hybrid keypair.  Old senders that still
-use the classical-only public key can still encrypt to the new public key.
+classical key and produces a hybrid keypair that contains it.  The hybrid
+public key is a new format (``u16(len(classical)) || classical || pqc``) that
+classical-only software cannot parse, so the upgrade is not backward
+compatible on its own: classical-only senders keep using the original key,
+which you continue to publish during the transition.
 
 .. code-block:: python
 

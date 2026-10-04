@@ -3,7 +3,7 @@ quantum_safe.migrate.upgrader
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Key upgrader: takes an existing classical key and produces a hybrid
-replacement that retains backward compatibility.
+replacement that contains it.
 
 The central design challenge in key migration is that you can't just
 swap keys atomically — at some point during rollout, both old and new
@@ -15,10 +15,15 @@ clients exist. The Upgrader solves this by producing a HybridKey that:
      can track progress.
 
 This means:
-  - Old senders using X25519-only can still encrypt to the new public key
-    (they just use the X25519 component and ignore the ML-KEM extension).
+  - The original classical key is retained inside the hybrid key, but the
+    hybrid key is a new byte string (``u16_be(len(classical)) || classical ||
+    pqc``) that classical-only software cannot parse. It is therefore NOT
+    backward compatible: classical-only clients keep using the original key
+    (publish both during the transition), and old X25519-only senders cannot
+    encrypt to the new public key.
   - New senders using HybridKEM use both components.
-  - The upgrade is reversible during the transition period.
+  - The upgrade is reversible during the transition period
+    (see strip_classical_component and keep the original key).
 
 Supported upgrade paths
 ------------------------
@@ -53,8 +58,10 @@ class UpgradeResult:
         old_algorithm:      Algorithm string of the key before upgrade.
         new_algorithm:      Algorithm string of the upgraded key.
         migration_state:    Migration state of the new key (always HYBRID_TRANSITION).
-        backward_compat:    True if the new key is backward-compatible with
-                            the old algorithm (i.e. old clients can still use it).
+        backward_compat:    True if old clients could use the new key directly.
+                            Always False for the upgrades this module performs:
+                            the hybrid key format is not readable by
+                            classical-only software, so they keep the original.
         notes:              Human-readable notes about the upgrade.
     """
 
@@ -156,11 +163,12 @@ class Upgrader:
             old_algorithm=classical_algorithm,
             new_algorithm=new_algo,
             migration_state=MigrationState.HYBRID_TRANSITION,
-            backward_compat=True,
+            backward_compat=False,
             notes=(
-                f"Original {classical_algorithm} sub-key retained in hybrid key. "
-                f"Old senders can still use the {classical_algorithm} component. "
-                f"New senders will use the full {new_algo} hybrid construction."
+                f"Original {classical_algorithm} key retained inside the hybrid key. "
+                f"The hybrid key format is not readable by {classical_algorithm}-only "
+                f"software, so classical-only clients keep using the original key. "
+                f"New senders use the full {new_algo} hybrid construction."
             ),
         )
 
@@ -224,11 +232,13 @@ class Upgrader:
             old_algorithm=classical_algorithm,
             new_algorithm=new_algo,
             migration_state=MigrationState.HYBRID_TRANSITION,
-            backward_compat=True,
+            backward_compat=False,
             notes=(
-                f"Original {classical_algorithm} signing key retained. "
-                f"Existing verifiers can still check the {classical_algorithm} sub-signature. "
-                f"New verifiers require both sub-signatures to pass."
+                f"Original {classical_algorithm} signing key retained inside the hybrid "
+                f"key. Hybrid signatures are a combined format that plain "
+                f"{classical_algorithm} verifiers cannot check, so existing verifiers keep "
+                f"using the original key and its signatures. New verifiers require both "
+                f"sub-signatures to pass."
             ),
         )
 

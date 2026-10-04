@@ -557,9 +557,49 @@ class TestUpgrader:
         assert isinstance(result, UpgradeResult)
         assert result.old_algorithm == "X25519"
         assert result.new_algorithm == "X25519+ML-KEM-768"
-        assert result.backward_compat
+        # Not backward compatible: the upgraded public key is
+        # u16(len) || classical || pqc, which a classical-only sender cannot
+        # parse. The original key is retained inside it instead.
+        assert result.backward_compat is False
         assert result.migration_state == MigrationState.HYBRID_TRANSITION
         assert result.new_keypair.algorithm == "X25519+ML-KEM-768"
+
+    def test_upgraded_kem_public_key_is_not_a_classical_key(self, monkeypatch):
+        """A classical-only client sees a different, longer, prefixed byte string."""
+        from quantum_safe.kem.hybrid import _unpack_components
+
+        monkeypatch.setattr("quantum_safe.backends._load_liboqs_kem", lambda: MockKEMBackend())
+        monkeypatch.setattr("quantum_safe.backends._load_rustcrypto_kem", lambda: MockKEMBackend())
+        classical_pub = b"\x02" * 32
+        result = Upgrader.upgrade_kem_key(
+            classical_secret_bytes=b"\x01" * 32,
+            classical_public_bytes=classical_pub,
+            classical_algorithm="X25519",
+            target_pqc="ML-KEM-768",
+        )
+        raw = result.new_keypair.public.raw_bytes
+        assert len(raw) != 32
+        assert raw[:2] == (32).to_bytes(2, "big")
+        assert raw[:32] != classical_pub
+        assert _unpack_components(raw, context="X25519+ML-KEM-768")[0] == classical_pub
+        assert "classical-only clients keep using the original" in result.notes
+
+    @pytest.mark.requires_liboqs
+    def test_upgraded_signing_key_is_not_backward_compatible(self):
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        from cryptography.hazmat.primitives.serialization import (
+            Encoding,
+            NoEncryption,
+            PrivateFormat,
+            PublicFormat,
+        )
+
+        sk = Ed25519PrivateKey.generate()
+        sec = sk.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+        pub = sk.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        result = Upgrader.upgrade_signing_key(sec, pub, "Ed25519", "ML-DSA-65")
+        assert result.backward_compat is False
+        assert "existing verifiers keep using the original" in result.notes
 
     def test_upgrade_preserves_classical_pub(self, monkeypatch):
         from quantum_safe.kem.hybrid import _unpack_components
