@@ -236,6 +236,18 @@ residual jitter above bare-metal Linux (~0.5–1.5%).
      - 52.4%
      - ✓ Expected — FIPS 204 hedged signing randomness
 
+.. warning::
+
+   The ML-KEM-768 *decapsulation* latency and CoV figures (3.9%) that earlier
+   releases published were measured with a harness that shared one liboqs object
+   across operations, so decapsulation ran the implicit-rejection path instead of
+   normal decapsulation. The harness is fixed (each operation has its own object
+   and the key/ciphertext pair is checked before timing); the figures are being
+   re-measured and the old decapsulation row should not be relied on. The other
+   rows in this table are unaffected by that defect but are best-of-three
+   measurements from March 2026 (about 8% optimistic on average against the
+   median of three).
+
 **Why ML-DSA sign has high CoV (~52%)**
 
 ML-DSA-65 (FIPS 204) uses *hedged signing*: a fresh 32-byte random string

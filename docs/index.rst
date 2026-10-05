@@ -39,6 +39,8 @@ and a CI-ready audit scanner — all in one library.
    guides/installation
    guides/quickstart
    guides/concepts
+   guides/choosing
+   guides/cookbook
 
 .. toctree::
    :maxdepth: 1
@@ -48,6 +50,9 @@ and a CI-ready audit scanner — all in one library.
    guides/signatures
    guides/protocols
    guides/migration
+   guides/interop
+   guides/compliance
+   guides/security
    guides/audit
    guides/cli
    guides/benchmarks
@@ -70,4 +75,5 @@ and a CI-ready audit scanner — all in one library.
    :maxdepth: 1
    :caption: Project
 
+   guides/upgrading
    changelog
