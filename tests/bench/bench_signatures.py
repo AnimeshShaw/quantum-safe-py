@@ -106,8 +106,8 @@ class BenchResult:
             return 0.0
         return (self.stdev_us / self.mean_us) * 100.0
 
-    def to_dict(self) -> dict:
-        return {
+    def to_dict(self, include_samples: bool = False) -> dict:
+        out: dict = {
             "name": self.name,
             "iterations": self.iterations,
             "warmup": self.warmup,
@@ -118,6 +118,11 @@ class BenchResult:
             "stdev_us": round(self.stdev_us, 2),
             "cov_pct": round(self.cov_pct, 2),
         }
+        if include_samples:
+            # every timed sample that survived the 1% trim, so any statistic in a paper
+            # can be recomputed from the file instead of copied by hand
+            out["samples_us"] = [round(x, 3) for x in self.samples_us]
+        return out
 
     def __str__(self) -> str:
         flag = ""
@@ -367,6 +372,8 @@ def _save_json(
     all_results: dict[str, list[BenchResult]],
     path: str,
     metadata: dict | None = None,
+    include_samples: bool = False,
+    iterations: int = 1000,
 ) -> None:
     """Save all benchmark results to a JSON file for paper reproducibility."""
     import datetime
@@ -374,7 +381,7 @@ def _save_json(
     data: dict = {
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "harness": {
-            "iterations": 1000,
+            "iterations": iterations,
             "warmup": 100,
             "outlier_trim_pct": 1,
             "timer": "time.perf_counter",
@@ -383,7 +390,7 @@ def _save_json(
         "results": {},
     }
     for section, results in all_results.items():
-        data["results"][section] = [r.to_dict() for r in results]
+        data["results"][section] = [r.to_dict(include_samples=include_samples) for r in results]
 
     os.makedirs(os.path.dirname(path) if os.path.dirname(path) else ".", exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
@@ -417,6 +424,11 @@ def main() -> None:
         type=int,
         default=1000,
         help="Measurement iterations per operation (default: 1000)",
+    )
+    parser.add_argument(
+        "--raw-samples",
+        action="store_true",
+        help="Also save every timed sample in the JSON (larger file; needed to recompute statistics)",
     )
     args = parser.parse_args()
 
@@ -465,12 +477,24 @@ def main() -> None:
     print("~ MODERATE (CoV 3-5%) — flag for further investigation.")
 
     if args.save:
+        try:
+            from ._provenance import environment
+        except ImportError:  # run as a script: tests/bench is on sys.path
+            from _provenance import environment
+
         metadata = {
+            **environment(),
             "platform": platform.platform(),
             "python": platform.python_version(),
             "with_pqc": args.with_pqc,
         }
-        _save_json(all_results, args.save, metadata)
+        _save_json(
+            all_results,
+            args.save,
+            metadata,
+            include_samples=args.raw_samples,
+            iterations=args.iterations,
+        )
 
 
 if __name__ == "__main__":

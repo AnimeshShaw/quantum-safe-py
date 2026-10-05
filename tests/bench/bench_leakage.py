@@ -1038,7 +1038,13 @@ def run_all(iterations: int = 10_000, save_json: str | None = None) -> list[Leak
 
     if save_json:
         os.makedirs(os.path.dirname(save_json) or ".", exist_ok=True)
+        try:
+            from ._provenance import environment
+        except ImportError:  # run as a script: tests/bench is on sys.path
+            from _provenance import environment
+
         payload = {
+            "metadata": environment(),
             "iterations_per_class": iterations,
             "t_clear_threshold": T_CLEAR,
             "t_suspicious_threshold": T_SUSPICIOUS,

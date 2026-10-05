@@ -1,0 +1,17 @@
+# Keep the build context small and private: the image only needs what Dockerfile COPYs.
+.git
+.ci_test_venv
+.venv
+dist
+build
+docs/_build
+paper
+notes
+liboqs
+**/__pycache__
+**/*.pyc
+.mypy_cache
+.ruff_cache
+.pytest_cache
+audit.json
+audit.sarif

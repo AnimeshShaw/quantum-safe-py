@@ -76,8 +76,8 @@ class BenchResult:
             return 0.0
         return (self.stdev_us / self.mean_us) * 100.0
 
-    def to_dict(self) -> dict:
-        return {
+    def to_dict(self, include_samples: bool = False) -> dict:
+        out: dict = {
             "name": self.name,
             "iterations": self.iterations,
             "warmup": self.warmup,
@@ -88,6 +88,11 @@ class BenchResult:
             "stdev_us": round(self.stdev_us, 2),
             "cov_pct": round(self.cov_pct, 2),
         }
+        if include_samples:
+            # every timed sample that survived the 1% trim, so any statistic in a paper
+            # can be recomputed from the file instead of copied by hand
+            out["samples_us"] = [round(x, 3) for x in self.samples_us]
+        return out
 
     def __str__(self) -> str:
         flag = ""
@@ -628,7 +633,12 @@ def bench_hybrid_decomposition() -> list[BenchResult]:
 # ---------------------------------------------------------------------------
 
 
-def run_all(save_json: str | None = None, iterations: int = 1000, with_pqc: bool = False) -> None:
+def run_all(
+    save_json: str | None = None,
+    iterations: int = 1000,
+    with_pqc: bool = False,
+    raw_samples: bool = False,
+) -> None:
     print("\n" + "=" * 80)
     print("quantum-safe benchmark suite")
     print("=" * 80)
@@ -682,8 +692,17 @@ def run_all(save_json: str | None = None, iterations: int = 1000, with_pqc: bool
         out_path = pathlib.Path(save_json)
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(out_path, "w") as f:
-            json.dump({"results": [r.to_dict() for r in all_results]}, f, indent=2)
+        try:
+            from ._provenance import environment
+        except ImportError:  # run as a script: tests/bench is on sys.path
+            from _provenance import environment
+
+        payload = {
+            "metadata": {**environment(), "iterations": iterations, "with_pqc": with_pqc},
+            "results": [r.to_dict(include_samples=raw_samples) for r in all_results],
+        }
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
         print(f"\nSaved results to {save_json}")
 
 
@@ -694,5 +713,15 @@ if __name__ == "__main__":
     parser.add_argument("--save", metavar="FILE", help="Save JSON results to FILE")
     parser.add_argument("--iterations", type=int, default=1000, help="Iterations per benchmark")
     parser.add_argument("--with-pqc", action="store_true", help="Run real PQC benchmarks")
+    parser.add_argument(
+        "--raw-samples",
+        action="store_true",
+        help="Also save every timed sample in the JSON (larger file; needed to recompute statistics)",
+    )
     args = parser.parse_args()
-    run_all(save_json=args.save, iterations=args.iterations, with_pqc=args.with_pqc)
+    run_all(
+        save_json=args.save,
+        iterations=args.iterations,
+        with_pqc=args.with_pqc,
+        raw_samples=args.raw_samples,
+    )

@@ -53,6 +53,10 @@ COPY tests/bench/ tests/bench/
 COPY tests/conformance/ tests/conformance/
 COPY results/ results/
 
+# The commit this image was built from, recorded in every benchmark file (there is no .git inside the image)
+ARG QS_GIT_COMMIT=unknown
+ENV QS_GIT_COMMIT=${QS_GIT_COMMIT}
+
 # Expose a volume for persisting JSON snapshots to the host
 VOLUME ["/app/results"]
 
