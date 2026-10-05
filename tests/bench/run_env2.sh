@@ -15,7 +15,7 @@ ITER="${ITER:-3000}"
 LEAK_ITER="${LEAK_ITER:-20000}"
 CPUS="${CPUS:-0,1}"
 IMAGE="quantum-safe-bench"
-OUT="results/env2/$(date +%Y-%m-%d)"
+OUT="${OUT_DIR:-results/env2/$(date +%Y-%m-%d)}"   # OUT_DIR=results/env2/rehearsal for a trial run
 export MSYS_NO_PATHCONV=1   # stop Git Bash rewriting /out and /app paths
 
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
