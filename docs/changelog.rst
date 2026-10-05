@@ -1,6 +1,15 @@
 Unreleased
 ----------
 
+Security
+~~~~~~~~
+
+- **High: signature prefix forgery in every release up to and including 0.3.0**
+  (CWE-347). A signature on ``M`` also verified on a suffix of ``M`` without the
+  key, because the unsigned prefix-length byte moved bytes between message and
+  prefix. Fixed: the verifier requires the prefix length of its own hedging mode.
+  PyPI 0.1.0, 0.2.1 and 0.3.0 are affected: upgrade. See :doc:`guides/security`.
+
 Changed behaviour
 ~~~~~~~~~~~~~~~~~
 
@@ -17,6 +26,16 @@ Changed behaviour
   Use ``cnsa2.pqc_kem()`` / ``cnsa2.pqc_sign()`` for a compliant
   configuration. ``cnsa2.enforce()`` still guards the post-quantum parameter
   set by default; ``strict=True`` also refuses ``PARTIAL``.
+
+Documentation and packaging
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- New guides: upgrading, choosing, cookbook, interoperability, CNSA 2.0 and
+  standards, security model. Their Python examples are run by the test suite.
+- ``NOTICE`` and ``THIRD_PARTY_LICENSES.md`` (the wheels bundle liboqs);
+  ``SECURITY.md`` lists supported versions and both audits.
+- The 0.3.0 ML-KEM-768 decapsulation latency and CoV figures are flagged: the old
+  harness measured the implicit-rejection path. They are being re-measured.
 
 Fixed
 ~~~~~

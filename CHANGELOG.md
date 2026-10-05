@@ -4,6 +4,14 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+### Security
+
+- **High: signature prefix forgery, present in every release up to and including 0.3.0** (CWE-347). In hedged mode (the default) the signed bytes are `prefix || message` and the blob stored `len(prefix) || prefix || signature`, but the length byte is not signed and the verifier trusted it. Whoever supplied a signed message could move bytes between message and prefix, so a signature on `M` also verified on a suffix of `M`, without the key (`PAY alice 5 USD
+PAY mallory 1000000 USD
+` verified as `PAY mallory 1000000 USD
+`). Fixed: the verifier requires the prefix length of its own hedging mode. See `docs/guides/security.rst` and `tests/security/`. **Upgrade; 0.1.0, 0.2.1 and 0.3.0 on PyPI are affected.** The `-v2` format has no prefix at all.
+- Five further issues of lower severity (S2 to S6: context taken from the message, loose hybrid payloads, loose key loaders, untyped parse errors, AAD not checked by the opener) are listed under Fixed and Added below.
+
 ### ⚠ Changed behaviour
 
 - **Signatures made with `hedged=False` now need a verifier built with
@@ -84,6 +92,13 @@ All notable changes to quantum-safe are documented here.
   without this a signature made for one purpose verified for another.
   `JWTVerifier` and `HybridCertificateBuilder.verify_cosig` now pass their
   own context instead of reading it from the token or bundle.
+
+### Documentation and packaging
+
+- Six new guides (upgrading, choosing, cookbook, interoperability, CNSA 2.0 and standards, security model); every Python block in them is executed by `tests/unit/test_docs_examples.py`. README: what's new, a documentation map, corrected thread-safety, hedging and timing text.
+- `NOTICE` and `THIRD_PARTY_LICENSES.md` (the wheels bundle liboqs); `SECURITY.md` updated (supported versions, private reporting, both audits, no independent review).
+- `CITATION.cff` points at arXiv:2605.17061.
+- The README and benchmark text no longer present the 0.3.0 ML-KEM-768 decapsulation latency and CoV figures as normal-path measurements: the old harness shared one liboqs object, so decapsulation exercised the implicit-rejection path. The harness is fixed; the figures are being re-measured.
 
 ### Changed
 
