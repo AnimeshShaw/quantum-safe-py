@@ -1,0 +1,12 @@
+quantum-safe-py
+Copyright 2026 Animesh Shaw
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Binary wheels published on PyPI bundle a compiled copy of liboqs (Open Quantum Safe
+project), which is distributed under its own licence terms. See THIRD_PARTY_LICENSES.md
+for the components, their licences and where to read the upstream texts.
+
+This software is not validated under the NIST CAVP or CMVP programmes and carries no
+FIPS 140 certificate. References to FIPS 203, 204 and 205 and to CNSA 2.0 describe the
+algorithms and parameter sets implemented, not a certification.

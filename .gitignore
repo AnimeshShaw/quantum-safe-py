@@ -127,3 +127,8 @@ liboqs/
 # ---------------------------------------------------------------------------
 site/
 docs/_build/
+
+# local environments and scan output (must never reach an sdist)
+.ci_test_venv/
+audit.json
+audit.sarif

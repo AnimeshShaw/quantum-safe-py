@@ -34,6 +34,5 @@ preferred-citation:
     - family-names: Shaw
       given-names: Animesh
   year: 2026
-  url: "https://arxiv.org/abs/ARXIV_ID_PLACEHOLDER"
-  journal: "arXiv preprint arXiv:ARXIV_ID_PLACEHOLDER"
-  # TODO: replace ARXIV_ID_PLACEHOLDER with the assigned arXiv ID (e.g. 2505.12345)
+  url: "https://arxiv.org/abs/2605.17061"
+  journal: "arXiv preprint arXiv:2605.17061"
