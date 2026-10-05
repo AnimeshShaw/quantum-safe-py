@@ -109,8 +109,27 @@ class BenchResult:
         )
 
 
-def _bench(name: str, fn: Callable, iterations: int = 1000, warmup: int = 100) -> BenchResult:
+_DEFAULT_ITERATIONS = 1000
+
+
+def set_default_iterations(n: int) -> None:
+    """Make ``--iterations`` real: every benchmark that does not name its own count uses ``n``.
+
+    Before this existed the flag was parsed and then ignored, so every table that said "3,000
+    iterations" was measured with 1,000 (980 samples after the 1% trim).
+    """
+    global _DEFAULT_ITERATIONS
+    if n < 10:
+        raise ValueError("iterations must be at least 10")
+    _DEFAULT_ITERATIONS = n
+
+
+def _bench(
+    name: str, fn: Callable, iterations: int | None = None, warmup: int = 100
+) -> BenchResult:
     """Run fn() for warmup+iterations times, return timing stats."""
+    if iterations is None:
+        iterations = _DEFAULT_ITERATIONS
     # Force GC before benchmarking
     gc.collect()
     gc.disable()
@@ -642,6 +661,7 @@ def run_all(
     print("\n" + "=" * 80)
     print("quantum-safe benchmark suite")
     print("=" * 80)
+    set_default_iterations(iterations)
     print(f"Iterations: {iterations}  Warmup: 100  Outlier trim: 1%")
     print()
 
@@ -698,7 +718,7 @@ def run_all(
             from _provenance import environment
 
         payload = {
-            "metadata": {**environment(), "iterations": iterations, "with_pqc": with_pqc},
+            "metadata": {**environment(), "default_iterations": iterations, "with_pqc": with_pqc},
             "results": [r.to_dict(include_samples=raw_samples) for r in all_results],
         }
         with open(out_path, "w", encoding="utf-8") as f:

@@ -139,10 +139,25 @@ class BenchResult:
         )
 
 
+_DEFAULT_ITERATIONS = 1000
+
+
+def set_default_iterations(n: int) -> None:
+    """Make ``--iterations`` real: every benchmark that does not name its own count uses ``n``.
+
+    Before this existed the flag was parsed and then ignored, so every table that said "3,000
+    iterations" was measured with 1,000 (980 samples after the 1% trim).
+    """
+    global _DEFAULT_ITERATIONS
+    if n < 10:
+        raise ValueError("iterations must be at least 10")
+    _DEFAULT_ITERATIONS = n
+
+
 def _bench(
     name: str,
     fn: Callable,
-    iterations: int = 1000,
+    iterations: int | None = None,
     warmup: int = 100,
 ) -> BenchResult:
     """Time fn() for warmup+iterations iterations, returning trimmed stats.
@@ -152,6 +167,8 @@ def _bench(
     bench_kem.py and required for the paper's statistical methodology
     (Benchmark Methodology, §6 of paper outline).
     """
+    if iterations is None:
+        iterations = _DEFAULT_ITERATIONS
     gc.collect()
     gc.disable()
     try:
@@ -381,7 +398,7 @@ def _save_json(
     data: dict = {
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "harness": {
-            "iterations": iterations,
+            "default_iterations": iterations,
             "warmup": 100,
             "outlier_trim_pct": 1,
             "timer": "time.perf_counter",
@@ -431,6 +448,7 @@ def main() -> None:
         help="Also save every timed sample in the JSON (larger file; needed to recompute statistics)",
     )
     args = parser.parse_args()
+    set_default_iterations(args.iterations)
 
     print("=" * 70)
     print("quantum-safe Signature Benchmarks")
