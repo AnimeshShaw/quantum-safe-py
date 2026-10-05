@@ -4,6 +4,8 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-05
+
 ### Security
 
 - **High: signature prefix forgery, present in every release up to and including 0.3.0** (CWE-347). In hedged mode (the default) the signed bytes are `prefix || message` and the blob stored `len(prefix) || prefix || signature`, but the length byte is not signed and the verifier trusted it. Whoever supplied a signed message could move bytes between message and prefix, so a signature on `M` also verified on a suffix of `M`, without the key (`PAY alice 5 USD

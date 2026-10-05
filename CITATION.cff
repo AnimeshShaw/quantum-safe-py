@@ -10,8 +10,8 @@ authors:
   - family-names: Shaw
     given-names: Animesh
     email: animesh15b@iimk.edu.in
-version: "0.3.0"
-date-released: "2026-09-28"
+version: "0.3.1"
+date-released: "2026-10-05"
 url: "https://pypi.org/project/quantum-safe-py/"
 repository-code: "https://github.com/AnimeshShaw/quantum-safe-py"
 license: Apache-2.0

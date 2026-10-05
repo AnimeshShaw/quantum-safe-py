@@ -1,5 +1,7 @@
-Unreleased
-----------
+0.3.1
+-----
+
+*Released 2026-10-05.*
 
 Security
 ~~~~~~~~
