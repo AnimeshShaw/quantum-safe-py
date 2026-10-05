@@ -1,0 +1,300 @@
+{
+  "files": [
+    "results\\env1\\2026-10-06\\kem_run10.json",
+    "results\\env1\\2026-10-06\\kem_run11.json",
+    "results\\env1\\2026-10-06\\kem_run12.json",
+    "results\\env1\\2026-10-06\\kem_run13.json",
+    "results\\env1\\2026-10-06\\kem_run14.json",
+    "results\\env1\\2026-10-06\\kem_run15.json",
+    "results\\env1\\2026-10-06\\kem_run16.json",
+    "results\\env1\\2026-10-06\\kem_run2.json",
+    "results\\env1\\2026-10-06\\kem_run3.json",
+    "results\\env1\\2026-10-06\\kem_run4.json",
+    "results\\env1\\2026-10-06\\kem_run5.json",
+    "results\\env1\\2026-10-06\\kem_run6.json",
+    "results\\env1\\2026-10-06\\kem_run7.json",
+    "results\\env1\\2026-10-06\\kem_run8.json",
+    "results\\env1\\2026-10-06\\kem_run9.json"
+  ],
+  "discarded_first": true,
+  "metadata_of_first_file": {
+    "recorded_at": "2026-10-05T21:11:54.249121+00:00",
+    "python": "3.12.7",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "machine": "AMD64",
+    "cpu_model": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "cpu_affinity": null,
+    "liboqs": "0.15.0",
+    "git_commit": "6d11e3299e4d61e278f031b7fcccdff269e1dd2a",
+    "in_container": false,
+    "default_iterations": 3000,
+    "with_pqc": true
+  },
+  "rows": [
+    {
+      "name": "X25519 keygen",
+      "runs": 15,
+      "median_of_run_medians_us": 24.0,
+      "fastest_run_us": 23.1,
+      "slowest_run_us": 31.3,
+      "run_to_run_cov_pct": 12.1
+    },
+    {
+      "name": "X25519 DH exchange",
+      "runs": 15,
+      "median_of_run_medians_us": 23.2,
+      "fastest_run_us": 21.2,
+      "slowest_run_us": 28.3,
+      "run_to_run_cov_pct": 9.7
+    },
+    {
+      "name": "Ed25519 sign",
+      "runs": 15,
+      "median_of_run_medians_us": 24.1,
+      "fastest_run_us": 23.4,
+      "slowest_run_us": 30.1,
+      "run_to_run_cov_pct": 8.86
+    },
+    {
+      "name": "Ed25519 verify",
+      "runs": 15,
+      "median_of_run_medians_us": 64.9,
+      "fastest_run_us": 63.3,
+      "slowest_run_us": 75.75,
+      "run_to_run_cov_pct": 4.87
+    },
+    {
+      "name": "HybridKEM keygen (X25519+mock PQC)",
+      "runs": 15,
+      "median_of_run_medians_us": 35.1,
+      "fastest_run_us": 32.2,
+      "slowest_run_us": 43.8,
+      "run_to_run_cov_pct": 11.16
+    },
+    {
+      "name": "HybridKEM encapsulate (X25519+mock)",
+      "runs": 15,
+      "median_of_run_medians_us": 66.5,
+      "fastest_run_us": 65.1,
+      "slowest_run_us": 80.7,
+      "run_to_run_cov_pct": 6.94
+    },
+    {
+      "name": "HybridKEM decapsulate (X25519+mock)",
+      "runs": 15,
+      "median_of_run_medians_us": 61.0,
+      "fastest_run_us": 60.0,
+      "slowest_run_us": 78.4,
+      "run_to_run_cov_pct": 9.8
+    },
+    {
+      "name": "AES-256-GCM encrypt 1 KB",
+      "runs": 15,
+      "median_of_run_medians_us": 2.5,
+      "fastest_run_us": 2.1,
+      "slowest_run_us": 2.8,
+      "run_to_run_cov_pct": 10.38
+    },
+    {
+      "name": "AES-256-GCM encrypt 64 KB",
+      "runs": 15,
+      "median_of_run_medians_us": 13.2,
+      "fastest_run_us": 10.8,
+      "slowest_run_us": 14.0,
+      "run_to_run_cov_pct": 9.57
+    },
+    {
+      "name": "AES-256-GCM decrypt 1 KB",
+      "runs": 15,
+      "median_of_run_medians_us": 2.6,
+      "fastest_run_us": 1.9,
+      "slowest_run_us": 2.8,
+      "run_to_run_cov_pct": 11.39
+    },
+    {
+      "name": "HKDF-SHA256 (32B \u2192 32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 7.8,
+      "fastest_run_us": 6.8,
+      "slowest_run_us": 9.5,
+      "run_to_run_cov_pct": 12.84
+    },
+    {
+      "name": "Envelope.seal() 1KB (X25519+mock KEM)",
+      "runs": 15,
+      "median_of_run_medians_us": 95.7,
+      "fastest_run_us": 78.7,
+      "slowest_run_us": 106.0,
+      "run_to_run_cov_pct": 11.12
+    },
+    {
+      "name": "Envelope.open() 1KB (X25519+mock KEM)",
+      "runs": 15,
+      "median_of_run_medians_us": 75.4,
+      "fastest_run_us": 73.5,
+      "slowest_run_us": 97.0,
+      "run_to_run_cov_pct": 8.54
+    },
+    {
+      "name": "PublicKey.to_pem()",
+      "runs": 15,
+      "median_of_run_medians_us": 10.4,
+      "fastest_run_us": 10.1,
+      "slowest_run_us": 13.7,
+      "run_to_run_cov_pct": 8.39
+    },
+    {
+      "name": "PublicKey.from_pem()",
+      "runs": 15,
+      "median_of_run_medians_us": 10.1,
+      "fastest_run_us": 9.3,
+      "slowest_run_us": 11.5,
+      "run_to_run_cov_pct": 6.53
+    },
+    {
+      "name": "PublicKey.to_cbor()",
+      "runs": 15,
+      "median_of_run_medians_us": 3.8,
+      "fastest_run_us": 3.6,
+      "slowest_run_us": 4.6,
+      "run_to_run_cov_pct": 7.17
+    },
+    {
+      "name": "PublicKey.from_cbor()",
+      "runs": 15,
+      "median_of_run_medians_us": 2.8,
+      "fastest_run_us": 2.7,
+      "slowest_run_us": 3.7,
+      "run_to_run_cov_pct": 11.19
+    },
+    {
+      "name": "PublicKey.fingerprint()",
+      "runs": 15,
+      "median_of_run_medians_us": 1.2,
+      "fastest_run_us": 1.2,
+      "slowest_run_us": 1.5,
+      "run_to_run_cov_pct": 8.78
+    },
+    {
+      "name": "Concurrent Handshakes (100 users)",
+      "runs": 15,
+      "median_of_run_medians_us": 43525.1,
+      "fastest_run_us": 42428.55,
+      "slowest_run_us": 45943.0,
+      "run_to_run_cov_pct": 2.54
+    },
+    {
+      "name": "Concurrent Handshakes (500 users)",
+      "runs": 15,
+      "median_of_run_medians_us": 216537.75,
+      "fastest_run_us": 211631.35,
+      "slowest_run_us": 229789.45,
+      "run_to_run_cov_pct": 2.6
+    },
+    {
+      "name": "Concurrent Handshakes (1000 users)",
+      "runs": 15,
+      "median_of_run_medians_us": 433355.95,
+      "fastest_run_us": 426473.4,
+      "slowest_run_us": 457193.5,
+      "run_to_run_cov_pct": 2.14
+    },
+    {
+      "name": "Concurrent Handshakes (5000 users)",
+      "runs": 15,
+      "median_of_run_medians_us": 2206977.1,
+      "fastest_run_us": 2179702.5,
+      "slowest_run_us": 2352405.6,
+      "run_to_run_cov_pct": 2.34
+    },
+    {
+      "name": "Decomp \u2460 X25519 keygen",
+      "runs": 15,
+      "median_of_run_medians_us": 23.3,
+      "fastest_run_us": 23.2,
+      "slowest_run_us": 29.2,
+      "run_to_run_cov_pct": 6.95
+    },
+    {
+      "name": "Decomp \u2460 X25519 DH exchange",
+      "runs": 15,
+      "median_of_run_medians_us": 21.5,
+      "fastest_run_us": 21.3,
+      "slowest_run_us": 28.1,
+      "run_to_run_cov_pct": 9.9
+    },
+    {
+      "name": "Decomp \u2461 ML-KEM-768 keygen",
+      "runs": 15,
+      "median_of_run_medians_us": 55.7,
+      "fastest_run_us": 54.7,
+      "slowest_run_us": 67.2,
+      "run_to_run_cov_pct": 6.27
+    },
+    {
+      "name": "Decomp \u2461 ML-KEM-768 encapsulate",
+      "runs": 15,
+      "median_of_run_medians_us": 55.8,
+      "fastest_run_us": 55.1,
+      "slowest_run_us": 69.1,
+      "run_to_run_cov_pct": 7.21
+    },
+    {
+      "name": "Decomp \u2461 ML-KEM-768 decapsulate",
+      "runs": 15,
+      "median_of_run_medians_us": 24.7,
+      "fastest_run_us": 24.5,
+      "slowest_run_us": 27.9,
+      "run_to_run_cov_pct": 4.37
+    },
+    {
+      "name": "Decomp \u2462 HybridKEM keygen      (full)",
+      "runs": 15,
+      "median_of_run_medians_us": 135.2,
+      "fastest_run_us": 131.7,
+      "slowest_run_us": 143.9,
+      "run_to_run_cov_pct": 2.98
+    },
+    {
+      "name": "Decomp \u2462 HybridKEM encapsulate (full)",
+      "runs": 15,
+      "median_of_run_medians_us": 180.2,
+      "fastest_run_us": 176.8,
+      "slowest_run_us": 200.1,
+      "run_to_run_cov_pct": 3.2
+    },
+    {
+      "name": "Decomp \u2462 HybridKEM decapsulate (full)",
+      "runs": 15,
+      "median_of_run_medians_us": 124.7,
+      "fastest_run_us": 122.2,
+      "slowest_run_us": 159.8,
+      "run_to_run_cov_pct": 8.57
+    },
+    {
+      "name": "HybridKEM keygen (Real ML-KEM-768)",
+      "runs": 15,
+      "median_of_run_medians_us": 137.7,
+      "fastest_run_us": 132.9,
+      "slowest_run_us": 152.9,
+      "run_to_run_cov_pct": 4.88
+    },
+    {
+      "name": "HybridKEM encapsulate (Real ML-KEM-768)",
+      "runs": 15,
+      "median_of_run_medians_us": 180.7,
+      "fastest_run_us": 176.0,
+      "slowest_run_us": 197.05,
+      "run_to_run_cov_pct": 3.09
+    },
+    {
+      "name": "HybridKEM decapsulate (Real ML-KEM-768)",
+      "runs": 15,
+      "median_of_run_medians_us": 123.8,
+      "fastest_run_us": 122.2,
+      "slowest_run_us": 151.9,
+      "run_to_run_cov_pct": 5.86
+    }
+  ]
+}

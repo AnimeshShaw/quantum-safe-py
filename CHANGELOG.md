@@ -4,6 +4,11 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+### Benchmarks
+
+- Re-measured with raw samples: the ENV-2 and ENV-1 runs and the two-class leakage screen are in `results/` (see `results/README.md`). `--iterations` is now honoured by `bench_kem.py` and `bench_signatures.py` (it was parsed and ignored, so every earlier "3,000 iterations" table was measured with 1,000), the harnesses save every timed sample and the run environment, and `tests/bench/paper_numbers.py` computes every figure the papers print from those files. New: `bench_gil.py` (thread-scaling test with a pure-Python negative control), `aggregate_runs.py`, `run_env1.sh`, `run_env2.sh`.
+- The Docker benchmark image builds again (the 0.3.2 licence files had not been copied into it) and has a `.dockerignore`.
+
 ## [0.3.2] - 2026-10-05
 
 ### Fixed
