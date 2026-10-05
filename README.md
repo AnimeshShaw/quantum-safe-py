@@ -785,6 +785,12 @@ black src/ tests/
 
 ---
 
+## Independent review wanted
+
+No part of this library has had an independent cryptographic review, and the second internal audit found a High-severity flaw that had shipped in every release up to 0.3.0. [REVIEW_WANTED.md](REVIEW_WANTED.md) lists exactly which constructions need a second pair of eyes (the `-v2` signature format, the hybrid KEM combiner and the envelope first), where they are in the code, what claim to check, and what a useful review looks like. Partial reviews are welcome.
+
+---
+
 ## Cite this work
 
 If you use quantum-safe-py in research or build on the methodology, please cite the accompanying paper:

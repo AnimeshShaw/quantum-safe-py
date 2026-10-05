@@ -29,7 +29,9 @@ The theme is "make the safe thing the only thing".
 - Benchmarks and timing-leakage figures **re-measured** with raw samples published, on more than
   one machine. The 0.3.0 decapsulation row is known to be wrong (it measured the
   implicit-rejection path); it is flagged now and will be replaced.
-- An **independent review** of the `-v2` signature format and the streaming construction. We say
+- An **independent review** of the constructions we built on top of liboqs and pyca/cryptography:
+  the `-v2` signature format, the hybrid KEM combiner and the envelope first. Exactly what needs
+  reviewing, where, and what a useful review is: [REVIEW_WANTED.md](REVIEW_WANTED.md). We say
   "not independently reviewed" until this happens.
 - Matching release of [quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts) so both
   libraries change defaults together.

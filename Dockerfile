@@ -35,7 +35,9 @@ WORKDIR /app
 # requirements to build wheel" and the image cannot be built at all. That broke
 # when the liboqs vendoring hook was introduced, and with it the claim that every
 # published number is reproducible from a single Docker command.
-COPY pyproject.toml README.md hatch_build.py ./
+# THIRD_PARTY_LICENSES.md and licenses/ are listed in pyproject.toml's wheel force-include, so the build fails without them.
+COPY pyproject.toml README.md hatch_build.py THIRD_PARTY_LICENSES.md ./
+COPY licenses/ licenses/
 COPY src/ src/
 
 # oqs-python will now find liboqs.so at /usr/local/lib and skip the auto-installer.
