@@ -12,6 +12,7 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
 [![Roadmap](https://img.shields.io/badge/roadmap-0.4.0-blue.svg)](ROADMAP.md)
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/2605.17061)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008259.svg)](https://doi.org/10.5281/zenodo.23008259)
 
 ---
 
@@ -799,6 +800,10 @@ If you use quantum-safe-py in research or build on the methodology, please cite 
   url       = {https://arxiv.org/abs/2605.17061}
 }
 ```
+
+To cite the software itself, use the Zenodo concept DOI
+[10.5281/zenodo.23008259](https://doi.org/10.5281/zenodo.23008259), which always resolves to the
+latest release; for an exact version use that release's own DOI from the same page.
 
 A machine-readable [CITATION.cff](CITATION.cff) is also provided for GitHub's
 "Cite this repository" button.

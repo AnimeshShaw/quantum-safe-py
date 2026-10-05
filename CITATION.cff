@@ -13,6 +13,10 @@ authors:
 version: "0.3.2"
 date-released: "2026-10-05"
 url: "https://pypi.org/project/quantum-safe-py/"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23008259
+    description: Zenodo concept DOI (resolves to the latest release; each release also has its own version DOI)
 repository-code: "https://github.com/AnimeshShaw/quantum-safe-py"
 license: Apache-2.0
 keywords:
