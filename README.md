@@ -166,6 +166,8 @@ recommends hybrid classical + PQC. This library makes hybrid the default so you
 have to explicitly opt out, not in.
 
 ```python
+from quantum_safe import HybridKEM, KEM
+
 # Default: X25519 + ML-KEM-768 (hybrid)
 kem = HybridKEM()
 
@@ -181,10 +183,14 @@ kem = HybridKEM(classical="X25519", pqc="ML-KEM-1024")
 Raw bytes are never returned from key operations. Every output is a distinct type:
 
 ```python
-kp:  KeyPair         # contains .public (PublicKey) and .secret (SecretKey)
-ct:  HybridCipherText  # ciphertext — pass to decapsulate()
-ss:  SharedSecret    # 32 bytes — call ss.derive_key() to get AES keys
-sm:  SignedMessage   # message + signature + metadata — self-contained
+from quantum_safe import HybridKEM, HybridSign
+
+kem, signer = HybridKEM(), HybridSign()
+kp = kem.generate_keypair()          # KeyPair: .public (PublicKey) and .secret (SecretKey)
+ct, ss = kem.encapsulate(kp.public)  # HybridCipherText, then SharedSecret (call ss.derive_key())
+sig_kp = signer.generate_keypair()
+sm = signer.sign(b"message", sig_kp.secret, context=b"readme")  # SignedMessage: message, signature, metadata
+print(type(kp).__name__, type(ct).__name__, type(ss).__name__, type(sm).__name__)
 ```
 
 This prevents the class of bug where you accidentally pass a `SharedSecret`
@@ -196,6 +202,10 @@ Every key carries its algorithm name, migration state, and supports multiple
 serialization formats:
 
 ```python
+from quantum_safe import HybridKEM
+from quantum_safe.types import PublicKey
+
+kp = HybridKEM().generate_keypair()
 pub = kp.public
 print(pub.algorithm)         # "X25519+ML-KEM-768"
 print(pub.migration_state)   # MigrationState.HYBRID_TRANSITION
@@ -218,7 +228,7 @@ pub4 = PublicKey.from_jwk(jwk)
 
 ```python
 from quantum_safe import HybridKEM
-from quantum_safe.protocols import Envelope
+from quantum_safe.protocols import Envelope, SealedMessage
 
 # Option 1: Low-level (you manage the shared secret)
 kem  = HybridKEM()
@@ -240,7 +250,7 @@ wire   = sealed.to_bytes()   # or .to_hex()
 sealed = SealedMessage.from_bytes(wire)  # or .from_hex()
 
 # With authenticated metadata (visible but authenticated)
-sealed = Envelope.seal(b"payload", pub, aad=b"recipient-id:user-42")
+sealed = Envelope.seal(b"payload", kp.public, aad=b"recipient-id:user-42")
 
 # On open, state the AAD you expect: a message sealed for another context
 # (user, record) will not open here. Envelopes do not authenticate the sender.
@@ -286,7 +296,10 @@ See Key Encapsulation section above.
 ### JWT (PQC-aware)
 
 ```python
+from quantum_safe import HybridSign
 from quantum_safe.protocols.jwt import JWTSigner, JWTVerifier
+
+keypair = HybridSign().generate_keypair()
 
 # Sign
 signer = JWTSigner(keypair, issuer="auth.myapp.com")
@@ -337,6 +350,8 @@ cert_pem, cosig_bundle = builder.build()
 ### Scan a codebase for classical crypto
 
 ```python
+import sys
+
 from quantum_safe.migrate import Scanner
 
 report = Scanner.scan_directory("./src")
@@ -355,7 +370,15 @@ if report.has_blocking_findings:
 ### Upgrade an existing key to hybrid
 
 ```python
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
+
 from quantum_safe.migrate import Upgrader
+
+# Stand-in for your existing key; in real use, load the raw bytes you already have.
+existing = X25519PrivateKey.generate()
+x25519_private_bytes = existing.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+x25519_public_bytes = existing.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
 
 result = Upgrader.upgrade_kem_key(
     classical_secret_bytes=x25519_private_bytes,  # your existing X25519 key
@@ -396,6 +419,8 @@ print(mgr.migration_progress())
 ### CI audit gate
 
 ```python
+import sys
+
 from quantum_safe.audit import Auditor, AuditPolicy
 
 # Returns 0 (pass) or 1 (fail) — use directly in CI
