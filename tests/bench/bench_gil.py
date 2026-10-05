@@ -83,6 +83,22 @@ def _oqs_worker() -> Callable[[int], None]:
     return work
 
 
+def _oqs_sign_worker() -> Callable[[int], None]:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import oqs
+
+    signer = oqs.Signature("ML-DSA-65")
+    signer.generate_keypair()
+    msg = b"x" * 32
+
+    def work(n: int) -> None:
+        for _ in range(n):
+            signer.sign(msg)
+
+    return work
+
+
 def _hybrid_worker() -> Callable[[int], None]:
     from quantum_safe.kem.hybrid import HybridKEM
 
@@ -100,6 +116,7 @@ def _hybrid_worker() -> Callable[[int], None]:
 WORKLOADS = {
     "python busy loop (negative control)": _busy_worker,
     "liboqs ML-KEM-768 decapsulate": _oqs_worker,
+    "liboqs ML-DSA-65 sign (longer call)": _oqs_sign_worker,
     "HybridKEM encapsulate+decapsulate": _hybrid_worker,
 }
 
