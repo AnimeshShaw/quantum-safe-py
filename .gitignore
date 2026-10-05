@@ -132,3 +132,6 @@ docs/_build/
 .ci_test_venv/
 audit.json
 audit.sarif
+
+# raw benchmark logs carry local paths; the JSON next to them has the data
+results/**/*.log
