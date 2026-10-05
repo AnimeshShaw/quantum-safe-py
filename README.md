@@ -58,6 +58,57 @@ signer.verify(sm, kp.public, context=b"myapp-v1")  # raises VerificationError if
 
 ---
 
+## What's new in 0.3.1
+
+0.3.1 is a security and quality release. **Nothing 0.3.0 wrote stops working**;
+the library now refuses input it should never have accepted and asks verifiers
+to state what they expect. Start with the
+[upgrade guide](docs/guides/upgrading.rst).
+
+**Security fixes**
+- **Signature prefix forgery (High; every release up to 0.3.0).** The unsigned
+  prefix-length byte let bytes be moved between a signed message and its prefix.
+  Verifiers now require the prefix length of their own hedging mode.
+- `verify(..., context=...)` and `Envelope.open(..., expected_aad=...)`: the
+  verifier states the context or AAD it expects.
+- Strict key and message loaders with one typed error (`KeyParseError`); exact
+  hybrid signature payloads.
+
+**New**
+- **`-v2` signatures** (`Sign("ML-DSA-65-v2")`, `HybridSign("Ed25519",
+  "ML-DSA-65-v2")`): no prefix, plain FIPS 204 with a native context,
+  byte-compatible with quantum-safe-ts.
+- **Envelope v2**: sealing to a pure `ML-KEM-1024` key derives with HKDF-SHA-384
+  (the CNSA 2.0 profile).
+- **`StandardJwt`** (RFC 9964): tokens any JOSE library can verify.
+- **Compare-and-set migration store**: safe across processes, no external lock.
+- A leakage harness with a **positive control** and public-data calibrations.
+- CNSA 2.0 report: every hybrid is `PARTIAL` (NSA's FAQ does not call a hybrid
+  compliant); a key-derivation row; `cnsa2.pqc_kem()` / `cnsa2.pqc_sign()`.
+
+---
+
+## Documentation
+
+Full documentation: <https://quantum-safe-py.readthedocs.io/en/latest/>.
+
+| If you want to... | Read |
+|---|---|
+| Try it in five minutes | [Quick start](docs/guides/quickstart.rst) |
+| Pick the right algorithm, format and token | [Choosing what to use](docs/guides/choosing.rst) |
+| Copy a working recipe (encrypt a file, sign a release, rotate keys...) | [Cookbook](docs/guides/cookbook.rst) |
+| Understand keys, contexts, hedging, formats | [Concepts](docs/guides/concepts.rst) |
+| Upgrade from 0.3.0 | [Upgrading to 0.3.1](docs/guides/upgrading.rst) |
+| Exchange data with Node.js, browsers or other ecosystems | [Interoperability](docs/guides/interop.rst) |
+| Check CNSA 2.0 parameters | [CNSA 2.0 and standards](docs/guides/compliance.rst) |
+| Understand the threat model, report a vulnerability | [Security model](docs/guides/security.rst) |
+| Migrate a fleet of keys | [Migration](docs/guides/migration.rst) |
+
+The TypeScript counterpart, byte-compatible with this library, is
+[quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts).
+
+---
+
 ## Installation
 
 ### Core (classical crypto only, no PQC backend required)
@@ -527,15 +578,22 @@ the result, preventing timing oracles that would reveal which component failed.
 The underlying liboqs implementations are designed for constant-time operation.
 
 Two distinct measurements back this, and it matters which one you're reading:
-CoV (Coefficient of Variation, ~3.9% for ML-KEM-768 decapsulation in ENV-2,
-within the AES-256-GCM noise floor) is computed with the secret held fixed, so
-it shows timing *stability under repetition* — not secret independence.
-A separate fixed-vs-random test with a random-vs-random control (needed to
-rule out measurement artifacts — see `docs/guides/benchmarks.rst`) shows no
-key-dependent timing in ML-KEM decapsulation, the implicit-rejection path, or
-the hybrid combiner, across two environments. Neither is a formal
-constant-time proof; `dudect` or `ct-verif` against the compiled backend
-would be. See the companion timing-leakage paper for the full methodology.
+CoV (Coefficient of Variation) is computed with the secret held fixed, so it
+shows timing *stability under repetition* — not secret independence.
+A separate fixed-vs-random test needs controls to be interpretable: a
+random-vs-random control, and (new in 0.3.1) a public-data calibration and a
+positive control that reports the smallest deliberate leak the harness
+detects. Without them, a fixed-vs-random signal can be a measurement artifact:
+on the development host, encapsulation, which uses no secret, reproduces the
+fixed-vs-random decapsulation signal. See `docs/guides/benchmarks.rst`.
+The harness screens for gross secret dependence; it is not a formal
+constant-time proof (`dudect` or `ct-verif` against the compiled backend
+would be), and everything is measured through the Python binding.
+
+> The ML-KEM-768 decapsulation CoV and latency figures published for 0.3.0
+> were measured with a harness defect that made decapsulation exercise the
+> implicit-rejection path (see `CHANGELOG.md`). The harness is fixed and the
+> figures are being re-measured; do not rely on the old decapsulation row.
 
 ### Serialization safety
 
@@ -546,11 +604,14 @@ rejected immediately to prevent version-rollback attacks.
 
 ### Thread safety
 
-`MigrationStateManager.transition()` holds a per-key `threading.Lock` across
-the read-check-write critical section.  For multi-process deployments (e.g.
-multiple Gunicorn workers sharing a Redis store) you must additionally acquire
-an external distributed lock (Redis `SETNX`, database row-level lock) on the
-`key_id` before calling `transition()`.
+`MigrationStateManager` is safe across processes and hosts when its store has
+a `compare_and_set(key, expected, value) -> bool` method (`MemoryMigrationStore`
+is the in-process reference; `manager.cross_process_safe` tells you which mode
+you are in): exactly one concurrent writer wins, with no external lock. With a
+plain dict it holds a per-key `threading.Lock`, which covers threads in **one
+process only**; with several workers sharing a store (e.g. Gunicorn and Redis)
+you must hold an external distributed lock on the `key_id` around
+`transition()`. See `docs/guides/migration.rst`.
 
 ### Hedged signing
 
@@ -558,6 +619,19 @@ an external distributed lock (Redis `SETNX`, database row-level lock) on the
 is prepended before signing.  This prevents fault-injection attacks that have
 been demonstrated on lattice signatures in lab conditions.  Opt out with
 `hedged=False` only if you have a specific need for deterministic signatures.
+
+**A verifier accepts only signatures made in its own hedging mode** (the prefix
+length is not covered by the signature, so it is not read from it). Build the
+verifier with the signer's `hedged` value and use one mode per key. The `-v2`
+signature format has no prefix and no hedging mode.
+
+### Verify with the context you expect
+
+`verify(sm, public_key, context=...)` and `Envelope.open(sealed, secret_key,
+expected_aad=...)` state what the verifier expects. The context and AAD carried
+inside a message come from whoever supplied it, so without these a signature
+made for one purpose verifies for another and a ciphertext sealed for one
+record opens for another. Omitting them is deprecated in 0.3.1.
 
 ### Hybrid mode rationale
 
