@@ -28,23 +28,24 @@ the OS scheduler. **ENV-2 (Docker/Linux) is the primary reference** for paper cl
      - ENV-1 — Windows 11 Native
      - ENV-2 — Docker / WSL2 Linux (Primary)
    * - OS
-     - Windows 11 Home 10.0.26200
-     - Linux 6.6.87.2-microsoft-standard-WSL2 (Hyper-V)
+     - Windows 11 Home 10.0.26300
+     - Linux 6.18.33.2-microsoft-standard-WSL2 (Hyper-V)
    * - Python
      - 3.12.7
-     - 3.12.13 (python:3.12-slim)
+     - 3.12.14 (python:3.12-slim)
    * - liboqs
      - 0.15.0 MSYS2 DLL (generic build)
      - 0.15.0 compiled from source (``-DOQS_DIST_BUILD=ON``)
    * - Scheduler noise
      - 15.6 ms NT timer resolution inflates CoV
-     - WSL2 vCPU adds ~2–4% CoV above bare-metal Linux
+     - Virtualised; see the paper's limitations
 
 .. note::
 
    The from-source Docker build enables AVX2/AVX-512 CPUID detection at runtime
-   (``-DOQS_DIST_BUILD=ON``), giving ML-KEM-768 keygen a **5.3× speedup** over the
-   Windows MSYS2 DLL.  CoV analysis in the paper uses ENV-2 values exclusively.
+   (``-DOQS_DIST_BUILD=ON``). ML-KEM-768 keygen is **6.4× faster** here than on the Windows MSYS2 DLL, which is
+   consistent with the build difference but does not isolate it (the OS, timer and container also differ).
+   CoV analysis in the paper uses ENV-2 values exclusively.
 
 ----
 
@@ -205,50 +206,50 @@ constant-time. An operation whose CoV sits near AES-GCM's CoV shows timing
 stability comparable to a known-safe reference — informative, but not by
 itself evidence about secret dependence.
 
-**ENV-2 (Docker/WSL2) noise floor: ~2.1%** — AES-256-GCM 1 KB encrypt.
-Operations within ~2% CoV are timing-stable. The paper uses this per-environment
-floor rather than a fixed global threshold, since the WSL2 hypervisor adds
-residual jitter above bare-metal Linux (~0.5–1.5%).
+**ENV-2 (Docker/WSL2) noise floor: about 3.0%** — AES-256-GCM 1 KB encrypt, median of per-run CoV.
+We report each operation's CoV and its distance from that floor and do not classify
+operations as stable or unstable: the floor itself moves between measurement sessions.
 
-.. list-table:: ENV-2 CoV reference values (2026-03-28)
+.. list-table:: ENV-2 CoV reference values (2026-10-06; median of per-run CoV over 15 runs)
    :header-rows: 1
    :widths: 40 15 45
 
    * - Operation
      - CoV
-     - Assessment
+     - Note
    * - AES-256-GCM 1 KB (baseline)
-     - 2.1%
-     - Noise floor — constant-time reference
-   * - Ed25519 verify
-     - 2.2%
-     - ✓ Timing-stable
-   * - PublicKey.fingerprint()
-     - 2.0%
-     - ✓ Timing-stable
+     - 3.0%
+     - Noise floor reference
    * - HKDF-SHA256
-     - 2.8%
-     - ✓ Within noise floor
-   * - ML-KEM-768 encapsulate
-     - 9.4%
-     - WSL2 vCPU scheduler noise; no secret-dep. branching in FIPS 203
+     - 3.6%
+     - Near the floor
+   * - Ed25519 verify
+     - 5.4%
+     - Near the floor
+   * - ML-KEM-768 keygen / encapsulate
+     - 6.3% / 6.6%
+     - Above the floor; not isolated
+   * - ML-KEM-768 decapsulate
+     - 9.8%
+     - Above the floor; not isolated
+   * - HybridKEM keygen / encap / decap
+     - 16% / 15% / 15%
+     - Python layer and scheduler
    * - ML-DSA-65 sign
-     - 52.4%
-     - ✓ Expected — FIPS 204 hedged signing randomness
+     - 54.0%
+     - Expected: FIPS 204 rejection sampling
 
-.. warning::
+.. note::
 
-   The ML-KEM-768 *decapsulation* latency and CoV figures (3.9%) that earlier
-   releases published were measured with a harness that shared one liboqs object
-   across operations, so decapsulation ran the implicit-rejection path instead of
-   normal decapsulation. The harness is fixed (each operation has its own object
-   and the key/ciphertext pair is checked before timing); the figures are being
-   re-measured and the old decapsulation row should not be relied on. The other
-   rows in this table are unaffected by that defect but are best-of-three
-   measurements from March 2026 (about 8% optimistic on average against the
-   median of three).
+   Earlier releases published an ML-KEM-768 decapsulation latency and CoV (3.9%) that were measured with a
+   harness that shared one liboqs object across operations, so decapsulation ran the implicit-rejection path.
+   They also reported the fastest of three runs, and the ``--iterations`` flag was ignored (every table said 3,000
+   iterations but 1,000 were measured). All three are fixed. The table above comes from one discarded warm-up run
+   plus 15 timed runs of 3,000 iterations, with every sample archived under ``results/``; on this machine,
+   decapsulation is now 10.7 µs against 9.9 µs for encapsulation. Absolute figures also
+   differ between sessions on the same host, so quote them with their range.
 
-**Why ML-DSA sign has high CoV (~52%)**
+**Why ML-DSA sign has high CoV (~54%)**
 
 ML-DSA-65 (FIPS 204) uses *hedged signing*: a fresh 32-byte random string
 is generated per signing call and mixed into the lattice rejection-sampling

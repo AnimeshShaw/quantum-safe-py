@@ -62,7 +62,7 @@ Documentation and packaging
 - ``NOTICE`` and ``THIRD_PARTY_LICENSES.md`` (the wheels bundle liboqs);
   ``SECURITY.md`` lists supported versions and both audits.
 - The 0.3.0 ML-KEM-768 decapsulation latency and CoV figures are flagged: the old
-  harness measured the implicit-rejection path. They are being re-measured.
+  harness measured the implicit-rejection path. They were re-measured on 2026-10-06.
 
 Fixed
 ~~~~~

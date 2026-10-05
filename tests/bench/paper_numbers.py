@@ -179,6 +179,7 @@ def throughput(kem) -> dict[str, Any]:
     for users in (100, 500, 1000, 5000):
         s = row_stats(kem, f"Concurrent Handshakes ({users} users)")
         out[str(users)] = {
+            "cov_in_run": s["cov_in_run"],
             "median_ms": s["median"] / 1000.0,
             "p95_ms": s["p95"] / 1000.0,
             "ops_per_s": users / (s["median"] / 1e6),
@@ -222,6 +223,27 @@ def build(env2: str, env1: str | None) -> dict[str, Any]:
             )
         },
     }
+    hs_sig = [
+        sum(v)
+        for v in zip(
+            per_run(sig, "HybridSign keygen (Ed25519+ML-DSA-65)"),
+            per_run(sig, "HybridSign sign (32B)"),
+            per_run(sig, "HybridSign verify (32B)"),
+        )
+    ]
+    result["hybrid_sign_total"] = summarise(hs_sig)
+    ml = result["signatures"]["ML-DSA-65 sign (32B)"]
+    result["mldsa_sign_p95_over_median"] = ml["p95"] / ml["median"]
+    # what one thread could do serially: each "user" in the concurrency test does encapsulate + decapsulate
+    serial = [1e6 / (e + d) for e, d in zip(per_run(kem, K["h_en"]), per_run(kem, K["h_de"]))]
+    result["serial_users_per_s"] = summarise(serial)
+    try:
+        from scipy import stats as _stats  # optional; only for the p-value text
+
+        w = result["decomposition"]["welch_run_level"]
+        w["p_two_sided"] = float(2 * _stats.t.sf(abs(w["t"]), w["df"]))
+    except ImportError:
+        pass
     tls = result["decomposition"]["handshake_overhead"]["median"]
     result["tls_budget"] = {
         "hybrid_overhead_us": tls,

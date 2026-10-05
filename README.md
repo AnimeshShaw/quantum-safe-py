@@ -636,7 +636,8 @@ would be), and everything is measured through the Python binding.
 > The ML-KEM-768 decapsulation CoV and latency figures published for 0.3.0
 > were measured with a harness defect that made decapsulation exercise the
 > implicit-rejection path (see `CHANGELOG.md`). The harness is fixed and the
-> figures are being re-measured; do not rely on the old decapsulation row.
+> figures are superseded: the benchmarks were re-run on 2026-10-06 with the harness fixed (one warm-up run plus
+> 15 timed runs, raw samples in `results/`), and `--iterations`, which the old harness ignored, now works.
 
 ### Serialization safety
 
