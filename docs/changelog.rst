@@ -42,6 +42,7 @@ Documentation and packaging
 Fixed
 ~~~~~
 
+- The registry listed ``BIKE-L1``'s secret key as 3114 bytes; liboqs produces 5223.
 - The signature prefix length must match the verifier's hedging mode (32 bytes
   hedged, 0 unhedged). It was read from the signature blob, where it is not
   covered by the signature, so bytes could be moved between prefix and

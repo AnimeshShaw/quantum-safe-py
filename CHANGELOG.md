@@ -36,6 +36,7 @@ PAY mallory 1000000 USD
 
 ### Fixed
 
+- The registry listed `BIKE-L1`'s secret key as 3114 bytes; liboqs produces 5223. Found by the registry-size test on a liboqs build that enables BIKE.
 - Signature verification now requires the signature prefix length to match
   the verifier's hedging mode (`hedged=True`, the default: 32 bytes;
   `hedged=False`: 0). Previously the length was read from the signature
