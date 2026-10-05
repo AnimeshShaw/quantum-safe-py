@@ -779,10 +779,10 @@ def positive_control_sensitivity(
     """Run the same two-class harness on an operation that really leaks.
 
     Baseline: BOTH classes cycle pools of random keys (the random-vs-random
-    arrangement, which carries no fixed-key artifact). Class A does a plain
-    ML-KEM-768 decapsulation. Class B does the same decapsulation and then spins
-    for ``magnitude`` microseconds when a per-key "secret" bit is set (half of its
-    keys), so the true mean difference is ``magnitude / 2``. A magnitude of 0 is
+    arrangement, which carries no fixed-key artifact). Both classes do an
+    ML-KEM-768 decapsulation and then, when a per-key "secret" bit is set (half of
+    the keys), spin: class A for 0 microseconds, class B for ``magnitude``
+    microseconds (identical code path, so a magnitude of 0 differs in nothing), so the true mean difference is ``magnitude / 2``. A magnitude of 0 is
     included as a zero point: it must NOT be flagged, otherwise the baseline is
     contaminated and the other rows mean nothing.
 
@@ -801,10 +801,15 @@ def positive_control_sensitivity(
     out: list[LeakageResult] = []
     try:
         for magnitude in magnitudes:
-
+            # Both classes run the SAME code path, branch and busy-wait call included;
+            # only the requested delay differs (0 for class A). Otherwise the zero point
+            # would measure the cost of the extra clock read, not the absence of a leak:
+            # a CI runner with fast, steady timing resolved that ~0.1 us as |t| 10-17.
             def do_a(i: int) -> None:
                 kem, ct = pool_a[i % pool_size]
                 kem.decap_secret(ct)
+                if secret_bits[i % pool_size]:
+                    _spin_us(0.0)
 
             def do_b(i: int, magnitude: float = magnitude) -> None:
                 kem, ct = pool_b[i % pool_size]
