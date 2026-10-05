@@ -17,9 +17,14 @@ installs; check `pip show` for yours.
 ## Obligation when redistributing the wheels
 
 The MIT licence requires that the copyright notice and permission notice travel with copies
-of the software. The liboqs notices are therefore part of what you must keep if you
-redistribute a binary wheel. Before each release the maintainer verifies that the wheel
-carries the liboqs licence text (see `paper/DEFERRED_WORK.md`, item D12).
+of the software. From 0.3.2 the wheels carry the liboqs licence text at
+`quantum_safe/_licenses/liboqs-LICENSE.txt` (a verbatim copy of liboqs's `LICENSE.txt`, also in
+this repository under `licenses/`) and this file at `quantum_safe/_licenses/THIRD_PARTY_LICENSES.md`.
+Releases 0.3.1 and earlier did not include the liboqs text in the wheels.
+
+liboqs states that it also contains third-party code licensed differently, with the applicable
+licence in the corresponding subfolder of its source tree. Those per-algorithm licences are in
+the liboqs repository at the tag your wheel was built from; this package does not copy them.
 
 ## Specifications
 

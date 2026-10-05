@@ -1,3 +1,28 @@
+0.3.2
+-----
+
+*Released 2026-10-05.*
+
+Fixed
+~~~~~
+
+- ``Sign.verify_raw()`` now verifies standard FIPS 204 ML-DSA signatures. It verified
+  ``len(context) || context || message`` under an empty FIPS 204 context and so rejected
+  every signature made elsewhere. **Behaviour change:** it no longer verifies the raw
+  part of a ``Sign.sign()`` signature; use ``verify()``. (GitHub issues #1 and #2.)
+
+Packaging
+~~~~~~~~~
+
+- The wheels carry the liboqs licence text and ``THIRD_PARTY_LICENSES.md`` (the bundled
+  compiled liboqs is MIT-licensed; 0.3.1 and earlier omitted its notice).
+
+Added
+~~~~~
+
+- ``Sign.sign_raw()``: standard FIPS 204 ``ML-DSA.Sign`` with a native context and
+  FIPS 204's own hedged randomness; returns the bare signature.
+
 0.3.1
 -----
 

@@ -77,3 +77,5 @@ and a CI-ready audit scanner — all in one library.
 
    guides/upgrading
    changelog
+   Roadmap <https://github.com/AnimeshShaw/quantum-safe-py/blob/master/ROADMAP.md>
+   Security policy <https://github.com/AnimeshShaw/quantum-safe-py/blob/master/SECURITY.md>

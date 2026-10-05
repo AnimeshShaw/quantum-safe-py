@@ -36,6 +36,12 @@ prepared and released before public disclosure, and a GitHub Security Advisory
 We follow [coordinated disclosure](https://cheatsheetseries.owasp.org/cheatsheets/Vulnerability_Disclosure_Cheat_Sheet.html):
 we ask that you give us 90 days to patch before publishing details.
 
+## Published advisories
+
+| Advisory | Affected | Fixed in | Summary |
+|---|---|---|---|
+| [GHSA-wqv6-gm9x-69x8](https://github.com/AnimeshShaw/quantum-safe-py/security/advisories/GHSA-wqv6-gm9x-69x8) | 0.1.0 to 0.3.0 | 0.3.1 | Signature prefix forgery: a signature also verifies for a suffix of the signed message (High) |
+
 ## Security audits
 
 - v0.1.0: an internal audit completed on 2026-04-12; all 14 findings (3 HIGH, 7 MEDIUM,

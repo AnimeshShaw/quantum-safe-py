@@ -115,6 +115,35 @@ another.  Calling ``verify()`` without ``context=`` still works in this
 release but emits a ``DeprecationWarning``; it will be required (default
 ``b""``) in the next minor release.
 
+Standard FIPS 204 signatures (interoperating with other libraries)
+-------------------------------------------------------------------
+
+``sign()``, the default hedging and the ``-v2`` format are this library's own
+constructions: a signature from them is not a plain ``ML-DSA.Sign(sk, message, ctx)``
+and another ML-DSA implementation cannot verify it from the message and context alone.
+When the other side is a standard FIPS 204 implementation, use the raw pair, which
+passes your message and context to ML-DSA unchanged and returns only the signature:
+
+.. code-block:: python
+
+   from quantum_safe import Sign
+
+   signer = Sign("ML-DSA-65")
+   kp = signer.generate_keypair()
+
+   sig = signer.sign_raw(b"release 1.2.3", kp.secret, context=b"myapp-release")
+   # sig is a bare FIPS 204 ML-DSA-65 signature (3309 bytes). Any FIPS 204 library
+   # verifies it with the same message, context and public key.
+
+   signer.verify_raw(b"release 1.2.3", sig, kp.public, context=b"myapp-release")
+
+``verify_raw()`` likewise verifies signatures made elsewhere (``ML-DSA.Sign`` with
+FIPS 204's context string). The randomness is FIPS 204's own hedged ``rnd`` input,
+generated inside liboqs, and the message is never modified. There is no hedging
+prefix, no metadata and no fingerprint, so you carry the algorithm, context and
+public key yourself. Before 0.3.2, ``verify_raw()`` verified the library's
+length-prefixed construction and so rejected every standard signature.
+
 Hedged mode
 -----------
 

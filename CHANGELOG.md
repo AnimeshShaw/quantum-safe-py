@@ -4,6 +4,24 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-05
+
+### Fixed
+
+- **`Sign.verify_raw()` now verifies standard FIPS 204 ML-DSA signatures.** It verified `len(context) || context || message` under an empty FIPS 204 context, so it rejected every signature made by another implementation, empty context included, although it was documented for exactly that. It now passes the message and the context to ML-DSA.Verify natively. **Behaviour change:** it no longer verifies the raw part of a `Sign.sign()` signature (that signs a different byte string); use `verify()` for those. Reported in GitHub issues #1 and #2.
+
+### Added
+
+- `Sign.sign_raw()`: standard FIPS 204 `ML-DSA.Sign` with a native context and FIPS 204's own hedged randomness; returns the bare signature. Tested in both directions against liboqs's FIPS 204 interface for ML-DSA-44/65/87 with empty, short and 255-byte contexts.
+
+### Packaging
+
+- The wheels now carry the liboqs licence text (`quantum_safe/_licenses/liboqs-LICENSE.txt`) and `THIRD_PARTY_LICENSES.md`. The compiled liboqs they bundle is MIT-licensed and the licence requires its notice to travel with it; 0.3.1 and earlier did not include it. `licenses/liboqs-LICENSE.txt` is a verbatim copy of upstream's `LICENSE.txt`.
+
+### Documentation
+
+- The `Sign` documentation says plainly that `sign()`, its hedging prefix and its context prefix are the library's own construction, not the FIPS 204 interface, and points to `sign_raw` / `verify_raw` for interoperability.
+
 ## [0.3.1] - 2026-10-05
 
 ### Security

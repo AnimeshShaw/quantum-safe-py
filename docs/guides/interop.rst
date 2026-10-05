@@ -155,8 +155,11 @@ TLS ``X25519MLKEM768`` group and **not** FIPS 204's native context, and they hav
 reviewed against NIST SP 800-227's key-combiner guidance.
 
 - Use the **defaults** when both ends are quantum-safe or quantum-safe-ts.
-- Use ``-v2`` signatures and ``StandardJwt`` when a standard FIPS 204 or JOSE library must
-  read what you produce.
+- Use ``Sign.sign_raw()`` / ``Sign.verify_raw()`` when the other side is a standard FIPS 204
+  ML-DSA implementation: they pass your message and context natively and exchange the bare
+  signature (new in 0.3.2). Use ``StandardJwt`` when a JOSE library must read the token.
+  ``-v2`` is for quantum-safe and quantum-safe-ts: a standard library could verify it only
+  by rebuilding the wrapped message ``M2``.
 - A third-party X-Wing or TLS-hybrid implementation cannot read quantum-safe envelopes.
 
 Staying in step

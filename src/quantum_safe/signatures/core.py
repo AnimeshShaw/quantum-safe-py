@@ -8,6 +8,18 @@ Like KEM vs HybridKEM, most production callers should use HybridSign.
 Sign is for benchmarking, protocol conformance testing, and cases where
 you specifically need a single PQC algorithm.
 
+Not plain FIPS 204
+------------------
+:meth:`Sign.sign` and the default hedging and context handling below are this
+library's own construction, not the FIPS 204 interface: the "hedged" prefix is
+random bytes added to the *message* (FIPS 204's hedging is an internal ``rnd``
+input) and the context is a message prefix (not FIPS 204's ``ctx``). A signature
+from :meth:`Sign.sign` therefore does not verify in another ML-DSA
+implementation. For standard ML-DSA use :meth:`Sign.sign_raw` and
+:meth:`Sign.verify_raw` (message and context passed natively, randomness from
+FIPS 204's own hedged ``rnd``). The ``-v2`` format has no prefix and uses a
+native context, but signs a wrapped message, so it is also library-specific.
+
 Hedged signing
 --------------
 By default, Sign operates in hedged mode: before hashing the message, we
@@ -407,6 +419,37 @@ class Sign:
         if not ok:
             raise VerificationError(algo=self._algorithm)
 
+    def sign_raw(
+        self,
+        message: bytes,
+        secret_key: SecretKey,
+        context: bytes = b"",
+    ) -> bytes:
+        """Standard FIPS 204 ``ML-DSA.Sign``: the raw signature, nothing else.
+
+        This is the interoperable path. The message is signed exactly as given,
+        ``context`` is FIPS 204's native context string (the ``ctx`` input, up to
+        255 bytes), and the randomness is FIPS 204's own hedged ``rnd`` input,
+        generated inside the backend (liboqs). No prefix is added to the message, no
+        blob or metadata is wrapped around the result, and any independent FIPS 204
+        implementation can verify it with the same message and context.
+
+        :meth:`sign` is a different, library-specific construction (see its
+        docstring and the ``-v2`` format); use ``sign_raw`` / :meth:`verify_raw`
+        when the other side is not this library or quantum-safe-ts.
+
+        Raises:
+            UnsupportedAlgorithm: if the key's algorithm doesn't match.
+            ValueError: if ``context`` is longer than 255 bytes.
+        """
+        if secret_key.algorithm not in (self._algorithm, self._spec.name):
+            raise UnsupportedAlgorithm(secret_key.algorithm, available=[self._algorithm])
+        if len(context) > 255:
+            raise ValueError(f"context must be <=255 bytes, got {len(context)}")
+        return self._backend.sign_native_context(
+            self._spec.name, secret_key.raw_bytes, message, context
+        )
+
     def verify_raw(
         self,
         message: bytes,
@@ -414,23 +457,28 @@ class Sign:
         public_key: PublicKey,
         context: bytes = b"",
     ) -> None:
-        """Verify a raw signature produced outside this library.
+        """Verify a standard FIPS 204 ML-DSA signature made by any implementation.
 
-        Use this for interoperability with other ML-DSA implementations.
-        Note: hedged mode doesn't apply here — you're verifying a raw
-        (non-hedged) signature.
+        ``message`` and ``context`` are passed to ML-DSA.Verify as given (the
+        FIPS 204 native context), so this accepts what ``ML-DSA.Sign(sk, message,
+        ctx)`` produces anywhere, including :meth:`sign_raw`. It does not read
+        signatures made by :meth:`sign` or the ``-v2`` format, which sign a
+        different byte string; verify those with :meth:`verify`.
+
+        Changed in 0.3.2: earlier versions verified ``len(context) || context ||
+        message`` here, so they rejected every standard signature, empty context
+        included.
+
+        Raises:
+            VerificationError: if the signature is not valid for this message,
+                context and key.
         """
-        if self._v2:
-            raise ValueError(
-                "verify_raw does not apply to v2: rebuild M2 and verify with FIPS 204 "
-                "context quantum-safe-sig-v2 (see quantum_safe.signatures._v2)"
-            )
-        ok = self._backend.verify(
-            self._algorithm,
-            public_key.raw_bytes,
-            message,
-            raw_signature,
-            context,
+        if public_key.algorithm not in (self._algorithm, self._spec.name):
+            raise UnsupportedAlgorithm(public_key.algorithm, available=[self._algorithm])
+        if len(context) > 255:
+            raise VerificationError(algo=self._algorithm)
+        ok = self._backend.verify_native_context(
+            self._spec.name, public_key.raw_bytes, message, raw_signature, context
         )
         if not ok:
             raise VerificationError(algo=self._algorithm)

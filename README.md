@@ -4,10 +4,13 @@ Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signat
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![FIPS 203/204/205](https://img.shields.io/badge/NIST-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
+[![Algorithms: FIPS 203/204/205](https://img.shields.io/badge/algorithms-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
+[![Not FIPS 140-3 validated](https://img.shields.io/badge/FIPS_140--3-not_validated-lightgrey.svg)](SECURITY.md)
+[![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)](ROADMAP.md)
 [![CI](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml/badge.svg)](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
+[![Roadmap](https://img.shields.io/badge/roadmap-0.4.0-blue.svg)](ROADMAP.md)
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/2605.17061)
 
 ---
@@ -58,7 +61,18 @@ signer.verify(sm, kp.public, context=b"myapp-v1")  # raises VerificationError if
 
 ---
 
-## What's new in 0.3.1
+## What's new
+
+### 0.3.2
+
+- `Sign.sign_raw()` and a standard `Sign.verify_raw()`: plain FIPS 204 ML-DSA with a native
+  context, for exchanging signatures with other ML-DSA implementations. Before this,
+  `verify_raw()` rejected every standard signature. See [Signatures](docs/guides/signatures.rst).
+- The wheels now carry the liboqs licence text.
+
+What is planned next (0.4.0 and beyond) is in the [roadmap](ROADMAP.md).
+
+### 0.3.1
 
 0.3.1 is a security and quality release. **Nothing 0.3.0 wrote stops working**;
 the library now refuses input it should never have accepted and asks verifiers
@@ -68,7 +82,9 @@ to state what they expect. Start with the
 **Security fixes**
 - **Signature prefix forgery (High; every release up to 0.3.0).** The unsigned
   prefix-length byte let bytes be moved between a signed message and its prefix.
-  Verifiers now require the prefix length of their own hedging mode.
+  Verifiers now require the prefix length of their own hedging mode. Advisory:
+  [GHSA-wqv6-gm9x-69x8](https://github.com/AnimeshShaw/quantum-safe-py/security/advisories/GHSA-wqv6-gm9x-69x8).
+  If you run 0.3.0 or earlier, upgrade.
 - `verify(..., context=...)` and `Envelope.open(..., expected_aad=...)`: the
   verifier states the context or AAD it expects.
 - Strict key and message loaders with one typed error (`KeyParseError`); exact
@@ -76,8 +92,8 @@ to state what they expect. Start with the
 
 **New**
 - **`-v2` signatures** (`Sign("ML-DSA-65-v2")`, `HybridSign("Ed25519",
-  "ML-DSA-65-v2")`): no prefix, plain FIPS 204 with a native context,
-  byte-compatible with quantum-safe-ts.
+  "ML-DSA-65-v2")`): no prefix, FIPS 204 native context, byte-compatible
+  with quantum-safe-ts (for plain FIPS 204 interop use `sign_raw`).
 - **Envelope v2**: sealing to a pure `ML-KEM-1024` key derives with HKDF-SHA-384
   (the CNSA 2.0 profile).
 - **`StandardJwt`** (RFC 9964): tokens any JOSE library can verify.
@@ -103,6 +119,7 @@ Full documentation: <https://quantum-safe-py.readthedocs.io/en/latest/>.
 | Check CNSA 2.0 parameters | [CNSA 2.0 and standards](docs/guides/compliance.rst) |
 | Understand the threat model, report a vulnerability | [Security model](docs/guides/security.rst) |
 | Migrate a fleet of keys | [Migration](docs/guides/migration.rst) |
+| See what is planned | [Roadmap](ROADMAP.md) |
 
 The TypeScript counterpart, byte-compatible with this library, is
 [quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts).

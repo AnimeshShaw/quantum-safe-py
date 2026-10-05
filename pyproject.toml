@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quantum-safe-py"
-version = "0.3.1"
+version = "0.3.2"
 description = "Production-grade post-quantum cryptography with hybrid KEM, migration tooling, and protocol helpers"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -101,6 +101,11 @@ Documentation = "https://quantum-safe-py.readthedocs.io/en/latest/"
 # ---------------------------------------------------------------------------
 [tool.hatch.build.targets.wheel]
 packages = ["src/quantum_safe"]
+
+# The wheels bundle a compiled liboqs (MIT): its licence text must travel with it.
+[tool.hatch.build.targets.wheel.force-include]
+"licenses/liboqs-LICENSE.txt" = "quantum_safe/_licenses/liboqs-LICENSE.txt"
+"THIRD_PARTY_LICENSES.md" = "quantum_safe/_licenses/THIRD_PARTY_LICENSES.md"
 
 # Vendors a compiled liboqs binary into the wheel — see hatch_build.py.
 # Only active when QUANTUM_SAFE_VENDOR_LIBOQS=1 (set by cibuildwheel below).
