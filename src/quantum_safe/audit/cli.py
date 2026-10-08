@@ -85,6 +85,17 @@ if _HAS_CLICK:
         help="Use a built-in policy preset.",
     )
     @click.option(
+        "--inventory",
+        "inventory_file",
+        default=None,
+        type=click.Path(exists=True),
+        help=(
+            "JSON key inventory ([{key_id, algorithm, migration_state}, ...]). Needed to "
+            "enforce min_security_level, hybrid_required, allow_non_nist_standard, "
+            "require_migration_state and max_classical_only_keys."
+        ),
+    )
+    @click.option(
         "--min-severity",
         default="info",
         type=click.Choice(["info", "medium", "high", "critical"]),
@@ -109,6 +120,7 @@ if _HAS_CLICK:
         output: str | None,
         policy_file: str | None,
         preset_policy: str,
+        inventory_file: str | None,
         min_severity: str,
         fail_on: str,
         exclude: tuple[str, ...],
@@ -116,12 +128,17 @@ if _HAS_CLICK:
     ) -> None:
         """Scan PATH for classical cryptography usage."""
         from quantum_safe.audit.auditor import Auditor
+        from quantum_safe.audit.inventory import load_inventory
         from quantum_safe.audit.policy import AuditPolicy
         from quantum_safe.migrate.scanner import Severity
 
-        # Resolve policy
+        # Resolve policy. A policy or inventory that cannot be read must stop the
+        # run with a non-zero exit, never fall back to a weaker one.
         if policy_file:
-            policy = AuditPolicy.from_file(policy_file)
+            try:
+                policy = AuditPolicy.from_file(policy_file)
+            except (ValueError, OSError) as exc:
+                raise click.ClickException(f"invalid policy file {policy_file}: {exc}") from exc
         elif preset_policy == "strict":
             policy = AuditPolicy.strict()
         elif preset_policy == "transition":
@@ -138,11 +155,19 @@ if _HAS_CLICK:
                 k, _, val = item.partition("=")
                 meta[k.strip()] = val.strip()
 
+        inventory = None
+        if inventory_file:
+            try:
+                inventory = load_inventory(inventory_file)
+            except (ValueError, OSError) as exc:
+                raise click.ClickException(f"invalid inventory {inventory_file}: {exc}") from exc
+
         report = Auditor.audit(
             path,
             policy=policy,
             metadata=meta,
             exclude=list(exclude) or None,
+            inventory=inventory,
         )
 
         # Filter by min_severity for output
@@ -161,6 +186,11 @@ if _HAS_CLICK:
                 lines.append("\nPolicy violations:")
                 for v in report.policy_violations:
                     lines.append(f"  {v}")
+            if report.unevaluated_controls:
+                lines.append(
+                    "\nNot evaluated (pass --inventory to enforce): "
+                    + ", ".join(report.unevaluated_controls)
+                )
             lines.append(f"\nResult: {'PASSED' if report.passed else 'FAILED'}")
             out = "\n".join(lines)
 

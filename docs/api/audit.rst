@@ -17,6 +17,16 @@ Policy
    :members:
    :show-inheritance:
 
+Key inventory
+-------------
+
+.. autoclass:: quantum_safe.audit.inventory.InventoryEntry
+   :members:
+
+.. autofunction:: quantum_safe.audit.inventory.load_inventory
+
+.. autofunction:: quantum_safe.audit.inventory.classify_algorithm
+
 NIST compliance
 ---------------
 

@@ -26,6 +26,43 @@ Example quantum-safe.yaml::
 The policy is evaluated against a ScanReport to produce a list of
 PolicyViolation objects. A non-empty violations list means the policy
 is not met — fail the CI gate.
+
+What each field enforces
+------------------------
+Source-code controls, evaluated against the scanner's findings:
+
+``fail_on``, ``exempt_paths``, ``allow_classical_only``
+    Findings at a ``fail_on`` severity are violations unless their file matches
+    ``exempt_paths``. With ``allow_classical_only=True`` only CRITICAL findings
+    are violations.
+
+Key controls, evaluated against a key inventory (see
+:mod:`quantum_safe.audit.inventory`) that you pass to ``evaluate`` /
+``Auditor.audit``. The scanner reads code, not your key store, so these cannot
+be checked without one:
+
+``min_security_level``
+    An entry whose post-quantum component has a NIST level below this is a violation.
+``hybrid_required``
+    A post-quantum-only entry is a violation.
+``allow_non_nist_standard``
+    With ``False``, an entry whose post-quantum algorithm is not a NIST standard
+    (BIKE, HQC) is a violation.
+``require_migration_state``
+    The minimum :class:`~quantum_safe.types.keys.MigrationState` a key must have
+    reached. A lower state is a violation; so is a missing state, unless the
+    minimum is ``classical_only``.
+``max_classical_only_keys``
+    More classical-only entries than this is one violation. When it is set it
+    governs classical-only keys; when it is ``None``, ``allow_classical_only=False``
+    makes every classical-only entry a violation.
+
+Entries whose algorithm is not in the registries are violations, never skipped.
+When a control that needs an inventory is active and no inventory is given, it
+is listed in :meth:`AuditPolicy.unevaluated_controls` (and so in the audit
+report) instead of passing silently; ``require_inventory=True`` turns that into
+a violation. Exemptions apply to source findings only and never exempt an
+inventory entry from a key control.
 """
 
 from __future__ import annotations
@@ -35,7 +72,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from quantum_safe.audit.inventory import (
+    MIGRATION_STATE_ORDER,
+    AlgorithmKind,
+    InventoryEntry,
+    classify_algorithm,
+)
 from quantum_safe.migrate.scanner import Finding, Severity
+from quantum_safe.types.keys import MigrationState
 
 
 @dataclass
@@ -87,8 +131,18 @@ class AuditPolicy:
                                 Supports glob-style wildcards.
         require_migration_state: Minimum acceptable migration state for keys.
                                  Default "hybrid_transition".
-        max_classical_only_keys: If set, more than this many CLASSICAL_ONLY keys
-                                 in the store is a violation. Default None (no limit).
+        max_classical_only_keys: If set, more than this many classical-only keys
+                                 in the inventory is a violation. Default None (no limit).
+        require_inventory:       If True, evaluating without a key inventory is itself
+                                 a violation whenever a key control is active, instead
+                                 of those controls being reported as not evaluated.
+                                 Default False.
+
+    The key controls (``min_security_level``, ``hybrid_required``,
+    ``allow_non_nist_standard``, ``require_migration_state`` and
+    ``max_classical_only_keys``) are enforced against a key inventory; see the
+    module documentation. A malformed value raises ``ValueError`` at
+    construction, so a typo cannot silently weaken the policy.
     """
 
     min_security_level: int = 3
@@ -99,8 +153,42 @@ class AuditPolicy:
     exempt_paths: list[str] = field(default_factory=list)
     require_migration_state: str = "hybrid_transition"
     max_classical_only_keys: int | None = None
+    require_inventory: bool = False
 
     def __post_init__(self) -> None:
+        # Type checks first: a YAML value such as `allow_classical_only: "false"` is a
+        # non-empty string, which is truthy, and would silently loosen the policy.
+        for name in (
+            "allow_classical_only",
+            "hybrid_required",
+            "allow_non_nist_standard",
+            "require_inventory",
+        ):
+            if not isinstance(getattr(self, name), bool):
+                raise ValueError(f"{name} must be true or false, got {getattr(self, name)!r}")
+        if isinstance(self.min_security_level, bool) or not isinstance(
+            self.min_security_level, int
+        ):
+            raise ValueError(
+                f"min_security_level must be an integer 1-5, got {self.min_security_level!r}"
+            )
+        m = self.max_classical_only_keys
+        if m is not None and (isinstance(m, bool) or not isinstance(m, int) or m < 0):
+            raise ValueError(
+                f"max_classical_only_keys must be a non-negative integer or null, got {m!r}"
+            )
+        for name in ("fail_on", "exempt_paths"):
+            value = getattr(self, name)
+            if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+                raise ValueError(f"{name} must be a list of strings, got {value!r}")
+        try:
+            MigrationState(self.require_migration_state)
+        except ValueError:
+            valid = [st.value for st in MigrationState]
+            raise ValueError(
+                f"require_migration_state must be one of {valid}, "
+                f"got {self.require_migration_state!r}"
+            ) from None
         if not 1 <= self.min_security_level <= 5:
             raise ValueError(f"min_security_level must be 1-5, got {self.min_security_level}")
         valid_severities = {s.name for s in Severity}
@@ -128,10 +216,41 @@ class AuditPolicy:
                 return True
         return False
 
-    def evaluate(self, findings: list[Finding]) -> list[PolicyViolation]:
-        """Evaluate findings against this policy.
+    def unevaluated_controls(self, inventory: list[InventoryEntry] | None) -> list[str]:
+        """Names of active key controls that cannot be checked without an inventory.
+
+        Empty when an inventory is given. A control is active when it can reject
+        something: a ``min_security_level`` above 1, ``hybrid_required``, a
+        disallowed non-NIST algorithm, a ``require_migration_state`` above
+        ``classical_only``, or a ``max_classical_only_keys`` limit.
+        """
+        if inventory is not None:
+            return []
+        active: list[str] = []
+        if self.min_security_level > 1:
+            active.append("min_security_level")
+        if self.hybrid_required:
+            active.append("hybrid_required")
+        if not self.allow_non_nist_standard:
+            active.append("allow_non_nist_standard")
+        if MigrationState(self.require_migration_state) is not MigrationState.CLASSICAL_ONLY:
+            active.append("require_migration_state")
+        if self.max_classical_only_keys is not None:
+            active.append("max_classical_only_keys")
+        return active
+
+    def evaluate(
+        self,
+        findings: list[Finding],
+        inventory: list[InventoryEntry] | None = None,
+    ) -> list[PolicyViolation]:
+        """Evaluate findings, and optionally a key inventory, against this policy.
 
         Returns a list of violations. Empty list = policy satisfied.
+
+        Without an ``inventory`` the key controls are not evaluated; see
+        :meth:`unevaluated_controls`. Passing an empty list means "there are no
+        keys" and is evaluated as such.
         """
         violations: list[PolicyViolation] = []
         fail_severities = self.fail_severity_levels
@@ -162,6 +281,118 @@ class AuditPolicy:
                         )
                     )
 
+        if inventory is None:
+            missing = self.unevaluated_controls(None)
+            if self.require_inventory and missing:
+                violations.append(
+                    PolicyViolation(
+                        rule="inventory_required",
+                        detail=(
+                            "no key inventory was provided, so these controls could not be "
+                            f"evaluated: {', '.join(missing)}"
+                        ),
+                    )
+                )
+        else:
+            violations.extend(self._evaluate_inventory(inventory))
+
+        return violations
+
+    def _evaluate_inventory(self, inventory: list[InventoryEntry]) -> list[PolicyViolation]:
+        violations: list[PolicyViolation] = []
+        floor = MIGRATION_STATE_ORDER.index(MigrationState(self.require_migration_state))
+        classical_only: list[str] = []
+
+        for entry in inventory:
+            info = classify_algorithm(entry.algorithm)
+            who = f"key '{entry.key_id}' ({entry.algorithm})"
+
+            if info.kind is AlgorithmKind.UNKNOWN:
+                violations.append(
+                    PolicyViolation(
+                        rule="unknown_algorithm",
+                        detail=(
+                            f"{who}: algorithm is not in the registry, so the policy "
+                            "cannot be evaluated for it"
+                        ),
+                    )
+                )
+                continue
+
+            is_classical = (
+                info.kind is AlgorithmKind.CLASSICAL
+                or entry.migration_state is MigrationState.CLASSICAL_ONLY
+            )
+            if is_classical:
+                classical_only.append(entry.key_id)
+                if self.max_classical_only_keys is None and not self.allow_classical_only:
+                    violations.append(
+                        PolicyViolation(
+                            rule="classical_only_key",
+                            detail=f"{who} has no post-quantum component",
+                        )
+                    )
+
+            if info.nist_level is not None and info.nist_level < self.min_security_level:
+                violations.append(
+                    PolicyViolation(
+                        rule="min_security_level",
+                        detail=(
+                            f"{who} is NIST level {info.nist_level}, below the required "
+                            f"{self.min_security_level}"
+                        ),
+                    )
+                )
+
+            if self.hybrid_required and info.kind is AlgorithmKind.PQC:
+                violations.append(
+                    PolicyViolation(
+                        rule="hybrid_required",
+                        detail=f"{who} is post-quantum only; the policy requires a hybrid",
+                    )
+                )
+
+            if not self.allow_non_nist_standard and info.is_nist_standard is False:
+                violations.append(
+                    PolicyViolation(
+                        rule="allow_non_nist_standard",
+                        detail=f"{who} is not a NIST-standardised algorithm",
+                    )
+                )
+
+            if entry.migration_state is None:
+                if floor > 0:
+                    violations.append(
+                        PolicyViolation(
+                            rule="require_migration_state",
+                            detail=(
+                                f"{who} has no migration state; the policy requires at least "
+                                f"'{self.require_migration_state}'"
+                            ),
+                        )
+                    )
+            elif MIGRATION_STATE_ORDER.index(entry.migration_state) < floor:
+                violations.append(
+                    PolicyViolation(
+                        rule="require_migration_state",
+                        detail=(
+                            f"{who} is '{entry.migration_state.value}'; the policy requires at "
+                            f"least '{self.require_migration_state}'"
+                        ),
+                    )
+                )
+
+        limit = self.max_classical_only_keys
+        if limit is not None and len(classical_only) > limit:
+            violations.append(
+                PolicyViolation(
+                    rule="max_classical_only_keys",
+                    detail=(
+                        f"{len(classical_only)} classical-only keys, more than the allowed "
+                        f"{limit}: {', '.join(classical_only)}"
+                    ),
+                )
+            )
         return violations
 
     def to_dict(self) -> dict[str, Any]:
@@ -174,10 +405,40 @@ class AuditPolicy:
             "exempt_paths": self.exempt_paths,
             "require_migration_state": self.require_migration_state,
             "max_classical_only_keys": self.max_classical_only_keys,
+            "require_inventory": self.require_inventory,
         }
+
+    #: Keys accepted by :meth:`from_dict`. ``version`` is the file-format marker.
+    _FIELDS = frozenset(
+        {
+            "version",
+            "min_security_level",
+            "allow_classical_only",
+            "hybrid_required",
+            "allow_non_nist_standard",
+            "fail_on",
+            "exempt_paths",
+            "require_migration_state",
+            "max_classical_only_keys",
+            "require_inventory",
+        }
+    )
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> AuditPolicy:
+        """Build a policy from a mapping.
+
+        Raises ``ValueError`` for an unknown key (a misspelt control would
+        otherwise be ignored and the policy would be weaker than written) or a
+        value of the wrong type.
+        """
+        if not isinstance(d, dict):
+            raise ValueError(f"a policy must be a mapping, got {type(d).__name__}")
+        unknown = set(d) - cls._FIELDS
+        if unknown:
+            raise ValueError(
+                f"unknown policy field(s): {sorted(unknown)}. Valid fields: {sorted(cls._FIELDS)}"
+            )
         return cls(
             min_security_level=d.get("min_security_level", 3),
             allow_classical_only=d.get("allow_classical_only", False),
@@ -187,6 +448,7 @@ class AuditPolicy:
             exempt_paths=d.get("exempt_paths", []),
             require_migration_state=d.get("require_migration_state", "hybrid_transition"),
             max_classical_only_keys=d.get("max_classical_only_keys"),
+            require_inventory=d.get("require_inventory", False),
         )
 
     @classmethod
@@ -232,6 +494,7 @@ class AuditPolicy:
             hybrid_required=True,
             allow_non_nist_standard=False,
             fail_on=["CRITICAL"],
+            require_migration_state="classical_only",
         )
 
     @classmethod
@@ -243,4 +506,5 @@ class AuditPolicy:
             hybrid_required=False,
             allow_non_nist_standard=True,
             fail_on=["CRITICAL"],
+            require_migration_state="classical_only",
         )

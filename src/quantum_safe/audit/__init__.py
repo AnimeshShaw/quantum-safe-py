@@ -12,6 +12,7 @@ Submodules
 ----------
 auditor     Core Auditor class — orchestrates scanning and report generation
 policy      Policy-as-code: configurable rules for what constitutes a failure
+inventory   Key inventory the policy's key controls are evaluated against
 sbom        CycloneDX SBOM enrichment with PQC-readiness annotations
 compliance  NIST SP 800-208 and FIPS 203/204/205 compliance report generation
 cli         qs-audit command-line interface
@@ -35,6 +36,7 @@ Quick start::
 
 from quantum_safe.audit.auditor import Auditor, AuditReport
 from quantum_safe.audit.compliance import ComplianceReport, NISTComplianceChecker
+from quantum_safe.audit.inventory import InventoryEntry, load_inventory
 from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
 from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
@@ -43,6 +45,8 @@ __all__ = [
     "AuditReport",
     "AuditPolicy",
     "PolicyViolation",
+    "InventoryEntry",
+    "load_inventory",
     "SBOMEnricher",
     "PQCReadiness",
     "ComplianceReport",
