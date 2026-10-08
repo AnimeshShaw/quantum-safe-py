@@ -4,6 +4,23 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+### Security
+
+- **`AuditPolicy` now enforces the key controls it declares** (GitHub issue #8). `min_security_level`, `hybrid_required`, `allow_non_nist_standard`, `require_migration_state` and `max_classical_only_keys` were accepted and stored but never read, so a stricter policy gave the same verdict as a looser one. They are now evaluated against a key inventory: `Auditor.audit(..., inventory=[InventoryEntry(...)])`, `AuditPolicy.evaluate(findings, inventory)`, or `qs-audit scan --inventory keys.json`. The source scanner cannot see keys, so without an inventory these controls cannot be checked; the report now lists them in `unevaluated_controls` (JSON, text, GitHub summary) instead of passing silently, and `require_inventory=True` makes that a failure. An algorithm outside the registries is a violation, never skipped.
+
+### Fixed
+
+- **`qs-migrate upgrade-key` now upgrades the key** (GitHub issue #9). It used to parse the input, print "Upgrading to ...", and exit 0 without writing anything. It now takes an X25519 or Ed25519 secret key (PKCS#8 PEM or the library's PEM), builds the hybrid key pair with `Upgrader`, checks it (parse-back plus a KEM round trip or a hybrid sign/verify), and writes the secret key to `--output` and the public key to `--public-output` (default `<output>.pub`). Public-only, P-256, RSA, encrypted, already-hybrid or mismatched-target inputs exit non-zero with the reason and write nothing. The input is never modified, existing outputs need `--force`, files are written through a temporary file and renamed (mode 0600 for the secret key on POSIX), and no key material is printed. `--target` now defaults from the key (`Ed25519+ML-DSA-65` for an Ed25519 key) and `--key-type` is an optional check.
+
+### Changed behaviour
+
+- `AuditPolicy` and `AuditPolicy.from_dict` / `from_file` now fail closed: an unknown field (for example a misspelt `min_security_lvl`), a string where a boolean is expected (`"false"` is truthy), or an invalid `require_migration_state` raises `ValueError`. Policy files that carried such mistakes were silently weaker than they read; they now need correcting. `version` is still accepted. `qs-audit scan` exits non-zero with a message for an unreadable policy or inventory.
+- `AuditPolicy.transition()` and `permissive()` set `require_migration_state="classical_only"` so they keep tolerating classical-only keys now that the field is enforced. Default pass/fail for source scans without an inventory is unchanged.
+
+### Documentation
+
+- `docs/guides/audit.rst` described `AuditPolicy.from_preset(...)` and a `block_on_severity` option that do not exist; it now documents the real presets and what every field enforces.
+
 ### Benchmarks
 
 - Re-measured with raw samples: the ENV-2 and ENV-1 runs and the two-class leakage screen are in `results/` (see `results/README.md`). `--iterations` is now honoured by `bench_kem.py` and `bench_signatures.py` (it was parsed and ignored, so every earlier "3,000 iterations" table was measured with 1,000), the harnesses save every timed sample and the run environment, and `tests/bench/paper_numbers.py` computes every figure the papers print from those files. New: `bench_gil.py` (thread-scaling test with a pure-Python negative control), `aggregate_runs.py`, `run_env1.sh`, `run_env2.sh`.

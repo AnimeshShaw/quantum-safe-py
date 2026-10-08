@@ -562,7 +562,7 @@ class TestMigrateUpgradeKey:
         assert result.exit_code == 2, result.output
 
     def test_upgrade_key_runs_with_valid_pem(self, runner: CliRunner, tmp_path: Path) -> None:
-        """upgrade-key should accept a valid PEM key and print status messages."""
+        """upgrade-key rejects a target that does not fit the key. Real upgrades: test_upgrade_key_cli.py."""
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         from cryptography.hazmat.primitives.serialization import (
             Encoding,
@@ -589,10 +589,11 @@ class TestMigrateUpgradeKey:
                 "X25519+ML-KEM-768",
             ],
         )
-        # Exit code 0 or 1 — the CLI may warn but should not crash
-        assert result.exit_code in (0, 1), result.output
-        # Should always produce some output
-        assert len(result.output.strip()) > 0
+        # An Ed25519 key cannot become an X25519+ML-KEM-768 key: the command must say so,
+        # exit non-zero and write nothing (it used to report success without doing anything).
+        assert result.exit_code == 1, result.output
+        assert "keeps a X25519 component" in result.output
+        assert not out_file.exists()
 
 
 # ---------------------------------------------------------------------------

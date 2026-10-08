@@ -15,8 +15,8 @@ Usage::
     # Show migration progress for a key store
     qs-migrate status ./keys/
 
-    # Upgrade a key file
-    qs-migrate upgrade-key --input key.pem --target X25519+ML-KEM-768
+    # Upgrade a classical secret key to a hybrid key pair
+    qs-migrate upgrade-key --input x25519.pem --output hybrid.pem
 """
 
 from __future__ import annotations
@@ -119,53 +119,72 @@ if _HAS_CLICK:
         "-i",
         "input_path",
         required=True,
-        type=click.Path(exists=True),
-        help="Input PEM key file",
+        type=click.Path(exists=True, dir_okay=False),
+        help="Classical SECRET key: a PKCS#8 'PRIVATE KEY' PEM or a library secret-key PEM.",
     )
     @click.option(
-        "--output", "-o", required=True, help="Output PEM file for the upgraded hybrid key"
+        "--output",
+        "-o",
+        required=True,
+        type=click.Path(dir_okay=False),
+        help="Where to write the hybrid SECRET key (mode 0600 on POSIX).",
+    )
+    @click.option(
+        "--public-output",
+        default=None,
+        type=click.Path(dir_okay=False),
+        help="Where to write the hybrid public key. Default: <output>.pub",
     )
     @click.option(
         "--target",
-        default="X25519+ML-KEM-768",
-        help="Target hybrid algorithm (default: X25519+ML-KEM-768)",
+        default=None,
+        help=(
+            "Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an X25519 key, "
+            "Ed25519+ML-DSA-65 for an Ed25519 key."
+        ),
     )
     @click.option(
         "--key-type",
-        default="kem",
+        default=None,
         type=click.Choice(["kem", "sign"]),
-        help="Whether to upgrade a KEM or signing key",
+        help="Optional check: fail unless the input is a KEM (X25519) or signing (Ed25519) key.",
     )
-    def upgrade_key_cmd(input_path: str, output: str, target: str, key_type: str) -> None:
-        """Upgrade a classical key to a hybrid PQC key."""
-        import pathlib
+    @click.option("--force", is_flag=True, help="Replace --output / --public-output if they exist.")
+    def upgrade_key_cmd(
+        input_path: str,
+        output: str,
+        public_output: str | None,
+        target: str | None,
+        key_type: str | None,
+        force: bool,
+    ) -> None:
+        """Upgrade a classical X25519 / Ed25519 secret key to a hybrid PQC key pair.
 
-        from quantum_safe.types import PublicKey, SecretKey
+        Writes the hybrid secret key to --output and the hybrid public key next to it.
+        The input file is never modified or deleted; keep it for classical-only clients
+        until the migration is finished. Exits non-zero, having written nothing, if the
+        key cannot be upgraded.
+        """
+        from quantum_safe.migrate.keyfile import KeyUpgradeError, upgrade_key_file
 
-        pem_data = pathlib.Path(input_path).read_text()
-
-        click.echo(f"Loading key from {input_path}...")
-
-        key: SecretKey | PublicKey
         try:
-            # Try loading as secret key first
-            key = SecretKey.from_pem(pem_data)
-            click.echo(f"Loaded secret key: algo={key.algorithm}")
-        except Exception:
-            try:
-                key = PublicKey.from_pem(pem_data)
-                click.echo(f"Loaded public key: algo={key.algorithm}")
-            except Exception as exc:
-                click.echo(f"Error: could not parse key: {exc}", err=True)
-                sys.exit(1)
+            done = upgrade_key_file(
+                input_path,
+                output,
+                public_output,
+                target=target,
+                key_type=key_type,
+                force=force,
+            )
+        except KeyUpgradeError as exc:
+            click.echo(f"Error: {exc}", err=True)
+            sys.exit(1)
 
-        click.echo(f"Upgrading to {target}...")
-        # For a full upgrade we'd need both pub+sec components.
-        # This CLI path is illustrative — production use needs the full keypair.
-        click.echo(
-            "Note: full key upgrade requires a KeyPair (public + secret). "
-            "Use Upgrader.upgrade_kem_key() / upgrade_signing_key() from Python directly."
-        )
+        click.echo(f"Upgraded {done.old_algorithm} -> {done.new_algorithm} ({done.key_type} key).")
+        click.echo(f"  hybrid secret key: {done.secret_path}")
+        click.echo(f"  hybrid public key: {done.public_path}")
+        click.echo(f"  {done.notes}")
+        click.echo(f"The original key {input_path} was not changed.")
 
     @_cli.command("status")
     @click.argument("store-path", default=".", type=click.Path())
