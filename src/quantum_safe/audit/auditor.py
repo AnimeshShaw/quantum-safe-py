@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from quantum_safe.audit.inventory import InventoryEntry
 from quantum_safe.audit.policy import AuditPolicy, PolicyViolation
 from quantum_safe.migrate.scanner import Scanner, ScanReport
 
@@ -44,6 +45,11 @@ class AuditReport:
         policy_violations:  List of policy violations found.
         passed:             True if no policy violations exist.
         metadata:           Arbitrary key-value pairs (CI job ID, branch, etc.).
+        inventory:          The key inventory the key controls were evaluated against,
+                            or None if none was given.
+        unevaluated_controls: Policy controls that are active but could not be checked
+                            because no inventory was given. A report with entries here
+                            passed only the controls that *were* evaluated.
     """
 
     audit_id: str
@@ -54,6 +60,8 @@ class AuditReport:
     policy_violations: list[PolicyViolation]
     passed: bool
     metadata: dict[str, Any] = field(default_factory=dict)
+    inventory: list[InventoryEntry] | None = None
+    unevaluated_controls: list[str] = field(default_factory=list)
 
     # ------------------------------------------------------------------
     # Convenience accessors
@@ -78,12 +86,15 @@ class AuditReport:
     def summary_line(self) -> str:
         """One-line status for logging."""
         status = "PASSED" if self.passed else "FAILED"
-        return (
+        line = (
             f"[{status}] Audit {self.audit_id[:8]}... | "
             f"{self.files_scanned} files | "
             f"{self.critical_count}C {self.high_count}H {self.medium_count}M findings | "
             f"{len(self.policy_violations)} violations"
         )
+        if self.unevaluated_controls:
+            line += f" | {len(self.unevaluated_controls)} controls not evaluated (no key inventory)"
+        return line
 
     # ------------------------------------------------------------------
     # Serialization
@@ -103,6 +114,8 @@ class AuditReport:
                 "info": len(self.scan_report.info),
             },
             "policy_violations": [v.to_dict() for v in self.policy_violations],
+            "unevaluated_controls": list(self.unevaluated_controls),
+            "inventory_keys": None if self.inventory is None else len(self.inventory),
             "policy": self.policy.to_dict(),
             "findings": [f.to_dict() for f in self.scan_report.findings],
             "errors": self.scan_report.errors,
@@ -132,6 +145,13 @@ class AuditReport:
             f"| Audit ID | `{self.audit_id[:16]}` |",
             "",
         ]
+
+        if self.unevaluated_controls:
+            lines.append(
+                "> **Not evaluated** (no key inventory was provided): "
+                + ", ".join(f"`{c}`" for c in self.unevaluated_controls)
+            )
+            lines.append("")
 
         if self.policy_violations:
             lines.append("### Policy violations")
@@ -172,6 +192,7 @@ class Auditor:
         policy: AuditPolicy | None = None,
         metadata: dict[str, Any] | None = None,
         exclude: list[str] | None = None,
+        inventory: list[InventoryEntry] | None = None,
     ) -> AuditReport:
         """Run a full audit on a directory or file.
 
@@ -180,6 +201,10 @@ class Auditor:
             policy:     Compliance policy. Defaults to AuditPolicy() (standard).
             metadata:   Arbitrary metadata for the report (CI job ID, etc.).
             exclude:    Directory/file patterns to exclude from scanning.
+            inventory:  Key inventory to evaluate the policy's key controls against
+                        (``min_security_level``, ``hybrid_required``, ...). Without
+                        one those controls are listed in
+                        ``report.unevaluated_controls``, not silently passed.
 
         Returns:
             AuditReport with all findings and policy evaluation.
@@ -198,7 +223,7 @@ class Auditor:
             scan_report = Scanner.scan_directory(target, exclude=exclude)
 
         # Evaluate policy
-        violations = policy.evaluate(scan_report.findings)
+        violations = policy.evaluate(scan_report.findings, inventory)
         passed = len(violations) == 0
 
         return AuditReport(
@@ -210,6 +235,8 @@ class Auditor:
             policy_violations=violations,
             passed=passed,
             metadata=metadata or {},
+            inventory=inventory,
+            unevaluated_controls=policy.unevaluated_controls(inventory),
         )
 
     @classmethod
@@ -219,6 +246,7 @@ class Auditor:
         filename: str = "<string>",
         policy: AuditPolicy | None = None,
         metadata: dict[str, Any] | None = None,
+        inventory: list[InventoryEntry] | None = None,
     ) -> AuditReport:
         """Audit a source string directly (useful in tests and CI hooks).
 
@@ -226,6 +254,7 @@ class Auditor:
             source:     Python source code as a string.
             filename:   Virtual filename for error messages.
             policy:     Compliance policy. Defaults to AuditPolicy().
+            inventory:  Key inventory for the policy's key controls (see ``audit``).
 
         Returns:
             AuditReport.
@@ -234,7 +263,7 @@ class Auditor:
             policy = AuditPolicy()
 
         scan_report = Scanner.scan_source(source, filename=filename)
-        violations = policy.evaluate(scan_report.findings)
+        violations = policy.evaluate(scan_report.findings, inventory)
 
         return AuditReport(
             audit_id=str(uuid.uuid4()),
@@ -247,6 +276,8 @@ class Auditor:
             policy_violations=violations,
             passed=len(violations) == 0,
             metadata=metadata or {},
+            inventory=inventory,
+            unevaluated_controls=policy.unevaluated_controls(inventory),
         )
 
     @classmethod
@@ -257,6 +288,7 @@ class Auditor:
         output_sarif: str | None = None,
         output_json: str | None = None,
         metadata: dict[str, Any] | None = None,
+        inventory: list[InventoryEntry] | None = None,
     ) -> int:
         """Run audit and return a shell exit code.
 
@@ -271,11 +303,12 @@ class Auditor:
             output_sarif:   If set, write SARIF to this path.
             output_json:    If set, write full JSON report to this path.
             metadata:       Arbitrary metadata for the report.
+            inventory:      Key inventory for the policy's key controls (see ``audit``).
 
         Returns:
             0 if all policies pass, 1 if any violations found.
         """
-        report = cls.audit(target, policy=policy, metadata=metadata)
+        report = cls.audit(target, policy=policy, metadata=metadata, inventory=inventory)
 
         if output_sarif:
             sarif_path = Path(output_sarif)
