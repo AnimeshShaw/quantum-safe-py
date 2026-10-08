@@ -202,10 +202,12 @@ def _check_result(
         signer.verify(signer.sign(b"qs-migrate upgrade-key self-check", sec), pub, context=b"")
 
 
-def _write_temp(directory: Path, name: str, text: str, secret: bool) -> Path:
+def _write_temp(directory: Path, name: str, text: str) -> Path:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
     tmp = directory / f".{name}.{secrets.token_hex(6)}.tmp"
-    fd = os.open(tmp, flags, 0o600 if secret else 0o644)
+    # Private to the owner. The public key is not secret, but it need not be world-readable
+    # by default either; whoever publishes it can relax the mode.
+    fd = os.open(tmp, flags, 0o600)
     try:
         with os.fdopen(fd, "wb") as fh:
             fh.write(text.encode("ascii"))
@@ -229,8 +231,9 @@ def upgrade_key_file(
 ) -> UpgradedFiles:
     """Upgrade the classical secret key in ``input_path`` and write the hybrid key pair.
 
-    The hybrid secret key goes to ``output_path`` (mode 0600 on POSIX) and the hybrid
-    public key to ``public_output_path`` (default: ``output_path`` + ``.pub``). The input
+    Both files are created with mode 0600 on POSIX. The hybrid secret key goes to
+    ``output_path`` and the hybrid public key to ``public_output_path`` (default:
+    ``output_path`` + ``.pub``). The input
     file is never modified. Neither output is replaced unless ``force`` is set, both are
     written through temporary files and renamed into place, and on any failure neither
     exists afterwards.
@@ -275,9 +278,9 @@ def upgrade_key_file(
     temps: list[Path] = []
     placed: list[Path] = []
     try:
-        sec_tmp = _write_temp(out.parent, out.name, secret_pem, secret=True)
+        sec_tmp = _write_temp(out.parent, out.name, secret_pem)
         temps.append(sec_tmp)
-        pub_tmp = _write_temp(pub_out.parent, pub_out.name, public_pem, secret=False)
+        pub_tmp = _write_temp(pub_out.parent, pub_out.name, public_pem)
         temps.append(pub_tmp)
         os.replace(sec_tmp, out)
         temps.remove(sec_tmp)

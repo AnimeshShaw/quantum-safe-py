@@ -228,8 +228,8 @@ What it does and does not do:
   non-zero and **no output file is left behind**.
 - The input file is never modified or deleted. Existing outputs are not replaced without
   ``--force``, and the input, ``--output`` and ``--public-output`` must be different files.
-- The secret key is written through a temporary file and renamed into place; on POSIX it
-  is created with mode ``0600``. On Windows POSIX modes do not apply, so restrict the
+- Both keys are written through a temporary file and renamed into place; on POSIX they
+  are created with mode ``0600`` (relax the public key's mode when you publish it). On Windows POSIX modes do not apply, so restrict the
   directory with ACLs. Key material is never printed.
 - The hybrid key is a new format that classical-only software cannot read. Keep the
   original key for those clients until the migration is finished.
