@@ -193,17 +193,46 @@ Scan for classical crypto and output a migration-focused report.
 ``qs-migrate upgrade-key``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Upgrade an existing classical key to a hybrid PQC key.
+Upgrade a classical **secret** key to a hybrid post-quantum key pair and write it to disk.
 
-.. code-block:: bash
+.. code-block:: text
 
    qs-migrate upgrade-key [OPTIONS]
 
    Options:
-     -i, --input PATH          Input PEM key file (required)
-     -o, --output PATH         Output PEM file for the upgraded hybrid key (required)
-     --target TEXT             Target hybrid algorithm (default: X25519+ML-KEM-768)
-     --key-type {kem,sign}     Whether to upgrade a KEM or signing key
+     -i, --input PATH          Classical secret key (required): a PKCS#8 "PRIVATE KEY" PEM,
+                               or this library's "QUANTUM SAFE SECRET KEY" PEM
+     -o, --output PATH         Where to write the hybrid SECRET key (required)
+     --public-output PATH      Where to write the hybrid public key (default: <output>.pub)
+     --target TEXT             Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an
+                               X25519 key, Ed25519+ML-DSA-65 for an Ed25519 key
+     --key-type {kem,sign}     Optional check that the input is a KEM (X25519) or signing
+                               (Ed25519) key
+     --force                   Replace --output / --public-output if they exist
+
+   Examples:
+     qs-migrate upgrade-key -i x25519.pem -o hybrid-kem.pem
+     qs-migrate upgrade-key -i ed25519.pem -o hybrid-sign.pem --target Ed25519+ML-DSA-87
+
+What it does and does not do:
+
+- Supported inputs are **X25519** and **Ed25519** secret keys. The hybrid key keeps the
+  original secret unchanged next to a freshly generated post-quantum key, so a public
+  key alone cannot be upgraded; the command says so and stops. P-256, RSA, encrypted
+  keys and keys that are already hybrid or post-quantum are rejected with the reason
+  (use :class:`~quantum_safe.migrate.upgrader.Upgrader` from Python for other cases).
+- ``--target`` must keep the input's classical algorithm and be an approved combination
+  (for example ``X25519+ML-KEM-1024``); ``--key-type`` must match the input.
+- Before anything is written the result is parsed back and exercised (a KEM
+  encapsulate/decapsulate or a hybrid sign/verify). On any failure the exit status is
+  non-zero and **no output file is left behind**.
+- The input file is never modified or deleted. Existing outputs are not replaced without
+  ``--force``, and the input, ``--output`` and ``--public-output`` must be different files.
+- The secret key is written through a temporary file and renamed into place; on POSIX it
+  is created with mode ``0600``. On Windows POSIX modes do not apply, so restrict the
+  directory with ACLs. Key material is never printed.
+- The hybrid key is a new format that classical-only software cannot read. Keep the
+  original key for those clients until the migration is finished.
 
 ``qs-migrate status``
 ~~~~~~~~~~~~~~~~~~~~~
