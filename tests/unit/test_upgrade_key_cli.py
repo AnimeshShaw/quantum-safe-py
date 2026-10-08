@@ -175,6 +175,7 @@ class TestUpgradeSucceeds:
         out = tmp_path / "o.pem"
         assert upgrade(runner, x25519_pem, out).exit_code == 0
         assert (os.stat(out).st_mode & 0o777) == 0o600
+        assert (os.stat(tmp_path / "o.pem.pub").st_mode & 0o777) == 0o600
         assert not any(p.name.endswith(".tmp") for p in tmp_path.iterdir())
 
 
