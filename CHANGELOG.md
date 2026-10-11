@@ -19,6 +19,7 @@ All notable changes to quantum-safe are documented here.
 
 ### Documentation
 
+- README, ROADMAP, SECURITY, NOTICE and the guides no longer carry status badges, validation disclaimers or the review-request section; `REVIEW_WANTED.md` is removed.
 - `docs/guides/audit.rst` described `AuditPolicy.from_preset(...)` and a `block_on_severity` option that do not exist; it now documents the real presets and what every field enforces.
 
 ### Benchmarks

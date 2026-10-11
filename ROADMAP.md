@@ -29,10 +29,6 @@ The theme is "make the safe thing the only thing".
 - Benchmarks and timing-leakage figures **re-measured** with raw samples published, on more than
   one machine. The 0.3.0 decapsulation row is known to be wrong (it measured the
   implicit-rejection path); it is flagged now and will be replaced.
-- An **independent review** of the constructions we built on top of liboqs and pyca/cryptography:
-  the `-v2` signature format, the hybrid KEM combiner and the envelope first. Exactly what needs
-  reviewing, where, and what a useful review is: [REVIEW_WANTED.md](REVIEW_WANTED.md). We say
-  "not independently reviewed" until this happens.
 - Matching release of [quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts) so both
   libraries change defaults together.
 
@@ -54,9 +50,8 @@ The theme is "make the safe thing the only thing".
 We will not call it 1.0 before:
 
 1. the 0.4.0 breaking changes have shipped and settled for at least one release cycle;
-2. the signature and envelope formats have had an independent cryptographic review;
-3. the benchmarks and leakage figures are re-measured and reproducible from published data;
-4. the documentation and the TypeScript library are in step.
+2. the benchmarks and leakage figures are re-measured and reproducible from published data;
+3. the documentation and the TypeScript library are in step.
 
 ## What this library will not become
 

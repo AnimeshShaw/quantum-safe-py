@@ -43,7 +43,6 @@ What it does not defend against
   explains its own sensitivity limits; it is not a proof.
 - **Sender impersonation in envelopes.** An envelope is anonymous public-key encryption.
   Sign the payload if the sender matters.
-- **Validation requirements.** The library is not FIPS 140-3 validated (see :doc:`compliance`).
 
 Practices that matter most
 --------------------------

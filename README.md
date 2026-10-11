@@ -1,15 +1,14 @@
-# quantum-safe
+# quantum-safe-py
 
 Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signatures, migration tooling, protocol helpers, and a CI-ready audit scanner — all in one library.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![Algorithms: FIPS 203/204/205](https://img.shields.io/badge/algorithms-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
-[![Not FIPS 140-3 validated](https://img.shields.io/badge/FIPS_140--3-not_validated-lightgrey.svg)](SECURITY.md)
-[![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)](ROADMAP.md)
 [![CI](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml/badge.svg)](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/quantum-safe-py?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLUE&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/quantum-safe-py)
 [![Roadmap](https://img.shields.io/badge/roadmap-0.4.0-blue.svg)](ROADMAP.md)
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/2605.17061)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008259.svg)](https://doi.org/10.5281/zenodo.23008259)
@@ -24,15 +23,15 @@ design, so the audit can (and does) score this library below others on some
 dimensions. Full methodology, per-dimension sources, and a re-auditable
 verification procedure: [`docs/production_readiness_rubric.md`](docs/production_readiness_rubric.md).
 
-| Gap (September 2026 audit, 7 libraries with verified evidence) | Ecosystem | This library |
-|-----|---------------------|--------------|
-| Cryptographic discovery/inventory | **0 of 7** provide it | ✓ CycloneDX CBOM (`qs-audit cbom`) |
-| Stateful hash-based signing (LMS/XMSS) | 1 of 7 (Bouncy Castle: both) | Partial — LMS only, optional `[lms]` extra |
-| Conformance evidence vs. NIST vectors | 1 of 5 holds a real CMVP cert (Bouncy Castle) | 225/225 ACVP known-answer cases — **not** a CMVP validation |
-| Hybrid KEM combiner | 3 of 6 have one (up from 1 of 9 nine months ago) | ✓ Default mode |
-| CNSA 2.0 parameter sets by default | n/a (raw primitives, no opinion) | **Partial** — defaults are ML-KEM-768/ML-DSA-65, below CNSA 2.0; `qs-audit cnsa2` reports or `cnsa2.enforce()` blocks it |
-| Migration path for existing keys | 1 of 7 partial | ✓ `Upgrader` + state machine |
-| Protocol helpers (TLS, JWT, X.509) | 3 of 7 (partial-to-full) | ✓ `protocols` module |
+| Gap (September 2026 audit, 7 libraries with verified evidence) | Ecosystem                                        | This library                                                                                                                        |
+| -------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Cryptographic discovery/inventory                              | **0 of 7** provide it                      | ✓ CycloneDX CBOM (`qs-audit cbom`)                                                                                               |
+| Stateful hash-based signing (LMS/XMSS)                         | 1 of 7 (Bouncy Castle: both)                     | Partial — LMS only, optional`[lms]` extra                                                                                        |
+| Conformance evidence vs. NIST vectors                          | 1 of 5 holds a real CMVP cert (Bouncy Castle)    | 225/225 ACVP known-answer cases pass                                                                   |
+| Hybrid KEM combiner                                            | 3 of 6 have one (up from 1 of 9 nine months ago) | ✓ Default mode                                                                                                                     |
+| CNSA 2.0 parameter sets by default                             | n/a (raw primitives, no opinion)                 | **Partial** — defaults are ML-KEM-768/ML-DSA-65, below CNSA 2.0; `qs-audit cnsa2` reports or `cnsa2.enforce()` blocks it |
+| Migration path for existing keys                               | 1 of 7 partial                                   | ✓`Upgrader` + state machine                                                                                                      |
+| Protocol helpers (TLS, JWT, X.509)                             | 3 of 7 (partial-to-full)                         | ✓`protocols` module                                                                                                              |
 
 We are not the strongest library on every axis — Bouncy Castle holds an
 actual CMVP FIPS 140-3 certificate and supports both LMS and XMSS, ahead of
@@ -81,6 +80,7 @@ to state what they expect. Start with the
 [upgrade guide](docs/guides/upgrading.rst).
 
 **Security fixes**
+
 - **Signature prefix forgery (High; every release up to 0.3.0).** The unsigned
   prefix-length byte let bytes be moved between a signed message and its prefix.
   Verifiers now require the prefix length of their own hedging mode. Advisory:
@@ -92,8 +92,8 @@ to state what they expect. Start with the
   hybrid signature payloads.
 
 **New**
-- **`-v2` signatures** (`Sign("ML-DSA-65-v2")`, `HybridSign("Ed25519",
-  "ML-DSA-65-v2")`): no prefix, FIPS 204 native context, byte-compatible
+
+- **`-v2` signatures** (`Sign("ML-DSA-65-v2")`, `HybridSign("Ed25519", "ML-DSA-65-v2")`): no prefix, FIPS 204 native context, byte-compatible
   with quantum-safe-ts (for plain FIPS 204 interop use `sign_raw`).
 - **Envelope v2**: sealing to a pure `ML-KEM-1024` key derives with HKDF-SHA-384
   (the CNSA 2.0 profile).
@@ -107,20 +107,20 @@ to state what they expect. Start with the
 
 ## Documentation
 
-Full documentation: <https://quantum-safe-py.readthedocs.io/en/latest/>.
+Full documentation: [https://quantum-safe-py.readthedocs.io/en/latest/](https://quantum-safe-py.readthedocs.io/en/latest/).
 
-| If you want to... | Read |
-|---|---|
-| Try it in five minutes | [Quick start](docs/guides/quickstart.rst) |
-| Pick the right algorithm, format and token | [Choosing what to use](docs/guides/choosing.rst) |
-| Copy a working recipe (encrypt a file, sign a release, rotate keys...) | [Cookbook](docs/guides/cookbook.rst) |
-| Understand keys, contexts, hedging, formats | [Concepts](docs/guides/concepts.rst) |
-| Upgrade from 0.3.0 | [Upgrading to 0.3.1](docs/guides/upgrading.rst) |
-| Exchange data with Node.js, browsers or other ecosystems | [Interoperability](docs/guides/interop.rst) |
-| Check CNSA 2.0 parameters | [CNSA 2.0 and standards](docs/guides/compliance.rst) |
-| Understand the threat model, report a vulnerability | [Security model](docs/guides/security.rst) |
-| Migrate a fleet of keys | [Migration](docs/guides/migration.rst) |
-| See what is planned | [Roadmap](ROADMAP.md) |
+| If you want to...                                                      | Read                                                |
+| ---------------------------------------------------------------------- | --------------------------------------------------- |
+| Try it in five minutes                                                 | [Quick start](docs/guides/quickstart.rst)            |
+| Pick the right algorithm, format and token                             | [Choosing what to use](docs/guides/choosing.rst)     |
+| Copy a working recipe (encrypt a file, sign a release, rotate keys...) | [Cookbook](docs/guides/cookbook.rst)                 |
+| Understand keys, contexts, hedging, formats                            | [Concepts](docs/guides/concepts.rst)                 |
+| Upgrade from 0.3.0                                                     | [Upgrading to 0.3.1](docs/guides/upgrading.rst)      |
+| Exchange data with Node.js, browsers or other ecosystems               | [Interoperability](docs/guides/interop.rst)          |
+| Check CNSA 2.0 parameters                                              | [CNSA 2.0 and standards](docs/guides/compliance.rst) |
+| Understand the threat model, report a vulnerability                    | [Security model](docs/guides/security.rst)           |
+| Migrate a fleet of keys                                                | [Migration](docs/guides/migration.rst)               |
+| See what is planned                                                    | [Roadmap](ROADMAP.md)                                |
 
 The TypeScript counterpart, byte-compatible with this library, is
 [quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts).
@@ -152,13 +152,13 @@ compiles liboqs from source, needing `git`, `CMake`, and a C compiler.
 Our own released wheels work around that: for common platforms — Linux
 x86_64, Windows x64, and macOS arm64 (14+) — we compile liboqs ourselves as
 part of the release process and bundle the binary directly into the wheel
-(see `hatch_build.py`). On those platforms, `pip install
-'quantum-safe-py[liboqs]'` just works, no compiler needed. Outside them
+(see `hatch_build.py`). On those platforms, `pip install 'quantum-safe-py[liboqs]'` just works, no compiler needed. Outside them
 (32-bit, other architectures, Intel Mac, macOS <14), liboqs-python falls back
 to its normal build-from-source path, so you'll still need `git`/`CMake`/a C
 compiler there.
 
 Verify installation:
+
 ```bash
 python -c "from quantum_safe.backends import list_available_backends; print(list_available_backends())"
 # → {'rustcrypto': False, 'liboqs': True, 'noble': False}
@@ -537,11 +537,6 @@ rejection). Testing against ACVP vectors is not unique to this library
 [the production-readiness rubric](docs/production_readiness_rubric.md)); what
 is reported here is the result for this library's own backend.
 
-**This is conformance evidence, not a CAVP or CMVP validation** — validation
-is performed by an accredited laboratory and produces a certificate; nothing
-here does. Bouncy Castle is the one library in our audit holding an actual
-CMVP FIPS 140-3 certificate, and we say so rather than blur the distinction.
-
 ```bash
 python tests/conformance/acvp_kat.py --save results/acvp_kat.json
 ```
@@ -671,8 +666,7 @@ signature format has no prefix and no hedging mode.
 
 ### Verify with the context you expect
 
-`verify(sm, public_key, context=...)` and `Envelope.open(sealed, secret_key,
-expected_aad=...)` state what the verifier expects. The context and AAD carried
+`verify(sm, public_key, context=...)` and `Envelope.open(sealed, secret_key, expected_aad=...)` state what the verifier expects. The context and AAD carried
 inside a message come from whoever supplied it, so without these a signature
 made for one purpose verifies for another and a ciphertext sealed for one
 record opens for another. Omitting them is deprecated in 0.3.1.
@@ -680,6 +674,7 @@ record opens for another. Omitting them is deprecated in 0.3.1.
 ### Hybrid mode rationale
 
 ML-KEM was standardized in 2024. Hybrid mode (X25519 + ML-KEM-768) means:
+
 - If ML-KEM is broken, X25519 still protects you.
 - If X25519 is broken by a quantum computer, ML-KEM still protects you.
 - Both would need to fail simultaneously.
@@ -691,18 +686,18 @@ that has added PQC support.
 
 ## Algorithm reference
 
-| Algorithm | Type | NIST Level | Standard | Notes |
-|-----------|------|-----------|----------|-------|
-| ML-KEM-512 | KEM | 1 | FIPS 203 | Smallest. Use ML-KEM-768 for new deployments. |
-| ML-KEM-768 | KEM | 3 | FIPS 203 | **Recommended default.** |
-| ML-KEM-1024 | KEM | 5 | FIPS 203 | Maximum security. |
-| ML-DSA-44 | Sign | 2 | FIPS 204 | Smallest ML-DSA. |
-| ML-DSA-65 | Sign | 3 | FIPS 204 | **Recommended default.** |
-| ML-DSA-87 | Sign | 5 | FIPS 204 | Maximum security. |
-| SLH-DSA-SHAKE-128s | Sign | 1 | FIPS 205 | Hash-based. Very slow to sign. |
-| SLH-DSA-SHAKE-128f | Sign | 1 | FIPS 205 | Hash-based. Larger sigs, faster sign. |
-| X25519+ML-KEM-768 | Hybrid KEM | — | IETF draft | **Default hybrid combination.** |
-| Ed25519+ML-DSA-65 | Hybrid Sign | — | IETF draft | **Default hybrid combination.** |
+| Algorithm          | Type        | NIST Level | Standard   | Notes                                         |
+| ------------------ | ----------- | ---------- | ---------- | --------------------------------------------- |
+| ML-KEM-512         | KEM         | 1          | FIPS 203   | Smallest. Use ML-KEM-768 for new deployments. |
+| ML-KEM-768         | KEM         | 3          | FIPS 203   | **Recommended default.**                |
+| ML-KEM-1024        | KEM         | 5          | FIPS 203   | Maximum security.                             |
+| ML-DSA-44          | Sign        | 2          | FIPS 204   | Smallest ML-DSA.                              |
+| ML-DSA-65          | Sign        | 3          | FIPS 204   | **Recommended default.**                |
+| ML-DSA-87          | Sign        | 5          | FIPS 204   | Maximum security.                             |
+| SLH-DSA-SHAKE-128s | Sign        | 1          | FIPS 205   | Hash-based. Very slow to sign.                |
+| SLH-DSA-SHAKE-128f | Sign        | 1          | FIPS 205   | Hash-based. Larger sigs, faster sign.         |
+| X25519+ML-KEM-768  | Hybrid KEM  | —         | IETF draft | **Default hybrid combination.**         |
+| Ed25519+ML-DSA-65  | Hybrid Sign | —         | IETF draft | **Default hybrid combination.**         |
 
 ---
 
@@ -786,12 +781,6 @@ black src/ tests/
 
 ---
 
-## Independent review wanted
-
-No part of this library has had an independent cryptographic review, and the second internal audit found a High-severity flaw that had shipped in every release up to 0.3.0. [REVIEW_WANTED.md](REVIEW_WANTED.md) lists exactly which constructions need a second pair of eyes (the `-v2` signature format, the hybrid KEM combiner and the envelope first), where they are in the code, what claim to check, and what a useful review looks like. Partial reviews are welcome.
-
----
-
 ## Cite this work
 
 If you use quantum-safe-py in research or build on the methodology, please cite the accompanying paper:
@@ -832,6 +821,7 @@ Apache 2.0. See [LICENSE](LICENSE).
 ## Acknowledgements
 
 Built on:
+
 - [Open Quantum Safe / liboqs](https://openquantumsafe.org/) — reference PQC implementations
 - [PyCA cryptography](https://cryptography.io/) — classical primitives and X.509
 - [NIST PQC Standardization](https://csrc.nist.gov/projects/post-quantum-cryptography) — FIPS 203/204/205

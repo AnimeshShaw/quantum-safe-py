@@ -174,8 +174,7 @@ Related standards and how this library relates
    * - Standard
      - Relationship
    * - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA)
-     - Implemented through liboqs. 225 of 225 runnable NIST ACVP known-answer cases pass
-       (conformance evidence, not validation).
+     - Implemented through liboqs. 225 of 225 runnable NIST ACVP known-answer cases pass.
    * - NIST SP 800-208 (LMS, XMSS)
      - LMS only, optional extra, write-ahead state store.
    * - RFC 9964 (ML-DSA in JOSE)

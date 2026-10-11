@@ -213,9 +213,8 @@ Where quantum-safe is not the right tool
 
 Being straightforward about limits is part of being safe to adopt:
 
-- **You need a validated module.** quantum-safe is not FIPS 140-3 validated and is not a
-  CAVP or CMVP result. Its conformance evidence (ACVP known-answer tests) is evidence, not
-  validation. If a procurement rule requires a certificate, use a validated module.
+- **A procurement rule requires a CMVP certificate.** Use a certified module for the
+  primitives; quantum-safe's value there is the migration and audit tooling around them.
 - **You need constant-time guarantees.** Python gives none. liboqs is the constant-time
   layer; this library adds Python code around it. See :doc:`security`.
 - **You need hardware or embedded targets.** This is a Python library. Use liboqs,
