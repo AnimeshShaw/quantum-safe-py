@@ -118,6 +118,30 @@ symmetric key material:
 The ``info`` parameter provides domain separation — use a unique value for
 each derived key in your application.
 
+X-Wing
+------
+
+:class:`~quantum_safe.kem.xwing.XWing` is the hybrid KEM of ``draft-connolly-cfrg-xwing-kem``:
+ML-KEM-768 and X25519 joined by a SHA3-256 combiner that binds the X25519 ciphertext and public
+key. Choose it when the other side is a third-party X-Wing implementation (for example in HPKE,
+age, or a JavaScript service); choose :class:`~quantum_safe.kem.hybrid.HybridKEM` for the
+library's own formats (envelopes, migration). quantum-safe-ts reads and writes the same bytes
+(``new HybridKEM('X-Wing')``).
+
+.. code-block:: python
+
+   from quantum_safe import XWing
+
+   kem = XWing()
+   kp = kem.generate_keypair()          # secret key: a 32-byte seed; public key: 1216 bytes
+   ct, ss_sender = kem.encapsulate(kp.public)      # ciphertext: 1120 bytes
+   ss_receiver = kem.decapsulate(kp.secret, ct)
+   assert ss_sender == ss_receiver
+
+A modified ciphertext decapsulates to a different secret rather than raising (ML-KEM's implicit
+rejection), so authenticate whatever you derive from it. ``keypair_from_seed(seed)`` rebuilds a
+key pair from its 32-byte seed.
+
 Envelope (high-level encryption)
 ---------------------------------
 

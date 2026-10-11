@@ -430,6 +430,24 @@ class LiboqsKEMBackend(AbstractKEMBackend):
                 algorithm=algorithm,
             ) from exc
 
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Deterministic key generation from the FIPS 203 seed ``d || z`` (64 bytes).
+
+        Returns (public_key_bytes, secret_key_bytes).
+        """
+        oqs = _import_oqs()
+        liboqs_name = self._liboqs_name(algorithm)
+        try:
+            kem = oqs.KeyEncapsulation(liboqs_name)
+            pub = kem.generate_keypair_seed(bytes(seed))
+            return bytes(pub), bytes(kem.export_secret_key())
+        except AttributeError as exc:  # a liboqs-python without seeded generation
+            raise UnsupportedAlgorithm(f"{algorithm} seeded key generation") from exc
+        except Exception as exc:
+            raise KeyGenerationError(
+                f"liboqs seeded keygen failed for {algorithm}: {exc}", algorithm=algorithm
+            ) from exc
+
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
         """Encapsulate a shared secret under the given public key.
 
