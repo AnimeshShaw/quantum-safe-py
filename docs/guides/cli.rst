@@ -205,7 +205,7 @@ Upgrade a classical **secret** key to a hybrid post-quantum key pair and write i
      -o, --output PATH         Where to write the hybrid SECRET key (required)
      --public-output PATH      Where to write the hybrid public key (default: <output>.pub)
      --target TEXT             Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an
-                               X25519 key, Ed25519+ML-DSA-65 for an Ed25519 key
+                               X25519 key, Ed25519+ML-DSA-65-v2 for an Ed25519 key
      --key-type {kem,sign}     Optional check that the input is a KEM (X25519) or signing
                                (Ed25519) key
      --force                   Replace --output / --public-output if they exist

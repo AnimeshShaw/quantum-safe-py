@@ -107,12 +107,21 @@ class TestUpgradeSucceeds:
 
         sec = SecretKey.from_pem(out.read_text())
         pub = PublicKey.from_pem(pub_out.read_text())
-        assert sec.algorithm == pub.algorithm == "Ed25519+ML-DSA-65"
+        assert sec.algorithm == pub.algorithm == "Ed25519+ML-DSA-65-v2"
 
         from quantum_safe.signatures.hybrid import HybridSign
 
-        signer = HybridSign("Ed25519", "ML-DSA-65")
+        signer = HybridSign()  # the default suite works with the upgraded key
         signer.verify(signer.sign(b"hello", sec), pub, context=b"")
+
+    @liboqs
+    def test_original_format_is_available_by_name(
+        self, runner: CliRunner, tmp_path: Path, ed25519_pem: Path
+    ) -> None:
+        out = tmp_path / "orig.pem"
+        result = upgrade(runner, ed25519_pem, out, "--target", "Ed25519+ML-DSA-65")
+        assert result.exit_code == 0, result.output
+        assert SecretKey.from_pem(out.read_text()).algorithm == "Ed25519+ML-DSA-65"
 
     @liboqs
     def test_the_classical_half_is_the_input_key(

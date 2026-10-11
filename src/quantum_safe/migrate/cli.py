@@ -140,7 +140,7 @@ if _HAS_CLICK:
         default=None,
         help=(
             "Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an X25519 key, "
-            "Ed25519+ML-DSA-65 for an Ed25519 key."
+            "Ed25519+ML-DSA-65-v2 for an Ed25519 key."
         ),
     )
     @click.option(

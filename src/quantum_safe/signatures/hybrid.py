@@ -100,12 +100,15 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
 class HybridSign:
     """Hybrid signature scheme: classical + PQC combined.
 
-    Default: Ed25519 + ML-DSA-65. Both sub-signatures must be valid for
-    verification to pass.
+    Default: Ed25519 + ML-DSA-65 in the ``-v2`` format (``Ed25519+ML-DSA-65-v2``).
+    Both sub-signatures must be valid for verification to pass.
 
     Args:
         classical:  Classical signature algorithm: "Ed25519" or "P-256".
-        pqc:        PQC signature algorithm. Default: "ML-DSA-65".
+        pqc:        PQC signature algorithm. Default: "ML-DSA-65-v2" (the original
+                    prefix format is "ML-DSA-65"; name it to keep using it). With
+                    ``hedged=False`` and no ``pqc``, the original format is used,
+                    because ``-v2`` is always hedged.
         backend:    PQC backend: "auto", "liboqs", "rustcrypto".
         hedged:     Hedged signing mode (default True). Prepends 32 random
                     bytes before signing to prevent fault injection. A
@@ -126,11 +129,16 @@ class HybridSign:
     def __init__(
         self,
         classical: str = DEFAULT_HYBRID_CLASSICAL,
-        pqc: str = DEFAULT_HYBRID_PQC,
+        pqc: str | None = None,
         backend: str = "auto",
         hedged: bool = True,
         validate: bool = True,
     ) -> None:
+        if pqc is None:
+            # The default suite is the -v2 format. It is always hedged inside ML-DSA, so a caller
+            # that asks for ``hedged=False`` without naming a suite gets the original format, the
+            # only one with an unhedged mode (this keeps verifiers built that way working).
+            pqc = DEFAULT_HYBRID_PQC if hedged else DEFAULT_HYBRID_PQC.removesuffix(_v2.SUFFIX)
         # A ``-v2`` suffix on the PQC half selects the v2 signature format.
         self._v2 = _v2.is_v2(pqc)
         if self._v2:

@@ -77,7 +77,8 @@ If you signed with ``hedged=False``, build the verifier the same way:
 
    from quantum_safe import VerificationError
    try:
-       HybridSign().verify(sm, kp.public, context=b"releases-v1")           # hedged verifier
+       # the same original format, but in hedged mode (in 0.4.0 plain HybridSign() is -v2)
+       HybridSign("Ed25519", "ML-DSA-65").verify(sm, kp.public, context=b"releases-v1")
    except VerificationError:
        print("an unhedged signature does not verify on a hedged verifier")
 

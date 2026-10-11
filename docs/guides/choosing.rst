@@ -60,8 +60,8 @@ The same decision as code:
        return cnsa2.pqc_kem().generate_keypair() if cnsa2_profile else HybridKEM().generate_keypair()
 
    def signer(verifiers_are_all_0_3_1_or_later: bool = False):
-       """-v2 when every verifier can read it, the default format otherwise."""
-       return HybridSign("Ed25519", "ML-DSA-65-v2") if verifiers_are_all_0_3_1_or_later else HybridSign()
+       """-v2 when every verifier can read it, the original format otherwise."""
+       return HybridSign() if verifiers_are_all_0_3_1_or_later else HybridSign("Ed25519", "ML-DSA-65")
 
    for profile in (False, True):
        keys = encryption_keys(profile)
@@ -138,16 +138,16 @@ more than belt-and-braces. Measured sizes for ML-DSA-65: the raw signature is 33
 default-format ``SignedMessage`` signature is 3342 bytes (hedging prefix) and 3476 for the
 hybrid; with ``-v2`` it is 3309 (pure) and 3373 (hybrid).
 
-Default format or ``-v2``?
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Original format or ``-v2``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
    :widths: 25 37 38
 
    * -
-     - Default (v1)
-     - ``-v2``
+     - Original format (v1)
+     - ``-v2`` (the default for ``HybridSign``)
    * - Who can verify
      - quantum-safe (Python 0.2.1+ and TypeScript)
      - quantum-safe 0.3.1+ and quantum-safe-ts; the ML-DSA half is plain FIPS 204, so any
@@ -165,9 +165,10 @@ Default format or ``-v2``?
      - Every ML-DSA suite, hybrids, SLH-DSA
      - ML-DSA-44/65/87, Ed25519 and P-256 hybrids (no SLH-DSA)
 
-**Recommendation.** For *new* signatures where every verifier you control runs 0.3.1 or
-later, use ``-v2``. Keep the default while an older verifier is in the loop. The default
-will move to ``-v2`` in a later minor release.
+**Recommendation.** ``-v2`` is the default hybrid format from 0.4.0, so ``HybridSign()``
+is right for new signatures wherever every verifier you control runs 0.3.1 or later. Name
+the original format (``HybridSign("Ed25519", "ML-DSA-65")``) while an older verifier is in
+the loop.
 
 .. warning::
 

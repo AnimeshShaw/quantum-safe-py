@@ -654,8 +654,10 @@ you must hold an external distributed lock on the `key_id` around
 
 ### Hedged signing
 
-`HybridSign` and `Sign` default to hedged mode: a 32-byte random prefix
-is prepended before signing.  This prevents fault-injection attacks that have
+`HybridSign()` defaults to the `-v2` format, in which ML-DSA hedges internally
+(FIPS 204's own fresh randomness) and there is no prefix. In the original format
+(`HybridSign("Ed25519", "ML-DSA-65")`, and `Sign` by default), hedged mode
+prepends a 32-byte random prefix before signing.  This prevents fault-injection attacks that have
 been demonstrated on lattice signatures in lab conditions.  Opt out with
 `hedged=False` only if you have a specific need for deterministic signatures.
 
@@ -697,7 +699,8 @@ that has added PQC support.
 | SLH-DSA-SHAKE-128s | Sign        | 1          | FIPS 205   | Hash-based. Very slow to sign.                |
 | SLH-DSA-SHAKE-128f | Sign        | 1          | FIPS 205   | Hash-based. Larger sigs, faster sign.         |
 | X25519+ML-KEM-768  | Hybrid KEM  | —         | IETF draft | **Default hybrid combination.**         |
-| Ed25519+ML-DSA-65  | Hybrid Sign | —         | IETF draft | **Default hybrid combination.**         |
+| Ed25519+ML-DSA-65-v2 | Hybrid Sign | —       | IETF draft | **Default hybrid combination** (`-v2` format). |
+| Ed25519+ML-DSA-65  | Hybrid Sign | —         | IETF draft | The original format; name it explicitly. |
 
 ---
 

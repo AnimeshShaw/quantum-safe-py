@@ -48,7 +48,7 @@ Digital signatures
 
    from quantum_safe import HybridSign
 
-   signer = HybridSign()               # Ed25519 + ML-DSA-65 by default
+   signer = HybridSign()               # Ed25519 + ML-DSA-65, -v2 format, by default
    kp     = signer.generate_keypair()
 
    sm = signer.sign(b"document", kp.secret, context=b"myapp-v1")

@@ -26,7 +26,7 @@ from quantum_safe.types import KeyPair, MigrationState, PublicKey, SecretKey
 #: Algorithm -> (key type, default hybrid target) for the inputs the CLI upgrades.
 SUPPORTED_INPUTS: dict[str, tuple[str, str]] = {
     "X25519": ("kem", "X25519+ML-KEM-768"),
-    "Ed25519": ("sign", "Ed25519+ML-DSA-65"),
+    "Ed25519": ("sign", "Ed25519+ML-DSA-65-v2"),
 }
 
 _MAX_KEY_FILE_BYTES = 64 * 1024
@@ -170,7 +170,13 @@ def resolve_target(
             from quantum_safe.kem.algorithms import validate_hybrid_combination
         else:
             from quantum_safe.signatures.algorithms import validate_hybrid_combination
-        validate_hybrid_combination(classical, pqc)
+        base = pqc.removesuffix("-v2") if expected_type == "sign" else pqc
+        validate_hybrid_combination(classical, base)
+        if expected_type == "sign" and base != pqc:
+            from quantum_safe.signatures import _v2
+
+            if base not in _v2.V2_HYBRIDS.get(classical, ()):
+                raise ValueError(f"{classical}+{pqc} is not a -v2 combination")
     except ValueError as exc:
         raise KeyUpgradeError(str(exc)) from exc
     return expected_type, classical, pqc

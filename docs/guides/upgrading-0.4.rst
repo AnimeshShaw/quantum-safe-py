@@ -54,3 +54,29 @@ liboqs-python warns at import when the two differ; 0.16.0 and its matching liboq
 ``quantum_safe.backends.liboqs.liboqs_versions()`` reports the pair. HQC is named ``HQC-1/3/5`` in
 liboqs 0.16 (``HQC-128/192/256`` in 0.15); the library's names are unchanged, and the HQC sizes follow
 the 2025 specification (secret key 2321 bytes, shared secret 32 bytes for HQC-128).
+
+The default hybrid signature is ``-v2``
+---------------------------------------
+
+``HybridSign()`` is now ``Ed25519+ML-DSA-65-v2`` (no hedging prefix, FIPS 204 native context,
+byte-compatible with quantum-safe-ts). Signatures it makes verify on quantum-safe 0.3.1 and later and
+on quantum-safe-ts, and **not** on 0.3.0 or earlier.
+
+.. code-block:: python
+
+   from quantum_safe import HybridSign
+
+   new = HybridSign()                              # Ed25519+ML-DSA-65-v2
+   old = HybridSign("Ed25519", "ML-DSA-65")        # the original format, unchanged
+   assert new.algorithm == "Ed25519+ML-DSA-65-v2"
+   assert old.algorithm == "Ed25519+ML-DSA-65"
+
+**What you need to do.**
+
+* Verifying signatures that already exist: build the verifier with the original suite
+  (``HybridSign("Ed25519", "ML-DSA-65")``). A default verifier refuses them, because keys carry their
+  format tag.
+* Signing for verifiers that are older than 0.3.1: name the original suite.
+* ``HybridSign(hedged=False)`` without a suite keeps selecting the original format (``-v2`` is always
+  hedged), so existing unhedged verifiers need no change.
+* Never use the same key material in both formats.

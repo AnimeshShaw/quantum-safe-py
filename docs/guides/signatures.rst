@@ -55,7 +55,7 @@ Both sub-signatures must verify for the overall verification to pass.
 
    from quantum_safe import HybridSign
 
-   signer = HybridSign()               # Ed25519 + ML-DSA-65 by default
+   signer = HybridSign()               # Ed25519 + ML-DSA-65, -v2 format, by default
    kp     = signer.generate_keypair()
 
    # Sign a message
@@ -226,9 +226,11 @@ and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
 - Keys carry the ``-v2`` tag, but the tag is advisory: v1 and v2 keys have
   identical bytes.  **Never use the same key in both formats.**
 
-``-v2`` is not the default in this release; the default will move to it in the
-next minor release.  Versions of quantum-safe before this one cannot read
-``-v2`` signatures.
+``-v2`` is the default hybrid format from 0.4.0: ``HybridSign()`` is
+``Ed25519+ML-DSA-65-v2``.  Versions of quantum-safe before 0.3.1 cannot read
+``-v2`` signatures; to sign for them, name the original format explicitly
+(``HybridSign("Ed25519", "ML-DSA-65")``).  ``HybridSign(hedged=False)`` without a
+suite also selects the original format, because ``-v2`` is always hedged.
 
 SignedMessage
 -------------

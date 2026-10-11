@@ -146,9 +146,9 @@ class TestSignatureAlgorithmRegistry:
         with pytest.raises(UnsupportedAlgorithm):
             get_algorithm_spec("FAKE-SIG-99")
 
-    def test_default_hybrid_is_ed25519_mldsa65(self):
+    def test_default_hybrid_is_ed25519_mldsa65_v2(self):
         assert DEFAULT_HYBRID_CLASSICAL == "Ed25519"
-        assert DEFAULT_HYBRID_PQC == "ML-DSA-65"
+        assert DEFAULT_HYBRID_PQC == "ML-DSA-65-v2"
 
     def test_canonical_name(self):
         assert canonical_hybrid_name("Ed25519", "ML-DSA-65") == "Ed25519+ML-DSA-65"
@@ -533,7 +533,8 @@ class TestHybridSignWithRealBackend:
         hs.verify(sm, kp.public, context=b"integration-test")
 
     def test_sign_produces_real_ml_dsa_signature(self):
-        hs = HybridSign()
+        # The prefix-format blob (random prefix, then the hybrid payload); the default is -v2.
+        hs = HybridSign("Ed25519", "ML-DSA-65")
         kp = hs.generate_keypair()
         sm = hs.sign(b"test", kp.secret, context=b"ctx")
         rand_prefix, hs_bytes = Sign._unpack_sig_blob(sm.signature, 32)

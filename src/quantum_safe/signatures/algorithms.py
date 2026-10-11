@@ -173,7 +173,10 @@ HYBRID_SIGNATURE_COMBINATIONS: dict[str, list[str]] = {
 }
 
 DEFAULT_HYBRID_CLASSICAL = "Ed25519"
-DEFAULT_HYBRID_PQC = "ML-DSA-65"
+# The default hybrid suite is the -v2 format (no hedging prefix, FIPS 204 native context,
+# byte-compatible with quantum-safe-ts). The previous default, "ML-DSA-65" (the library's original
+# prefix format), is unchanged and reachable under that identifier.
+DEFAULT_HYBRID_PQC = "ML-DSA-65-v2"
 DEFAULT_SINGLE_PQC = "ML-DSA-65"
 
 # Hedged signing injects this many random bytes before the message.
