@@ -489,6 +489,30 @@ class Sign:
         if not ok:
             raise VerificationError(algo=self._algorithm)
 
+    def sign_standard(
+        self,
+        message: bytes,
+        secret_key: SecretKey,
+        context: bytes = b"",
+    ) -> bytes:
+        """The standard FIPS 204 signature of ``message`` under ``context``.
+
+        Identical to :meth:`sign_raw`; this is the name that says what it is. The result is a
+        bare ``ML-DSA.Sign`` signature that any FIPS 204 implementation can verify from the
+        message and context, as opposed to :meth:`sign`, which is the library's own format.
+        """
+        return self.sign_raw(message, secret_key, context)
+
+    def verify_standard(
+        self,
+        message: bytes,
+        signature: bytes,
+        public_key: PublicKey,
+        context: bytes = b"",
+    ) -> None:
+        """Verify a standard FIPS 204 signature. Identical to :meth:`verify_raw`."""
+        self.verify_raw(message, signature, public_key, context)
+
     # ------------------------------------------------------------------
     # Internal: signature blob packing
     # ------------------------------------------------------------------

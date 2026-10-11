@@ -137,6 +137,9 @@ passes your message and context to ML-DSA unchanged and returns only the signatu
 
    signer.verify_raw(b"release 1.2.3", sig, kp.public, context=b"myapp-release")
 
+``sign_standard()`` and ``verify_standard()`` are the same two operations under names that
+say what they are; use whichever reads better in your code.
+
 ``verify_raw()`` likewise verifies signatures made elsewhere (``ML-DSA.Sign`` with
 FIPS 204's context string). The randomness is FIPS 204's own hedged ``rnd`` input,
 generated inside liboqs, and the message is never modified. There is no hedging
