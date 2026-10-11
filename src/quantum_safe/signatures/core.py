@@ -66,7 +66,12 @@ import warnings
 from typing import TYPE_CHECKING
 
 from quantum_safe.backends import get_signature_backend
-from quantum_safe.exceptions import InsecureOperationError, UnsupportedAlgorithm, VerificationError
+from quantum_safe.exceptions import (
+    ContextOmittedWarning,
+    InsecureOperationError,
+    UnsupportedAlgorithm,
+    VerificationError,
+)
 from quantum_safe.signatures import _v2
 from quantum_safe.signatures.algorithms import (
     HEDGED_RANDOMNESS_BYTES,
@@ -84,19 +89,20 @@ def check_expected_context(
 ) -> None:
     """Require the message's context to equal the verifier's expected context.
 
-    ``expected=None`` keeps the pre-0.3.1 behaviour (the context is taken from
-    the message) and emits a DeprecationWarning.
+    ``expected=None`` means "expect an empty context": a message that carries a
+    context is rejected, and a :class:`ContextOmittedWarning` says why (without
+    revealing the context). The wire error stays the opaque VerificationError.
     """
     if expected is None:
-        warnings.warn(
-            "verify() without context= is deprecated: pass the context you expect. "
-            "The context in the message is attacker-controlled, so without it a "
-            "signature made for one purpose verifies for another. context= will be "
-            "required (default b'') in the next minor release.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        return
+        expected = b""
+        if signed_message.context:
+            warnings.warn(
+                "verify() was called without context= but the message carries a non-empty "
+                "context, so it is rejected: omitting context= means 'expect an empty "
+                "context'. Pass the context you expect.",
+                ContextOmittedWarning,
+                stacklevel=3,
+            )
     if not hmac.compare_digest(bytes(signed_message.context), bytes(expected)):
         raise VerificationError(algo=algorithm)
 

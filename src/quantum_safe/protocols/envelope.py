@@ -64,6 +64,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from quantum_safe._internal import serialization as _ser
 from quantum_safe.exceptions import (
+    AadOmittedWarning,
     DecapsulationError,
     KeyParseError,
 )
@@ -339,10 +340,11 @@ class Envelope:
             kem:                  HybridKEM instance. If None, auto-created
                                   from the envelope's algorithm field.
             expected_aad:         The AAD this opener expects. The message's
-                                  AAD must equal it. Omitting it while the
-                                  message carries AAD is deprecated (it emits
-                                  a DeprecationWarning); it will be required
-                                  (default ``b""``) in the next minor release.
+                                  AAD must equal it. If omitted, any AAD is
+                                  accepted (it is authenticated, so it cannot
+                                  be altered), and an
+                                  :class:`~quantum_safe.exceptions.AadOmittedWarning`
+                                  is emitted when the message carries AAD.
 
         Returns:
             Original plaintext bytes.
@@ -359,11 +361,10 @@ class Envelope:
         if expected_aad is None:
             if sealed.aad:
                 warnings.warn(
-                    "Envelope.open() without expected_aad= is deprecated: the AAD travels "
-                    "inside the message and anyone with the recipient's public key can set "
-                    "it, so pass the AAD you expect. expected_aad= will be required "
-                    "(default b'') in the next minor release.",
-                    DeprecationWarning,
+                    "Envelope.open() was called without expected_aad= for a message that "
+                    "carries AAD. The AAD travels inside the message and anyone with the "
+                    "recipient's public key can set it, so pass the AAD you expect.",
+                    AadOmittedWarning,
                     stacklevel=2,
                 )
         elif not hmac.compare_digest(bytes(sealed.aad), bytes(expected_aad)):

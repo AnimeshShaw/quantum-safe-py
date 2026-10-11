@@ -16,6 +16,9 @@ All notable changes to quantum-safe are documented here.
 
 ### Changed behaviour
 
+- **Omitted `context=` in `verify()` now means "expect an empty context"** (`Sign` and `HybridSign`). Before, the message's own context was accepted with a `DeprecationWarning`. Now a message that carries a context is rejected with `VerificationError`, and a `ContextOmittedWarning` tells the developer why (it never contains the context). Messages signed without a context are unaffected. New warning classes `QuantumSafeWarning`, `ContextOmittedWarning` and `AadOmittedWarning` (all `UserWarning`, so visible by default).
+- `Envelope.open()` without `expected_aad=` still accepts any AAD; its warning is now an `AadOmittedWarning` (was a `DeprecationWarning`, hidden by default).
+- New guide `docs/guides/context-and-aad.rst` and `docs/guides/upgrading-0.4.rst`.
 - `AuditPolicy` and `AuditPolicy.from_dict` / `from_file` now fail closed: an unknown field (for example a misspelt `min_security_lvl`), a string where a boolean is expected (`"false"` is truthy), or an invalid `require_migration_state` raises `ValueError`. Policy files that carried such mistakes were silently weaker than they read; they now need correcting. `version` is still accepted. `qs-audit scan` exits non-zero with a message for an unreadable policy or inventory.
 - `AuditPolicy.transition()` and `permissive()` set `require_migration_state="classical_only"` so they keep tolerating classical-only keys now that the field is enforced. Default pass/fail for source scans without an inventory is unchanged.
 

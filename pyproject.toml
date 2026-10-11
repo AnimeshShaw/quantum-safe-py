@@ -177,11 +177,11 @@ addopts = [
     "--strict-markers",
     "-ra",
 ]
-# The library's own tests must state the context they expect when verifying;
-# only the test that exercises the deprecated path may omit it (pytest.warns).
+# The library's own tests must state the context and AAD they expect; only a test that
+# exercises the omitted-argument path may leave it out (pytest.warns).
 filterwarnings = [
-    "error:verify\\(\\) without context=:DeprecationWarning",
-    "error:Envelope.open\\(\\) without expected_aad=:DeprecationWarning",
+    "error::quantum_safe.exceptions.ContextOmittedWarning",
+    "error::quantum_safe.exceptions.AadOmittedWarning",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",

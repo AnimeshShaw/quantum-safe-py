@@ -160,10 +160,10 @@ encrypt data:
    An envelope is public-key encryption: anyone holding the recipient's
    public key can seal a message, with any AAD, and the AAD travels inside
    the message.  Pass ``expected_aad=`` to ``Envelope.open`` to bind a
-   message to a context; omitting it while the message carries AAD is
-   deprecated (``DeprecationWarning``) and will be an error-by-default in the
-   next minor release.  An envelope does **not** authenticate the sender;
-   sign the payload separately when the sender matters.
+   message to a context; omitting it accepts any AAD and emits an
+   ``AadOmittedWarning`` when the message carries one (see
+   :doc:`context-and-aad`).  An envelope does **not** authenticate the
+   sender; sign the payload separately when the sender matters.
 
 Key serialization
 -----------------

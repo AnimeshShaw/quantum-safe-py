@@ -108,12 +108,12 @@ a unique context string for each signing context:
    signer.verify(sm_docs, kp.public, context=b"myapp-docs-v1")   # OK
    signer.verify(sm_auth, kp.public, context=b"myapp-docs-v1")   # VerificationError
 
-Always pass ``context=`` to ``verify()``.  The context stored in a
-``SignedMessage`` comes from whoever supplied the message, so a verifier that
-takes it from there would accept a signature made for one purpose as valid for
-another.  Calling ``verify()`` without ``context=`` still works in this
-release but emits a ``DeprecationWarning``; it will be required (default
-``b""``) in the next minor release.
+Pass ``context=`` to ``verify()``.  The context stored in a ``SignedMessage``
+comes from whoever supplied the message, so a verifier that took it from there
+would accept a signature made for one purpose as valid for another.  Leaving
+``context=`` out means "expect an empty context": a message that carries a
+context is rejected, and a ``ContextOmittedWarning`` tells the developer why.
+See :doc:`context-and-aad` for the use cases and the full table.
 
 Standard FIPS 204 signatures (interoperating with other libraries)
 -------------------------------------------------------------------
