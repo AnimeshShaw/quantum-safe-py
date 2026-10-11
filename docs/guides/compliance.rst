@@ -7,11 +7,10 @@ how to configure a deployment that selects the CNSA 2.0 parameter sets.
 
 .. important::
 
-   quantum-safe reports **parameter selection only**. CNSA 2.0 compliance for National
+   quantum-safe reports **parameter selection**: which algorithms, key sizes and modes a
+   deployment uses, set against the CNSA 2.0 requirements. CNSA 2.0 compliance for National
    Security Systems runs through FIPS 140-3 validated cryptographic modules, which is an
-   outcome of testing by an accredited laboratory. quantum-safe is not a validated module,
-   its ACVP results are conformance *evidence* and not a CAVP or CMVP validation, and no
-   self-assessment produces a certificate. Nothing here is a statement of compliance.
+   outcome of testing by an accredited laboratory; the reports here are inputs to that work.
 
 .. contents:: On this page
    :local:
@@ -174,7 +173,7 @@ Related standards and how this library relates
    * - Standard
      - Relationship
    * - FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA)
-     - Implemented through liboqs. 225 of 225 runnable NIST ACVP known-answer cases pass.
+     - Implemented through liboqs, and through the optional ``cryptography`` backend for ML-DSA and ML-KEM. 638 of 638 runnable NIST ACVP known-answer cases pass.
    * - NIST SP 800-208 (LMS, XMSS)
      - LMS only, optional extra, write-ahead state store.
    * - RFC 9964 (ML-DSA in JOSE)

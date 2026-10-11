@@ -591,13 +591,8 @@ ACVP conformance testing
 ``tests/conformance/acvp_kat.py`` runs NIST's own published ACVP
 known-answer vectors against the installed backend.
 
-.. warning::
-
-   This is **not** a CAVP or CMVP validation. Validation is performed by
-   accredited laboratories against NIST's production ACVTS server and results
-   in a certificate. This module produces none of that. The supported claim
-   is "answers NIST-issued ACVP vectors correctly", not "validated" — never
-   describe a passing run as validation, certification, or compliance.
+The supported claim is "answers NIST-issued ACVP vectors correctly", for the
+test types listed below.
 
 Vectors are fetched from a pinned commit of ``usnistgov/ACVP-Server`` (so a
 re-run reproduces the same answers) and cached under
@@ -607,14 +602,19 @@ re-run reproduces the same answers) and cached under
 
    python tests/conformance/acvp_kat.py --save results/acvp_kat.json
 
-Current result: **225 of 225 runnable cases** produce the expected answer —
-ML-KEM keyGen (75/75, seeded from the 64-byte ``d‖z``), ML-KEM encapsulation
-(75/75, reached through ``OQS_KEM_encaps_derand`` via ``ctypes`` since the
-high-level binding can't accept ACVP's supplied randomness), ML-KEM
-decapsulation (30/30, including implicit-rejection cases), and ML-DSA sigVer
-(45/45, across both acceptance and rejection cases — an implementation that
-rejected everything would pass only the rejection cases, so both polarities
-matter). ML-KEM key-validation checks and ML-DSA keyGen/sigGen remain out of
-reach of the current API surface; the runner reports this as a scope limit,
-not a failure. Full detail, including *why* each unreachable test type is
+Current result: **638 of 638 runnable cases** produce the expected answer —
+ML-KEM keyGen (75/75, seeded from the 64-byte ``d‖z``; 50/50 ``ek`` through
+the ``cryptography`` backend), ML-KEM encapsulation (75/75, reached through
+``OQS_KEM_encaps_derand`` via ``ctypes`` since the high-level binding can't
+accept ACVP's supplied randomness), ML-KEM decapsulation (30/30, including
+implicit-rejection cases), ML-DSA keyGen (75/75 public keys from the seed
+through ``cryptography``; 75/75 NIST expanded secret keys sign in liboqs and
+verify in ``cryptography`` under NIST's public keys), ML-DSA sigVer (45/45 in
+liboqs and 45/45 in ``cryptography``, across both acceptance and rejection
+cases — an implementation that rejected everything would pass only the
+rejection cases, so both polarities matter) and SLH-DSA sigVer (168/168 over
+all twelve parameter sets, acceptance and rejection). ML-KEM key-validation
+checks, ML-DSA sigGen and externalMu, SLH-DSA keyGen/sigGen, and the pre-hash
+and internal-interface groups remain out of reach of the current API
+surface; the runner reports this as a scope limit, not a failure. Full detail, including *why* each unreachable test type is
 unreachable, is in ``results/BENCHMARKS.md`` and the module's own docstring.

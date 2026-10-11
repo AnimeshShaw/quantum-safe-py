@@ -152,7 +152,6 @@ Added
 - **ACVP known-answer conformance testing** against NIST-published vectors
   (``tests/conformance/acvp_kat.py``), wired into CI. 225/225 runnable cases
   pass: ML-KEM keyGen, encapsulation, decapsulation, and ML-DSA sigVer.
-  Explicitly not a CAVP/CMVP validation.
 - **Two-class timing-leakage harness** (``tests/bench/bench_leakage.py``),
   replacing CoV as the tool for the secret-dependence question. Requires a
   random-vs-random control in addition to the usual fixed-vs-fixed one --

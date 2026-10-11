@@ -27,7 +27,7 @@ verification procedure: [`docs/production_readiness_rubric.md`](docs/production_
 | -------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Cryptographic discovery/inventory                              | **0 of 7** provide it                      | ✓ CycloneDX CBOM (`qs-audit cbom`)                                                                                               |
 | Stateful hash-based signing (LMS/XMSS)                         | 1 of 7 (Bouncy Castle: both)                     | Partial — LMS only, optional`[lms]` extra                                                                                        |
-| Conformance evidence vs. NIST vectors                          | 1 of 5 holds a real CMVP cert (Bouncy Castle)    | 225/225 ACVP known-answer cases pass                                                                   |
+| Conformance evidence vs. NIST vectors                          | 1 of 5 holds a real CMVP cert (Bouncy Castle)    | 638/638 ACVP known-answer cases pass                                                                   |
 | Hybrid KEM combiner                                            | 3 of 6 have one (up from 1 of 9 nine months ago) | ✓ Default mode                                                                                                                     |
 | CNSA 2.0 parameter sets by default                             | n/a (raw primitives, no opinion)                 | **Partial** — defaults are ML-KEM-768/ML-DSA-65, below CNSA 2.0; `qs-audit cnsa2` reports or `cnsa2.enforce()` blocks it |
 | Migration path for existing keys                               | 1 of 7 partial                                   | ✓`Upgrader` + state machine                                                                                                      |
@@ -526,13 +526,17 @@ signer = cnsa2.hybrid_sign()  # Ed25519 + ML-DSA-87, PARTIAL
 Or from the CLI: `qs-audit cnsa2` (defaults to checking this library's own
 defaults — which fail, on purpose, so you see it immediately).
 
-### ACVP conformance evidence
+### ACVP known-answer conformance
 
-**225 of 225 runnable ACVP known-answer cases**, run against NIST's own
-published test vectors — ML-KEM keyGen (75/75, exact `ek`+`dk`), ML-KEM
-encapsulation (75/75), ML-KEM decapsulation (30/30, including
-implicit-rejection cases), ML-DSA sigVer (45/45, both acceptance and
-rejection). Testing against ACVP vectors is not unique to this library
+**638 of 638 runnable ACVP known-answer cases**, run against NIST's own
+published test vectors — ML-KEM keyGen (75/75, exact `ek`+`dk`; 50/50 `ek`
+from the seed through the `cryptography` backend), ML-KEM encapsulation
+(75/75), ML-KEM decapsulation (30/30, including implicit-rejection cases),
+ML-DSA keyGen (75/75 public keys from the seed, 75/75 expanded secret keys
+against their public keys), ML-DSA sigVer (45/45 through liboqs and 45/45
+through `cryptography`, both acceptance and rejection), SLH-DSA sigVer
+(168/168 across all twelve parameter sets, both acceptance and rejection).
+Testing against ACVP vectors is not unique to this library
 (noble-post-quantum, for one, does too; see
 [the production-readiness rubric](docs/production_readiness_rubric.md)); what
 is reported here is the result for this library's own backend.
