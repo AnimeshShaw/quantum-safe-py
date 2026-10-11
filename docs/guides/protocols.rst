@@ -6,6 +6,34 @@ Envelope
 
 See :doc:`kem` for the full Envelope API.
 
+COSE_Sign1 (CBOR signatures, RFC 9964)
+--------------------------------------
+
+:mod:`quantum_safe.protocols.cose` signs and verifies **COSE_Sign1** messages with ML-DSA, the
+CBOR counterpart of a compact JWS (CBOR Web Tokens, WebAuthn, attestation formats). It is the COSE
+half of RFC 9964; :class:`~quantum_safe.protocols.standard_jwt.StandardJwt` is the JOSE half. The
+signed bytes are ``["Signature1", protected, external_aad, payload]`` under plain FIPS 204 with the
+empty context, so any compliant COSE library verifies the result.
+
+.. code-block:: python
+
+   from quantum_safe.protocols.cose import sign1, verify_sign1
+   from quantum_safe.signatures import Sign
+
+   kp = Sign("ML-DSA-65").generate_keypair()
+   message = sign1(b"hello", kp.secret, kid=b"key-1", external_aad=b"myapp-v1")
+   payload = verify_sign1(message, kp.public, external_aad=b"myapp-v1")
+   assert payload == b"hello"
+
+- Algorithms: ML-DSA-44 = -48, ML-DSA-65 = -49, ML-DSA-87 = -50.
+- ``detached=True`` leaves the payload out (``verify_sign1(..., detached_payload=...)``);
+  ``tagged=False`` omits CBOR tag 18.
+- ``encode_cose_key`` / ``decode_cose_key`` read and write AKP public keys.
+- Verification is strict: the algorithm must be protected and known, ``crit`` is refused, CBOR must
+  be minimal with unique labels and no trailing bytes.
+- Checked against RFC 9964 Appendix A (all three levels) and against quantum-safe-ts in both
+  directions.
+
 Streaming envelope (large or incremental data)
 ----------------------------------------------
 

@@ -14,6 +14,21 @@ Envelope
    :members:
    :show-inheritance:
 
+COSE
+----
+
+.. autofunction:: quantum_safe.protocols.cose.sign1
+
+.. autofunction:: quantum_safe.protocols.cose.verify_sign1
+
+.. autofunction:: quantum_safe.protocols.cose.inspect_sign1
+
+.. autofunction:: quantum_safe.protocols.cose.sig_structure
+
+.. autofunction:: quantum_safe.protocols.cose.encode_cose_key
+
+.. autofunction:: quantum_safe.protocols.cose.decode_cose_key
+
 Streaming envelope
 ------------------
 
