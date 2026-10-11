@@ -246,14 +246,35 @@ class FileMigrationStore(MutableMapping[str, bytes]):
                 if owner_file.read_text(encoding="ascii") == token:
                     shutil.rmtree(lock, ignore_errors=True)
 
+    @staticmethod
+    def _lock_age(path: Path) -> float:
+        return time.time() - path.stat().st_mtime
+
     def _break_if_stale(self, lock: Path) -> None:
         """Remove a lock not refreshed for ``stale_lock_seconds``. Removal is a rename to a unique
-        name, so only one waiter wins it."""
+        name, so only one waiter wins it.
+
+        Checking the age and renaming are two steps. Between them another waiter may have broken the
+        stale lock and a third process taken a fresh one at the same path, which our rename would
+        then move away. So the age is checked again on what was actually moved: a lock that turns
+        out to be live is put back (if its path is still free). If it cannot be, its holder fails
+        with "lock lost" before writing, never with a corrupt write.
+        """
         try:
-            if time.time() - lock.stat().st_mtime <= self._stale:
+            if self._lock_age(lock) <= self._stale:
                 return
             graveyard = lock.with_name(f"{lock.name}.stale.{secrets.token_hex(6)}")
             os.rename(lock, graveyard)
+            try:
+                moved_live = self._lock_age(graveyard) <= self._stale
+            except OSError:
+                moved_live = False
+            if moved_live:
+                try:
+                    os.rename(graveyard, lock)
+                    return
+                except OSError:
+                    pass  # the path is taken again: the holder will notice and fail safely
             shutil.rmtree(graveyard, ignore_errors=True)
         except OSError:
             pass  # released, or another waiter broke it first: just retry

@@ -122,7 +122,13 @@ def _parse_sign1(data: bytes) -> tuple[list[Any], bool]:
         raise ValueError("COSE_Sign1 payload must be a byte string or nil")
     if not isinstance(signature, bytes):
         raise ValueError("COSE_Sign1 signature must be a byte string")
-    return [protected, unprotected, payload, signature], tagged
+    parts: list[Any] = [protected, unprotected, payload, signature]
+    # One reading per message: re-encoding what was decoded must give back exactly the input. That
+    # rejects indefinite lengths, non-minimal integers and lengths, and duplicate map labels (which
+    # decode to one entry and so re-encode shorter).
+    if bytes(cbor2.dumps(cbor2.CBORTag(_TAG_SIGN1, parts) if tagged else parts)) != data:
+        raise ValueError("the COSE_Sign1 is not in minimal definite-length CBOR with unique labels")
+    return parts, tagged
 
 
 def _protected_header(protected: bytes) -> dict[Any, Any]:
@@ -134,9 +140,9 @@ def _protected_header(protected: bytes) -> dict[Any, Any]:
         raise ValueError("the protected header is not well-formed CBOR") from exc
     if not isinstance(header, dict):
         raise ValueError("the protected header is not a map")
-    # A re-encoding is shorter if the map had duplicate labels and longer if it used a non-minimal
-    # encoding; either way there is more than one spelling of the same header, so refuse it.
-    if len(cbor2.dumps(header)) != len(protected):
+    # More than one spelling of the same header (duplicate labels, non-minimal or indefinite
+    # encodings, trailing bytes) is refused: the re-encoding must equal the input exactly.
+    if bytes(cbor2.dumps(header)) != protected:
         raise ValueError("the protected header has duplicate labels or a non-minimal encoding")
     return header
 
@@ -144,6 +150,8 @@ def _protected_header(protected: bytes) -> dict[Any, Any]:
 def _read(data: bytes) -> tuple[bytes, dict[Any, Any], dict[Any, Any], bytes | None, bytes, bool]:
     (protected, unprotected, payload, signature), tagged = _parse_sign1(data)
     header = _protected_header(protected)
+    if set(header) & set(unprotected):
+        raise ValueError("a header label appears in both the protected and unprotected headers")
     if 2 in header or 2 in unprotected:
         raise ValueError("a 'crit' header is present and no critical headers are understood")
     return protected, header, unprotected, payload, signature, tagged
@@ -230,12 +238,17 @@ def decode_cose_key(data: bytes) -> tuple[PublicKey, bytes | None]:
     Raises ``ValueError`` for another key type, a non-ML-DSA algorithm, a missing algorithm
     (REQUIRED for AKP), a wrong-length key, or a key that carries private material.
     """
+    data = bytes(data)
     try:
-        key = cbor2.loads(bytes(data))
+        key = cbor2.loads(data)
     except Exception as exc:
         raise ValueError("not well-formed CBOR") from exc
     if not isinstance(key, dict):
         raise ValueError("a COSE_Key is a map")
+    if bytes(cbor2.dumps(key)) != data:
+        raise ValueError(
+            "the COSE_Key has duplicate labels, trailing bytes or a non-minimal encoding"
+        )
     if key.get(1) != KTY_AKP:
         raise ValueError("not an AKP key (kty must be 7)")
     if -2 in key:

@@ -165,6 +165,29 @@ class TestLocks:
         assert s["k"] == b"v"
 
 
+class TestStaleLockRace:
+    def test_a_live_lock_that_replaced_the_stale_one_is_put_back(self, tmp_path: Path) -> None:
+        """Between the age check and the rename, the stale lock may be replaced by a live one."""
+        s = FileMigrationStore(tmp_path, stale_lock_seconds=60, lock_timeout_seconds=1)
+        s["k"] = b"v"
+        lock = next(tmp_path / (f.name + ".lock") for f in list(tmp_path.iterdir()))
+        lock.mkdir()
+        (lock / "owner").write_text("live-holder")
+        calls = {"n": 0}
+        real = FileMigrationStore._lock_age
+
+        def lying_first_check(path: Path) -> float:
+            calls["n"] += 1
+            return (
+                10_000.0 if calls["n"] == 1 else real(path)
+            )  # "stale" at check time, live at move time
+
+        s._lock_age = lying_first_check  # type: ignore[method-assign]
+        s._break_if_stale(lock)
+        assert lock.is_dir() and (lock / "owner").read_text() == "live-holder"
+        assert not any(".stale." in p.name for p in tmp_path.iterdir())
+
+
 class TestWithTheStateManager:
     def test_is_cross_process_safe_and_drives_the_state_machine(self, tmp_path: Path) -> None:
         from quantum_safe.migrate.state import MigrationStateManager
