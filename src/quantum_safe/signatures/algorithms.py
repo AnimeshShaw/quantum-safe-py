@@ -106,49 +106,50 @@ SIGNATURE_ALGORITHMS: dict[str, SignatureAlgorithmSpec] = {
         sign_speed="fast",
         notes="FIPS 204 level 5. Maximum security.",
     ),
-    # SLH-DSA (FIPS 205) — hash-based, large sigs, different math than ML-DSA
-    "SLH-DSA-SHAKE-128s": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-128s",
-        nist_level=NISTLevel.L1,
-        public_key_bytes=32,
-        secret_key_bytes=64,
-        signature_bytes=7856,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="slow",
-        notes=(
-            "FIPS 205, small variant, level 1. Extremely slow to sign (~seconds). "
-            "Use when you need a non-lattice backup. Verify is fast."
-        ),
-    ),
-    "SLH-DSA-SHAKE-128f": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-128f",
-        nist_level=NISTLevel.L1,
-        public_key_bytes=32,
-        secret_key_bytes=64,
-        signature_bytes=17088,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="medium",
-        notes=(
-            "FIPS 205, fast variant, level 1. Faster signing than -128s but ~2× larger signatures."
-        ),
-    ),
-    "SLH-DSA-SHAKE-256s": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-256s",
-        nist_level=NISTLevel.L5,
-        public_key_bytes=64,
-        secret_key_bytes=128,
-        signature_bytes=29792,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="slow",
-        notes="FIPS 205, small variant, level 5. Maximum security, hash-based.",
-    ),
+    # SLH-DSA (FIPS 205) — hash-based, large sigs, different math than ML-DSA.
+    # All twelve parameter sets (2 hash families x 3 security levels x 2 variants) are added below
+    # from _SLH_DSA_SETS, in the order SHAKE then SHA2.
 }
+
+# FIPS 205, Table 2 (sizes in bytes). Public key, secret key, signature, NIST level.
+_SLH_DSA_SETS: dict[str, tuple[int, int, int, NISTLevel]] = {
+    "128s": (32, 64, 7856, NISTLevel.L1),
+    "128f": (32, 64, 17088, NISTLevel.L1),
+    "192s": (48, 96, 16224, NISTLevel.L3),
+    "192f": (48, 96, 35664, NISTLevel.L3),
+    "256s": (64, 128, 29792, NISTLevel.L5),
+    "256f": (64, 128, 49856, NISTLevel.L5),
+}
+
+
+def _register_slh_dsa() -> None:
+    for family in ("SHAKE", "SHA2"):
+        for variant, (pk, sk, sig, level) in _SLH_DSA_SETS.items():
+            name = f"SLH-DSA-{family}-{variant}"
+            small = variant.endswith("s")
+            SIGNATURE_ALGORITHMS[name] = SignatureAlgorithmSpec(
+                name=name,
+                nist_level=level,
+                public_key_bytes=pk,
+                secret_key_bytes=sk,
+                signature_bytes=sig,
+                is_nist_standard=True,
+                is_lattice_based=False,
+                supports_context=True,
+                sign_speed="slow" if small else "medium",
+                notes=(
+                    f"FIPS 205, {'small' if small else 'fast'} variant, level {int(level)}, "
+                    f"{family}. "
+                    + (
+                        "Smaller signatures, very slow to sign (verification is fast)."
+                        if small
+                        else "Faster signing than the small variant, about 2x larger signatures."
+                    )
+                ),
+            )
+
+
+_register_slh_dsa()
 
 # Classical signature companions for hybrid mode
 CLASSICAL_SIGNATURE_ALGORITHMS: dict[str, ClassicalSignatureSpec] = {

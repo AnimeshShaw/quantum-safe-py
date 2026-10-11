@@ -223,6 +223,32 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
     ),
 }
 
+
+def _register_slh_dsa_info() -> None:
+    """Add the SLH-DSA sets the table above does not list, from the signature registry."""
+    from quantum_safe.signatures.algorithms import SIGNATURE_ALGORITHMS
+
+    for name, spec in SIGNATURE_ALGORITHMS.items():
+        if name.startswith("SLH-DSA-") and name not in _SIGNATURE_ALGORITHM_INFO:
+            small = name.endswith("s")
+            _SIGNATURE_ALGORITHM_INFO[name] = AlgorithmInfo(
+                name=name,
+                nist_level=int(spec.nist_level),
+                public_key_size=spec.public_key_bytes,
+                secret_key_size=spec.secret_key_bytes,
+                ciphertext_size=spec.signature_bytes,  # signature size
+                is_kem=False,
+                is_signature=True,
+                is_nist_standard=True,
+                notes=(
+                    f"FIPS 205, security level {int(spec.nist_level)}, "
+                    + ("small signatures. Very slow to sign." if small else "fast signing.")
+                ),
+            )
+
+
+_register_slh_dsa_info()
+
 # liboqs uses different name formats internally. This maps our canonical names
 # to the names liboqs expects.  We keep our names aligned with the FIPS
 # standards, which use hyphens and no spaces.
