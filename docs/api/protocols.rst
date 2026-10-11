@@ -14,6 +14,25 @@ Envelope
    :members:
    :show-inheritance:
 
+Streaming envelope
+------------------
+
+.. autofunction:: quantum_safe.protocols.stream.seal_stream
+
+.. autofunction:: quantum_safe.protocols.stream.open_stream
+
+.. autofunction:: quantum_safe.protocols.stream.seal_bytes
+
+.. autofunction:: quantum_safe.protocols.stream.open_bytes
+
+.. autofunction:: quantum_safe.protocols.stream.inspect_stream_header
+
+.. autoclass:: quantum_safe.protocols.stream.StreamSealer
+   :members:
+
+.. autoclass:: quantum_safe.protocols.stream.StreamOpener
+   :members:
+
 JWT
 ---
 

@@ -6,6 +6,45 @@ Envelope
 
 See :doc:`kem` for the full Envelope API.
 
+Streaming envelope (large or incremental data)
+----------------------------------------------
+
+An :class:`~quantum_safe.protocols.envelope.Envelope` encrypts one buffer. For files, uploads and
+pipes that do not fit in memory or arrive in pieces, the streaming envelope (format v3) encrypts
+with **one** KEM encapsulation per stream and AES-256-GCM per chunk, using the STREAM construction:
+chunks cannot be reordered, dropped, duplicated or truncated without detection. It is
+byte-compatible with quantum-safe-ts (``sealStream`` / ``openStream``).
+
+.. code-block:: python
+
+   from quantum_safe import HybridKEM
+   from quantum_safe.protocols.stream import open_stream, seal_stream
+
+   kp = HybridKEM().generate_keypair()
+
+   with open("report.bin", "rb") as src, open("report.bin.qss", "wb") as dst:
+       for piece in seal_stream(kp.public, src, aad=b"report-2026", chunk_size=64 * 1024):
+           dst.write(piece)
+
+   with open("report.bin.qss", "rb") as enc, open("report.out", "wb") as out:
+       for chunk in open_stream(kp.secret, enc, expected_aad=b"report-2026"):
+           out.write(chunk)
+
+- Suites: any hybrid (for example ``X25519+ML-KEM-768``), X-Wing, and pure ``ML-KEM-1024``
+  (key derivation with HKDF-SHA-384, the CNSA 2.0 profile).
+- ``chunk_size`` is 1,024 to 16,777,216 bytes (default 65,536). Every chunk but the last is exactly
+  that size; the last may be shorter or empty.
+- ``aad`` is bound to every chunk and is **not stored** in the stream: the opener must pass the same
+  ``expected_aad``. A different value fails authentication.
+- ``open_stream`` raises on the first bad chunk (``cryptography.exceptions.InvalidTag`` for
+  authentication, ``ValueError`` for a malformed prelude or frame); a truncated or extended stream
+  never completes silently.
+- Like envelopes, a stream is anonymous: it does not say who sent it. Sign the data separately when
+  that matters.
+- Low level: :class:`~quantum_safe.protocols.stream.StreamSealer` and
+  :class:`~quantum_safe.protocols.stream.StreamOpener` seal and open chunk by chunk;
+  ``seal_bytes`` / ``open_bytes`` handle a whole buffer.
+
 JWT (PQC-aware)
 ---------------
 
