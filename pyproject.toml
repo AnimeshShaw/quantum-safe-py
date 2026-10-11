@@ -48,7 +48,7 @@ dependencies = [
 
 [project.optional-dependencies]
 liboqs = [
-    "liboqs-python>=0.10.0",
+    "liboqs-python>=0.16.0,<0.17",
 ]
 # LMS stateful hash-based signatures (RFC 8554 / SP 800-208), required by
 # CNSA 2.0 for software and firmware signing and not available through liboqs.

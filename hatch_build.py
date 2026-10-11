@@ -39,6 +39,19 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 _VENDOR_ENV_FLAG = "QUANTUM_SAFE_VENDOR_LIBOQS"
 
 
+def _liboqs_pin(root: Path) -> dict:
+    """Read LIBOQS_VERSION / LIBOQS_PYTHON_SPEC from src/quantum_safe/_liboqs_version.py.
+
+    The package is not importable at build time, so the file is executed on its own. It is the
+    single place that names the liboqs release; tests keep pyproject.toml and the Dockerfile in
+    step with it.
+    """
+    namespace: dict = {}
+    source = (root / "src" / "quantum_safe" / "_liboqs_version.py").read_text(encoding="utf-8")
+    exec(compile(source, "_liboqs_version.py", "exec"), namespace)  # noqa: S102
+    return namespace
+
+
 class LiboqsVendorBuildHook(BuildHookInterface):
     """Compiles liboqs via liboqs-python's installer and bundles it into the wheel."""
 
@@ -107,16 +120,18 @@ class LiboqsVendorBuildHook(BuildHookInterface):
         env = os.environ.copy()
         env.pop("PYTHONPATH", None)
 
+        subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=False, env=env)
+        pin = _liboqs_pin(Path(self.root))
         subprocess.run(
-            [sys.executable, "-m", "ensurepip", "--upgrade"], check=False, env=env
-        )
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "liboqs-python>=0.10.0"],
+            [sys.executable, "-m", "pip", "install", f"liboqs-python{pin['LIBOQS_PYTHON_SPEC']}"],
             check=True,
             env=env,
         )
 
         env["OQS_INSTALL_PATH"] = str(staging)
+        # liboqs-python's installer clones the liboqs tag equal to ITS OWN version string, which is
+        # "0.16.0.1" for the current release and is not a liboqs tag. Name the tag explicitly.
+        env["PYOQS_VERSION"] = pin["LIBOQS_VERSION"]
         result = subprocess.run(
             [sys.executable, "-c", "import oqs"],
             env=env,
