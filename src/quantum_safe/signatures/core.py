@@ -207,6 +207,78 @@ class Sign:
         return KeyPair(public=pub, secret=sec)
 
     # ------------------------------------------------------------------
+    # Seed keys (pyca backend)
+    # ------------------------------------------------------------------
+
+    def _seed_backend(self) -> AbstractSignatureBackend:
+        """The backend that can derive a key from a seed: pyca/cryptography."""
+        if self._v2 or "ML-DSA" not in self._spec.name:
+            raise UnsupportedAlgorithm(
+                self._algorithm, available=["ML-DSA-44", "ML-DSA-65", "ML-DSA-87"]
+            )
+        if self._backend.name == "pyca":
+            return self._backend
+        return get_signature_backend("pyca")
+
+    def keypair_from_seed(self, seed: bytes) -> KeyPair:
+        """Rebuild an ML-DSA key pair from its 32-byte seed (FIPS 204's native secret key).
+
+        Needs the optional ``cryptography`` backend (``cryptography >= 48``). The result is a
+        *seed key*: ``secret.raw_bytes`` is the seed itself, which is what RFC 9964 stores in a
+        private JWK or COSE key, and what quantum-safe-ts's ``StandardKeyPair`` holds.
+        """
+        if len(seed) != 32:
+            raise ValueError(f"an ML-DSA seed is exactly 32 bytes, got {len(seed)}")
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen_from_seed(self._spec.name, bytes(seed))
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def generate_seed_keypair(self) -> KeyPair:
+        """Generate an ML-DSA key pair whose secret key is its 32-byte seed (pyca backend)."""
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen(self._spec.name)
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def export_seed(self, secret_key: SecretKey) -> bytes:
+        """The 32-byte seed of a seed key. Raises ``ValueError`` for an expanded (liboqs) key.
+
+        Treat the result as a secret: store or move it as carefully as the key itself.
+        """
+        raw = secret_key.raw_bytes
+        if len(raw) != 32:
+            raise ValueError(
+                "this secret key is an expanded key (made by liboqs); no seed can be recovered "
+                "from it. Generate a seed key with generate_seed_keypair()."
+            )
+        return bytes(raw)
+
+    # ------------------------------------------------------------------
     # Signing
     # ------------------------------------------------------------------
 

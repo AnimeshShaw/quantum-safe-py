@@ -12,7 +12,10 @@ The selection priority for auto mode:
                    SLH-DSA). Fastest on native Python, WASM-compatible.
   2. liboqs      — fallback for the full algorithm set (includes BIKE,
                    FrodoKEM, HQC, etc. that RustCrypto doesn't have yet).
-  3. noble       — JS/WASM environments only. Never selected in native Python.
+  3. pyca        — pyca/cryptography >= 48: ML-KEM-768/1024 and ML-DSA with seeded keys,
+                   no compiler and no liboqs needed. Used when nothing above is installed,
+                   or on request (``backend="pyca"``) for seed keys.
+  4. noble       — JS/WASM environments only. Never selected in native Python.
 
 You can override selection with the QUANTUM_SAFE_BACKEND environment variable
 or the `backend=` parameter on KEM/Sign constructors.
@@ -31,7 +34,7 @@ if TYPE_CHECKING:
 
 
 # All known backend names (for validation)
-_KNOWN_BACKENDS = {"liboqs", "rustcrypto", "noble", "auto"}
+_KNOWN_BACKENDS = {"liboqs", "rustcrypto", "pyca", "noble", "auto"}
 
 
 @cache
@@ -47,6 +50,20 @@ def _load_rustcrypto_kem() -> AbstractKEMBackend:
     from quantum_safe.backends.rustcrypto import RustCryptoKEMBackend
 
     return RustCryptoKEMBackend()
+
+
+@cache
+def _load_pyca_kem() -> AbstractKEMBackend:
+    from quantum_safe.backends.pyca import PycaKEMBackend
+
+    return PycaKEMBackend()
+
+
+@cache
+def _load_pyca_sig() -> AbstractSignatureBackend:
+    from quantum_safe.backends.pyca import PycaSignatureBackend
+
+    return PycaSignatureBackend()
 
 
 @cache
@@ -96,6 +113,12 @@ def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
             raise BackendNotAvailable("liboqs")
         return b
 
+    if name == "pyca":
+        b = _load_pyca_kem()
+        if not b.is_available():
+            raise BackendNotAvailable("pyca")
+        return b
+
     if name == "noble":
         raise BackendNotAvailable("noble")  # noble is JS-only
 
@@ -126,12 +149,18 @@ def get_signature_backend(name: str = "auto") -> AbstractSignatureBackend:
             raise BackendNotAvailable("liboqs")
         return b
 
+    if name == "pyca":
+        b = _load_pyca_sig()
+        if not b.is_available():
+            raise BackendNotAvailable("pyca")
+        return b
+
     raise BackendNotAvailable(name)
 
 
 def _auto_select_kem_backend() -> AbstractKEMBackend:
     """Try backends in priority order, return the first available one."""
-    for loader in (_load_rustcrypto_kem, _load_liboqs_kem):
+    for loader in (_load_rustcrypto_kem, _load_liboqs_kem, _load_pyca_kem):
         try:
             b = loader()
             if b.is_available():
@@ -144,7 +173,7 @@ def _auto_select_kem_backend() -> AbstractKEMBackend:
 
 def _auto_select_sig_backend() -> AbstractSignatureBackend:
     """Try signature backends in priority order."""
-    for loader in (_load_rustcrypto_sig, _load_liboqs_sig):
+    for loader in (_load_rustcrypto_sig, _load_liboqs_sig, _load_pyca_sig):
         try:
             b = loader()
             if b.is_available():
@@ -162,7 +191,11 @@ def list_available_backends() -> dict[str, bool]:
     list_available_backends; print(list_available_backends())"`.
     """
     results: dict[str, bool] = {}
-    for name, loader in [("rustcrypto", _load_rustcrypto_kem), ("liboqs", _load_liboqs_kem)]:
+    for name, loader in [
+        ("rustcrypto", _load_rustcrypto_kem),
+        ("liboqs", _load_liboqs_kem),
+        ("pyca", _load_pyca_kem),
+    ]:
         try:
             b = loader()
             results[name] = b.is_available()

@@ -13,9 +13,12 @@ What is signed
 **empty** context (RFC 9964 section 5), i.e. exactly :meth:`Sign.sign_standard`. Any compliant
 COSE library verifies the result, and this module verifies theirs.
 
-Algorithm identifiers (RFC 9964 section 8.1.1): ML-DSA-44 = -48, ML-DSA-65 = -49, ML-DSA-87 = -50.
-Key type ``AKP`` = 7 with ``pub`` = -1 (and ``priv`` = -2, the 32-byte seed, which this module does
-not emit: liboqs secret keys are expanded keys from which no seed can be recovered).
+Algorithm identifiers (RFC 9964 section 8.1.1): ML-DSA-44 = -48, ML-DSA-65 = -49, ML-DSA-87 =
+-50.
+Key type ``AKP`` = 7 with ``pub`` = -1 and ``priv`` = -2, the 32-byte seed. Public keys work with
+any backend; private COSE keys (``encode_cose_private_key`` / ``keypair_from_cose_key``) hold a
+seed, so they need the optional ``cryptography`` backend (liboqs secret keys are expanded keys
+from which no seed can be recovered).
 
 Verification is strict: the algorithm must be in the protected header and known, ``crit`` is
 refused, the protected header must be a minimally encoded map without duplicate labels, and
@@ -31,7 +34,7 @@ import cbor2
 
 from quantum_safe.exceptions import VerificationError
 from quantum_safe.signatures.core import Sign
-from quantum_safe.types import PublicKey, SecretKey
+from quantum_safe.types import KeyPair, PublicKey, SecretKey
 
 COSE_ALGORITHMS: dict[str, int] = {"ML-DSA-44": -48, "ML-DSA-65": -49, "ML-DSA-87": -50}
 _BY_ID = {v: k for k, v in COSE_ALGORITHMS.items()}
@@ -230,6 +233,67 @@ def encode_cose_key(public_key: PublicKey, kid: bytes | None = None) -> bytes:
     if kid is not None:
         key[2] = bytes(kid)
     return bytes(cbor2.dumps(key))
+
+
+def encode_cose_private_key(keypair: KeyPair, kid: bytes | None = None) -> bytes:
+    """Encode a seed key pair as a private AKP COSE_Key: ``pub`` and the 32-byte seed in ``priv``.
+
+    The result is a secret. Needs a seed key (see ``Sign.generate_seed_keypair`` and
+    ``Sign.keypair_from_seed``); an expanded liboqs key raises ``ValueError``.
+    """
+    cose_alg = _check_algorithm(keypair.secret.algorithm)
+    seed = keypair.secret.raw_bytes
+    if len(seed) != 32:
+        raise ValueError(
+            "this key is an expanded liboqs key; a private COSE_Key needs a 32-byte seed key"
+        )
+    key: dict[int, Any] = {1: KTY_AKP, 3: cose_alg, -1: keypair.public.raw_bytes, -2: bytes(seed)}
+    if kid is not None:
+        key[2] = bytes(kid)
+    return bytes(cbor2.dumps(key))
+
+
+def keypair_from_cose_key(data: bytes) -> KeyPair:
+    """Rebuild the key pair of a private AKP COSE_Key (needs the ``cryptography`` backend).
+
+    Raises ``ValueError`` if there is no seed, it is not 32 bytes, or ``pub`` does not match it.
+    """
+    data = bytes(data)
+    key = _read_key_map(data)
+    seed = key.get(-2)
+    if not isinstance(seed, bytes) or len(seed) != 32:
+        raise ValueError("a private COSE_Key carries a 32-byte seed in label -2")
+    algorithm = _key_algorithm(key)
+    keypair = Sign(algorithm, backend="pyca").keypair_from_seed(seed)
+    pub = key.get(-1)
+    if pub is not None and pub != keypair.public.raw_bytes:
+        raise ValueError("the COSE_Key public key does not match its seed")
+    return keypair
+
+
+def _read_key_map(data: bytes) -> dict[Any, Any]:
+    try:
+        key = cbor2.loads(data)
+    except Exception as exc:
+        raise ValueError("not well-formed CBOR") from exc
+    if not isinstance(key, dict):
+        raise ValueError("a COSE_Key is a map")
+    if bytes(cbor2.dumps(key)) != data:
+        raise ValueError(
+            "the COSE_Key has duplicate labels, trailing bytes or a non-minimal encoding"
+        )
+    if key.get(1) != KTY_AKP:
+        raise ValueError("not an AKP key (kty must be 7)")
+    return key
+
+
+def _key_algorithm(key: dict[Any, Any]) -> str:
+    if 3 not in key:
+        raise ValueError("an AKP key must carry its algorithm (alg)")
+    algorithm = _BY_ID.get(key[3])
+    if algorithm is None:
+        raise ValueError(f"COSE algorithm {key[3]!r} is not an ML-DSA algorithm")
+    return algorithm
 
 
 def decode_cose_key(data: bytes) -> tuple[PublicKey, bytes | None]:

@@ -141,13 +141,25 @@ Verification is strict: the key's algorithm must equal the header ``alg``,
 base64url.  Only the pure ML-DSA algorithms are defined by the RFC; hybrids are
 not.
 
-.. note::
+Private JWKs
+~~~~~~~~~~~~
 
-   RFC 9964's private JWK member ``priv`` is the 32-byte ML-DSA *seed*.  The
-   liboqs backend cannot derive a key pair from a seed, so this class neither
-   writes nor reads private AKP JWKs: keys are ordinary quantum-safe key pairs,
-   and a private JWK made elsewhere (for example by quantum-safe-ts) cannot be
-   used to sign here.  Its public JWK verifies as usual.
+RFC 9964's private JWK member ``priv`` is the 32-byte ML-DSA *seed*. liboqs cannot derive a key
+from a seed, so private JWKs use the optional ``cryptography`` backend
+(``pip install 'quantum-safe-py[pyca]'``):
+
+.. code-block:: python
+
+   from quantum_safe.protocols.standard_jwt import StandardJwt
+
+   private = StandardJwt.generate_private_jwk("ML-DSA-65", kid="k1")   # a secret: priv is the seed
+   public = StandardJwt.public_jwk(private)                              # share this one
+   token = StandardJwt.sign({"sub": "alice"}, private, issuer="https://issuer.example")
+   claims = StandardJwt.verify(token, public, issuer="https://issuer.example")
+
+``StandardJwt.keypair_from_private_jwk`` and ``StandardJwt.private_jwk`` convert between a JWK and
+a ``KeyPair``. A private JWK made by quantum-safe-ts signs here and the reverse; RFC 9964's
+all-zero example key derives the RFC's public key (checked in the test suite).
 
 TLS hybrid key exchange
 -----------------------

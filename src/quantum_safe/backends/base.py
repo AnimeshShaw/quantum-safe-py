@@ -166,6 +166,16 @@ class AbstractSignatureBackend(ABC):
         """
         ...
 
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Generate a signing key pair deterministically from a seed (ML-DSA: 32 bytes).
+
+        Backends without seeded generation inherit this default, which raises
+        ``UnsupportedAlgorithm``. Returns ``(public_key_bytes, secret_key_bytes)``.
+        """
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        raise UnsupportedAlgorithm(f"{algorithm} seeded key generation on backend '{self.name}'")
+
     @abstractmethod
     def sign(
         self,

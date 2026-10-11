@@ -50,6 +50,12 @@ dependencies = [
 liboqs = [
     "liboqs-python>=0.16.0,<0.17",
 ]
+# ML-KEM-768/1024 and ML-DSA through pyca/cryptography with seeded keys (private RFC 9964 JWKs and COSE
+# keys, seed export for quantum-safe-ts). No compiler and no liboqs needed. 48 is the first release
+# with ML-DSA and ML-KEM.
+pyca = [
+    "cryptography>=48.0",
+]
 # LMS stateful hash-based signatures (RFC 8554 / SP 800-208), required by
 # CNSA 2.0 for software and firmware signing and not available through liboqs.
 # Optional because LMS is stateful: misusing the state compromises the key, so

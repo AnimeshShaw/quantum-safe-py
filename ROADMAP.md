@@ -34,8 +34,6 @@ The theme is "make the safe thing the only thing".
 
 ## Later (no release assigned)
 
-- `StandardJwt` private keys (RFC 9964 stores a seed). Waiting for seeded ML-DSA key generation
-  in liboqs.
 - P-384 hybrids (`P-384+ML-KEM-1024`, `P-384+ML-DSA-87`). Only worth building if someone needs the
   TLS `SecP384r1MLKEM1024` group; NSA's CNSA 2.0 FAQ does not make any hybrid compliant, so it
   would still report `PARTIAL`.

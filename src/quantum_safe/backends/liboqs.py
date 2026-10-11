@@ -478,7 +478,14 @@ class LiboqsKEMBackend(AbstractKEMBackend):
         than raising an exception. We check the output length to detect the
         most obvious failure modes, but we cannot distinguish a bad ciphertext
         from a good one by inspecting the output.
+
+        A 64-byte seed key (``d || z``, made by the pyca backend) is decapsulated through
+        the pyca backend.
         """
+        if algorithm.startswith("ML-KEM-") and len(secret_key) == 64:
+            from quantum_safe.backends import get_kem_backend
+
+            return get_kem_backend("pyca").decapsulate(algorithm, secret_key, ciphertext)
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
@@ -551,6 +558,11 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
                 algorithm=algorithm,
             ) from exc
 
+    @staticmethod
+    def _seed_key(algorithm: str, secret_key: bytes) -> bool:
+        """True for a 32-byte ML-DSA seed key (made by the pyca backend); liboqs cannot use it."""
+        return algorithm.startswith("ML-DSA-") and len(secret_key) == 32
+
     def sign(
         self,
         algorithm: str,
@@ -559,6 +571,8 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         context: bytes = b"",
     ) -> bytes:
         """Sign a message.
+
+        A 32-byte seed key (made by the pyca backend) is signed through the pyca backend.
 
         Domain separation is done by a message prefix, not by FIPS 204's
         native context. This backend signs, with plain ML-DSA and an
@@ -572,6 +586,10 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         native context would change what is signed, so it would be a new,
         separately identified signature format, not a silent switch.
         """
+        if self._seed_key(algorithm, secret_key):
+            from quantum_safe.backends import get_signature_backend
+
+            return get_signature_backend("pyca").sign(algorithm, secret_key, message, context)
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
@@ -634,6 +652,12 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         """ML-DSA.Sign with FIPS 204's native context (liboqs ``sign_with_ctx_str``)."""
         from quantum_safe.exceptions import CryptoError
 
+        if self._seed_key(algorithm, secret_key):
+            from quantum_safe.backends import get_signature_backend
+
+            return get_signature_backend("pyca").sign_native_context(
+                algorithm, secret_key, message, context
+            )
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
         if len(context) > 255:
