@@ -93,7 +93,9 @@ a per-key state machine tracking where each key sits in the migration path:
    sharing the store with **no external lock**: exactly one concurrent writer
    wins and the others get a stale-state ``ValueError``.
    :class:`~quantum_safe.migrate.state.MemoryMigrationStore` is the in-process
-   reference; for Redis use ``WATCH``/``MULTI`` or a Lua script, for Postgres
+   reference and :class:`~quantum_safe.migrate.file_store.FileMigrationStore`
+   is a directory-backed store that is safe across processes on one host (below);
+   for Redis use ``WATCH``/``MULTI`` or a Lua script, for Postgres
    ``UPDATE ... WHERE value = expected`` (and ``INSERT ... ON CONFLICT DO
    NOTHING`` for absent), for DynamoDB a ``ConditionExpression``.
    ``manager.cross_process_safe`` tells you which mode you are in.
@@ -105,6 +107,13 @@ a per-key state machine tracking where each key sits in the migration path:
    races produced more than one winner; with a compare-and-set store, none did.
    Hold an external distributed lock (Redis ``SETNX``, a ``SELECT … FOR UPDATE``
    row lock) on the ``key_id`` in that case.
+
+   **File store**: ``FileMigrationStore("/var/lib/myapp/migration")`` keeps one file per key
+   (named by the hex of the key; keys are at most 100 bytes), takes a per-key ``mkdir`` lock
+   with a heartbeat, and writes through a fsynced temporary file that is renamed into place,
+   so several worker processes on one host can share it with no external lock. Files are
+   mode 0600 in a 0700 directory. It is not distributed: do not put it on NFS or SMB or share
+   it between hosts. The same design is in quantum-safe-ts (``FileMigrationStore``).
 
    **Layout and durability**: the layout is unchanged (``<key_id>_current`` and
    ``<key_id>_history``).  With compare-and-set the history entry is the single
