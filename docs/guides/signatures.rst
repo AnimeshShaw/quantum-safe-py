@@ -225,7 +225,9 @@ and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
 - The classical half signs ``"quantum-safe-sig-v2" || 0x00 || M2`` (Ed25519, or
   ECDSA P-256/SHA-256 as raw ``r || s``, low-S only).
 - ML-DSA signing is always hedged inside ML-DSA, so ``hedged=False`` does not
-  exist for ``-v2``.
+  exist for ``-v2``: naming a ``-v2`` suite together with ``hedged=False`` raises
+  ``ValueError``. (quantum-safe-ts accepts the combination, ignores the option and emits a
+  ``QS_HEDGED_IGNORED`` warning, so that existing code keeps working.)
 - Keys carry the ``-v2`` tag, but the tag is advisory: v1 and v2 keys have
   identical bytes.  **Never use the same key in both formats.**
 
