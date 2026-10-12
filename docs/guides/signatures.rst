@@ -237,6 +237,24 @@ and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
 (``HybridSign("Ed25519", "ML-DSA-65")``).  ``HybridSign(hedged=False)`` without a
 suite also selects the original format, because ``-v2`` is always hedged.
 
+Which default makes which format:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Call
+     - Format
+   * - ``HybridSign()``
+     - ``Ed25519+ML-DSA-65-v2`` (the clean format, no prefix).
+   * - ``Sign()``
+     - ``ML-DSA-65`` in the original format. ``ML-DSA-65`` is also the name the standards formats (JOSE, COSE)
+       use for the algorithm, so the bare name keeps its meaning; ask for ``Sign("ML-DSA-65-v2")`` for the clean format.
+   * - ``HybridSign("Ed25519", "ML-DSA-65")``
+     - The original hybrid format, by name.
+   * - ``Sign().sign_standard(...)``
+     - A bare FIPS 204 signature with a native context, for other ML-DSA implementations.
+
 SignedMessage
 -------------
 
