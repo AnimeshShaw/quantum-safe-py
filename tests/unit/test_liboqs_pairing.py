@@ -24,7 +24,11 @@ import warnings
 from pathlib import Path
 
 import pytest
-import tomllib
+
+try:  # Python 3.11+
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    tomllib = None  # type: ignore[assignment]
 
 from quantum_safe._liboqs_version import LIBOQS_PYTHON_SPEC, LIBOQS_VERSION
 
@@ -43,8 +47,13 @@ class TestOneSourceOfTruth:
         assert LIBOQS_PYTHON_SPEC == f">={LIBOQS_VERSION},<{major}.{minor + 1}"
 
     def test_extra_in_pyproject_uses_the_spec(self) -> None:
-        data = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-        extra = data["project"]["optional-dependencies"]["liboqs"]
+        text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        if tomllib is not None:
+            extra = tomllib.loads(text)["project"]["optional-dependencies"]["liboqs"]
+        else:  # Python 3.10: the extra is a one-line list in a known table
+            m = re.search(r"^liboqs = \[\s*\"([^\"]+)\",?\s*\]", text, re.MULTILINE)
+            assert m, "liboqs extra not found in pyproject.toml"
+            extra = [m.group(1)]
         assert extra == [f"liboqs-python{LIBOQS_PYTHON_SPEC}"]
 
     def test_dockerfile_builds_the_same_liboqs(self) -> None:

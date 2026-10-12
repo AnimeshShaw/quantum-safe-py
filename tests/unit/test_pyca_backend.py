@@ -125,6 +125,7 @@ class TestSeedKeyConveniences:
         kp = Sign(v["algorithm"], backend="pyca").keypair_from_seed(bytes.fromhex(v["seed"]))
         assert kp.public.raw_bytes == bytes.fromhex(v["public_key"])
 
+    @pytest.mark.requires_liboqs
     def test_export_seed_refuses_an_expanded_key(self) -> None:
         from quantum_safe.signatures.core import Sign
 
