@@ -154,7 +154,8 @@ The same check from the command line (exit status 1 when not compliant):
 What the profile does not cover
 -------------------------------
 
-- **Validation.** FIPS 140-3 validated modules are outside this library's reach.
+- **Validation.** For National Security Systems, CNSA 2.0 is met through FIPS 140-3
+  validated modules; the report covers parameter selection.
 - **Software and firmware signing.** LMS (RFC 8554) is available through the optional
   ``[lms]`` extra, with a write-ahead state store because LMS is stateful; XMSS is not
   implemented, and SP 800-208 also requires key generation inside a validated module.

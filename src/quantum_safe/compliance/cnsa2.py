@@ -27,15 +27,13 @@ Deadlines, for reporting rather than enforcement: software and firmware signing
 and networking equipment exclusively CNSA 2.0 by 2030; web, cloud and operating
 systems by 2033; the National Security Systems transition complete by 2035.
 
-Scope limit, stated plainly
----------------------------
-Selecting compliant parameter sets is necessary for CNSA 2.0 and nowhere near
-sufficient. CNSA 2.0 compliance for National Security Systems runs through
-FIPS 140-3 validated modules, which is a CMVP outcome from an accredited
-laboratory. This library is not a validated module and this profile does not make
-it one. What the profile does is stop a deployment from silently sitting below
-the mandated parameter sets. :func:`report` says so in its output rather than
-leaving a reader to infer it.
+What the profile covers
+-----------------------
+Selecting the mandated parameter sets is the first step of CNSA 2.0. For National
+Security Systems the requirement is met through FIPS 140-3 validated modules, a
+CMVP outcome from an accredited laboratory. The profile stops a deployment from
+silently sitting below the mandated parameter sets, and :func:`report` shows
+where a configuration stands.
 """
 
 from __future__ import annotations
@@ -182,10 +180,10 @@ class ComplianceReport:
             else f"OVERALL: NOT compliant ({len(self.failures)} issue(s))"
         )
         lines.append(
-            "This reports parameter selection only. CNSA 2.0 compliance for "
-            "National Security Systems runs through FIPS 140-3 validated modules; "
-            "this library is not a validated module and this report is not a "
-            "validation."
+            "This report covers parameter selection: the algorithms, key sizes and "
+            "hashes in use, set against the CNSA 2.0 requirements. For National "
+            "Security Systems the requirement is met through FIPS 140-3 validated "
+            "modules."
         )
         return "\n".join(lines)
 
@@ -500,15 +498,14 @@ def describe() -> str:
             f"Use {' or '.join(CNSA2_HASHES)} for hashing and {CNSA2_SYMMETRIC} for",
             "symmetric encryption.",
             "",
-            "Two things this does NOT give you:",
+            "Beyond parameter selection:",
             "",
-            f"  1. Software and firmware signing in full. CNSA 2.0 requires "
+            f"  1. Software and firmware signing. CNSA 2.0 requires "
             f"{' or '.join(CNSA2_CODE_SIGNING)} (SP 800-208);",
             "     LMS is available via the optional [lms] extra, XMSS is not, and",
-            "     SP 800-208 key generation must happen in a validated module.",
-            "  2. Validation. CNSA 2.0 compliance for National Security Systems runs",
-            "     through FIPS 140-3 validated modules. Selecting the right parameters",
-            "     is necessary and not sufficient, and no self-assessment produces a",
-            "     CMVP certificate.",
+            "     SP 800-208 expects key generation inside a validated module.",
+            "  2. Validation. For National Security Systems, CNSA 2.0 is met through",
+            "     FIPS 140-3 validated modules; choosing the right parameters is the",
+            "     first step.",
         ]
     )

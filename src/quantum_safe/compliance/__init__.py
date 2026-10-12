@@ -10,9 +10,9 @@ Currently provided:
 ``cnsa2``
     NSA Commercial National Security Algorithm Suite 2.0 parameter sets.
 
-Every profile in this package reports parameter selection only. None of them
-constitutes a FIPS 140-3 / CMVP validation, which is an outcome of testing by an
-accredited laboratory and cannot be produced by self-assessment.
+Every profile in this package reports parameter selection: the algorithms, key
+sizes and hashes in use, set against the standard. FIPS 140-3 / CMVP validation is
+a separate outcome of testing by an accredited laboratory.
 """
 
 from quantum_safe.compliance.cnsa2 import (

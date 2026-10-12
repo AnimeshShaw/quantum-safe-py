@@ -133,13 +133,16 @@ class TestReport:
         )
         assert rep.compliant
 
-    def test_render_never_claims_validation(self) -> None:
-        """Output must not let a reader infer FIPS 140-3 validation."""
+    def test_render_states_what_it_covers_and_never_claims_validation(self) -> None:
+        """The output says it covers parameter selection and claims no validation."""
         rendered = cnsa2.report(
             kem="ML-KEM-1024", signature="ML-DSA-87", include_code_signing=False
         ).render()
-        assert "not a validated module" in rendered
-        assert "is not a validation" in rendered
+        assert "parameter selection" in rendered
+        assert "FIPS 140-3 validated modules" in rendered
+        lowered = rendered.lower()
+        for claim in ("is validated", "is fips 140-3 validated", "is certified", "cmvp certified"):
+            assert claim not in lowered
 
 
 class TestKeyDerivation:

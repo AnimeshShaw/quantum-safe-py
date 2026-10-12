@@ -119,7 +119,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="NIST Round 4 candidate. Not standardized.",
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
     ),
     "BIKE-L3": KEMAlgorithmSpec(
         name="BIKE-L3",
@@ -130,7 +130,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="NIST Round 4 candidate. Not standardized.",
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
     ),
     "BIKE-L5": KEMAlgorithmSpec(
         name="BIKE-L5",
@@ -141,7 +141,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="NIST Round 4 candidate. Not standardized.",
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
     ),
     # HQC: sizes of the 2025-08-22 specification as built in liboqs 0.16 (where the mechanisms are
     # named HQC-1, HQC-3 and HQC-5). Selected by NIST in March 2025; the standard is in preparation.
@@ -154,7 +154,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="Selected by NIST (2025); standard in preparation. liboqs name: HQC-1.",
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-1.",
     ),
     "HQC-192": KEMAlgorithmSpec(
         name="HQC-192",
@@ -165,7 +165,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="Selected by NIST (2025); standard in preparation. liboqs name: HQC-3.",
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-3.",
     ),
     "HQC-256": KEMAlgorithmSpec(
         name="HQC-256",
@@ -176,7 +176,7 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="Selected by NIST (2025); standard in preparation. liboqs name: HQC-5.",
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-5.",
     ),
 }
 

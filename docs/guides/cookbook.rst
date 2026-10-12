@@ -232,7 +232,7 @@ already did it".
    # In CI, fail hard if a service drifts below the parameter sets.
    cnsa2.enforce(kem="ML-KEM-1024", signature="ML-DSA-87")
 
-*Reminder:* this reports parameter selection only. It is not a validation.
+*Note:* this reports parameter selection: which algorithms, key sizes and hashes are in use.
 
 8. Find classical cryptography in CI
 ------------------------------------
