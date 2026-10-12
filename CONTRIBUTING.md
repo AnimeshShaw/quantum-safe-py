@@ -61,6 +61,8 @@ Add a test in `tests/unit/test_migrate.py::TestScanner*`.
 
 Run without slow/liboqs tests: `pytest -m "not requires_liboqs and not slow"`
 
+Code quality: `ruff check src tests`, `ruff format src tests`, `mypy src/quantum_safe`. Benchmarks and the statistical helpers are described in `docs/guides/benchmarks.rst`.
+
 ## Commit conventions
 
 - `feat: add X` — new feature

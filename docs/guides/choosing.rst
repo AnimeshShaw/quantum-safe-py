@@ -209,6 +209,59 @@ Use ``Upgrader`` to produce a hybrid key that *contains* the classical key, and
 Give the manager a store with ``compare_and_set`` whenever more than one process shares it
 (see :doc:`migration`).
 
+Algorithm reference
+-------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 14 10 14 34
+
+   * - Algorithm
+     - Type
+     - NIST level
+     - Standard
+     - Notes
+   * - ``ML-KEM-512``
+     - KEM
+     - 1
+     - FIPS 203
+     - Smallest; use ML-KEM-768 for new deployments.
+   * - ``ML-KEM-768``
+     - KEM
+     - 3
+     - FIPS 203
+     - Default.
+   * - ``ML-KEM-1024``
+     - KEM
+     - 5
+     - FIPS 203
+     - Highest level; the CNSA 2.0 parameter set.
+   * - ``ML-DSA-44`` / ``65`` / ``87``
+     - Signature
+     - 2 / 3 / 5
+     - FIPS 204
+     - ``ML-DSA-65`` is the default; ``ML-DSA-87`` is the CNSA 2.0 parameter set.
+   * - ``SLH-DSA-*`` (12 sets)
+     - Signature
+     - 1 / 3 / 5
+     - FIPS 205
+     - Hash-based; ``s`` sets are smaller and slower to sign, ``f`` sets are faster and larger.
+   * - ``X25519+ML-KEM-768``
+     - Hybrid KEM
+     - 3
+     - IETF drafts
+     - Default hybrid combination. ``X-Wing`` is available for interoperability with other X-Wing implementations.
+   * - ``Ed25519+ML-DSA-65-v2``
+     - Hybrid signature
+     - 3
+     - library format
+     - Default hybrid signature. ``Ed25519+ML-DSA-65`` is the original format; name it explicitly.
+   * - ``HQC-128`` / ``192`` / ``256``, ``BIKE-L1`` / ``L3`` / ``L5``
+     - KEM
+     - 1 / 3 / 5
+     - liboqs
+     - Available through liboqs; experimental.
+
 Where quantum-safe is not the right tool
 -----------------------------------------
 
