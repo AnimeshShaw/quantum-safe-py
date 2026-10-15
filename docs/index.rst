@@ -57,6 +57,7 @@ and a CI-ready audit scanner — all in one library.
    guides/audit
    guides/cli
    guides/benchmarks
+   guides/reproducible-build
 
 .. toctree::
    :maxdepth: 1
