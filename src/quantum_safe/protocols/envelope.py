@@ -430,6 +430,54 @@ class Envelope:
         aes = AESGCM(enc_key)
         return aes.decrypt(sealed.nonce, sealed.ciphertext, built_aad)
 
+    @classmethod
+    def rewrap(
+        cls,
+        sealed: SealedMessage,
+        old_secret_key: SecretKey,
+        new_public_key: PublicKey,
+        *,
+        expected_aad: bytes | None = None,
+        aad: bytes | None = None,
+    ) -> SealedMessage:
+        """Move a message from one recipient key to another.
+
+        Opens ``sealed`` under ``old_secret_key`` and seals the plaintext to ``new_public_key``,
+        keeping the AAD. This is the single step of a migration to a hybrid or stronger key: the
+        original message is not modified, and nothing is returned if opening fails.
+
+        Args:
+            sealed: the message sealed to the old key.
+            old_secret_key: the secret key it is sealed to.
+            new_public_key: the public key to seal it to. Any envelope key: a hybrid KEM key
+                (version 1 envelope) or ``ML-KEM-1024`` (version 2).
+            expected_aad: the AAD the message must carry, as for :meth:`open`. If omitted, any AAD
+                is accepted (it is authenticated) and an
+                :class:`~quantum_safe.exceptions.AadOmittedWarning` is emitted when the message
+                carries AAD.
+            aad: AAD for the new message. Default: the message's own AAD, unchanged.
+
+        Returns:
+            A new :class:`SealedMessage` for ``new_public_key``.
+
+        Raises:
+            cryptography.exceptions.InvalidTag: wrong key, tampered message or AAD mismatch.
+            DecapsulationError: KEM decapsulation failed.
+        """
+        if expected_aad is None and sealed.aad:
+            warnings.warn(
+                "Envelope.rewrap() was called without expected_aad= for a message that carries "
+                "AAD. The AAD travels inside the message and anyone with the recipient's public "
+                "key can set it, so pass the AAD you expect.",
+                AadOmittedWarning,
+                stacklevel=2,
+            )
+        check = bytes(sealed.aad) if expected_aad is None else bytes(expected_aad)
+        plaintext = cls.open(sealed, old_secret_key, expected_aad=check)
+        return cls.seal(
+            plaintext, new_public_key, aad=bytes(sealed.aad) if aad is None else bytes(aad)
+        )
+
     @staticmethod
     def _version_for(algorithm: str) -> int:
         """Envelope version for a KEM algorithm: v1 hybrid, v2 pure ML-KEM-1024."""

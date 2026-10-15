@@ -234,6 +234,35 @@ What it does and does not do:
 - The hybrid key is a new format that classical-only software cannot read. Keep the
   original key for those clients until the migration is finished.
 
+``qs-migrate rewrap``
+~~~~~~~~~~~~~~~~~~~~~
+
+Re-wrap every sealed envelope under a directory to a new recipient key.
+
+.. code-block:: text
+
+   qs-migrate rewrap SOURCE [DESTINATION] [OPTIONS]
+
+   Options:
+     --old-secret PATH     Secret-key PEM the envelopes are sealed to today (required)
+     --new-public PATH     Public-key PEM to seal them to (required)
+     --new-secret PATH     The matching new secret-key PEM: each result is opened again and
+                           compared (recommended)
+     --aad TEXT            The AAD every envelope must carry (UTF-8)
+     --aad-from-path       Expect each envelope's AAD to be its path relative to SOURCE
+     --in-place            Replace files in SOURCE (atomically); no DESTINATION
+     --dry-run             Check everything, write nothing
+     --report PATH         Write the JSON report
+     --cbom PATH           Write a CycloneDX report
+
+   Examples:
+     qs-migrate rewrap sealed/ sealed-new/ --old-secret old.pem --new-public new.pub.pem \
+         --new-secret new.pem --aad-from-path --report rewrap.json --cbom rewrap-cbom.json
+
+The source is not modified unless ``--in-place``; the command is safe to run again (files already
+migrated are recognised); it exits ``1`` if any file failed or did not verify. See
+:doc:`migration` for what the report means.
+
 ``qs-migrate status``
 ~~~~~~~~~~~~~~~~~~~~~
 
