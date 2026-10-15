@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "quantum-safe"
 author = "Animesh"
 copyright = "2024–2026, Animesh"
-release = "0.1.0"
-version = "0.1"
+release = "0.4.0"
+version = "0.4"
 
 # ---------------------------------------------------------------------------
 # General config
