@@ -39,13 +39,14 @@ def test_vector_counts() -> None:
         "ML-DSA-44-v2",
         "ML-DSA-65-v2",
         "ML-DSA-87-v2",
+        "P-384+ML-DSA-87-v2",
         "Ed25519+ML-DSA-44-v2",
         "Ed25519+ML-DSA-65-v2",
         "Ed25519+ML-DSA-87-v2",
         "P-256+ML-DSA-44-v2",
         "P-256+ML-DSA-65-v2",
     }
-    assert len(V["signatures_v2"]) == 16 and len(V["standard_jwt"]) == 3
+    assert len(V["signatures_v2"]) == 18 and len(V["standard_jwt"]) == 3
 
 
 @pytest.mark.parametrize("e", V["envelope_v2"], ids=["no-aad", "with-aad"])

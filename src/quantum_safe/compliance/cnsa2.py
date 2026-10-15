@@ -79,10 +79,10 @@ HYBRID_POLICY_NOTE = (
     "it names is IKEv2, keeping CNSA 1.0 key establishment fortified by ML-KEM-1024)."
 )
 
-# Classical partners hybrid_kem() can build. HybridKEM implements X25519 and
-# P-256 only; P-384 is not offered until it is implemented. Note that these
-# hybrids are reported PARTIAL (see above); pqc_kem() is the compliant choice.
-CNSA2_HYBRID_CLASSICAL = ("X25519",)
+# Classical partners hybrid_kem() can build with ML-KEM-1024: X25519, and P-384 (the
+# curve of CNSA 1.0 estates). Note that these hybrids are reported PARTIAL (see above);
+# pqc_kem() is the compliant choice.
+CNSA2_HYBRID_CLASSICAL = ("X25519", "P-384")
 
 #: Why the software/firmware signing requirement is still only partly met.
 CODE_SIGNING_STATUS: dict[str, str] = {

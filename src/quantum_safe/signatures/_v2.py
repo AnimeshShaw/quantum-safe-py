@@ -37,7 +37,7 @@ This module holds the format. :class:`~quantum_safe.signatures.core.Sign` and
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from quantum_safe.exceptions import UnsupportedAlgorithm, VerificationError
 
@@ -46,15 +46,24 @@ if TYPE_CHECKING:
 
 SUFFIX = "-v2"
 LABEL = b"quantum-safe-sig-v2"
-CLASSICAL_SIG_LEN = 64
+CLASSICAL_SIG_LEN = 64  # Ed25519 and P-256; see _CLASSICAL_LEN for each classical half
 
-# Same group order as P-256 (NIST FIPS 186-4, curve P-256).
+#: Length of the fixed-size classical half of a v2 blob, per classical algorithm.
+_CLASSICAL_LEN: dict[str, int] = {"Ed25519": 64, "P-256": 64, "P-384": 96}
+
+# Group orders (NIST FIPS 186-4). The classical half is raw r || s, low-S only.
 _P256_ORDER = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+_P384_ORDER = int(
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "C7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
+    16,
+)
 
 #: Hybrid combinations that have a v2 identifier (same as quantum-safe-ts).
 V2_HYBRIDS: dict[str, tuple[str, ...]] = {
     "Ed25519": ("ML-DSA-44", "ML-DSA-65", "ML-DSA-87"),
     "P-256": ("ML-DSA-44", "ML-DSA-65"),
+    "P-384": ("ML-DSA-87",),
 }
 V2_ML_DSA = ("ML-DSA-44", "ML-DSA-65", "ML-DSA-87")
 
@@ -121,24 +130,39 @@ def unpack_components(data: bytes) -> tuple[bytes, bytes]:
 # ---------------------------------------------------------------------------
 
 
+def _curve(classical: str) -> tuple[int, int, Any]:
+    """(group order, coordinate size in bytes, digest class) of an ECDSA classical half."""
+    from cryptography.hazmat.primitives import hashes
+
+    if classical == "P-384":
+        return _P384_ORDER, 48, hashes.SHA384
+    return _P256_ORDER, 32, hashes.SHA256
+
+
+def _curve_class(classical: str) -> Any:  # noqa: ANN401
+    from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, SECP384R1
+
+    return SECP384R1 if classical == "P-384" else SECP256R1
+
+
 def _classical_sign(classical: str, secret: bytes, data: bytes) -> bytes:
     if classical == "Ed25519":
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         return Ed25519PrivateKey.from_private_bytes(secret).sign(data)
-    if classical == "P-256":
-        from cryptography.hazmat.primitives import hashes
+    if classical in ("P-256", "P-384"):
         from cryptography.hazmat.primitives.asymmetric.ec import ECDSA, EllipticCurvePrivateKey
         from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
         from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
+        order, size, digest = _curve(classical)
         key = load_pem_private_key(secret, password=None)
         if not isinstance(key, EllipticCurvePrivateKey):
-            raise ValueError("P-256 secret key is not an EC key")
-        r, s = decode_dss_signature(key.sign(data, ECDSA(hashes.SHA256())))
-        if s > _P256_ORDER // 2:  # low-S only: the high-S twin is a second encoding
-            s = _P256_ORDER - s
-        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+            raise ValueError(f"{classical} secret key is not an EC key")
+        r, s = decode_dss_signature(key.sign(data, ECDSA(digest())))
+        if s > order // 2:  # low-S only: the high-S twin is a second encoding
+            s = order - s
+        return r.to_bytes(size, "big") + s.to_bytes(size, "big")
     raise UnsupportedAlgorithm(classical, available=list(V2_HYBRIDS))
 
 
@@ -149,27 +173,26 @@ def _classical_verify(classical: str, public: bytes, data: bytes, sig: bytes) ->
 
             Ed25519PublicKey.from_public_bytes(public).verify(sig, data)
             return True
-        if classical == "P-256":
-            from cryptography.hazmat.primitives import hashes
+        if classical in ("P-256", "P-384"):
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 ECDSA,
-                SECP256R1,
                 EllipticCurvePublicNumbers,
             )
             from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
-            if len(public) != 64 or len(sig) != 64:
+            order, size, digest = _curve(classical)
+            if len(public) != 2 * size or len(sig) != 2 * size:
                 return False
-            r = int.from_bytes(sig[:32], "big")
-            s = int.from_bytes(sig[32:], "big")
-            if s > _P256_ORDER // 2:
+            r = int.from_bytes(sig[:size], "big")
+            s = int.from_bytes(sig[size:], "big")
+            if s > order // 2:
                 return False  # the high-S twin is refused
             pub = EllipticCurvePublicNumbers(
-                int.from_bytes(public[:32], "big"),
-                int.from_bytes(public[32:], "big"),
-                SECP256R1(),
+                int.from_bytes(public[:size], "big"),
+                int.from_bytes(public[size:], "big"),
+                _curve_class(classical)(),
             ).public_key()
-            pub.verify(encode_dss_signature(r, s), data, ECDSA(hashes.SHA256()))
+            pub.verify(encode_dss_signature(r, s), data, ECDSA(digest()))
             return True
     except Exception:  # noqa: BLE001
         return False
@@ -221,9 +244,10 @@ def verify(
         c_pub, p_pub = unpack_components(public)
     except ValueError as exc:
         raise VerificationError(algo=algorithm) from exc
-    if len(blob) <= CLASSICAL_SIG_LEN:
+    classical_len = _CLASSICAL_LEN[classical]
+    if len(blob) <= classical_len:
         raise VerificationError(algo=algorithm)
-    c_sig, p_sig = blob[:CLASSICAL_SIG_LEN], blob[CLASSICAL_SIG_LEN:]
+    c_sig, p_sig = blob[:classical_len], blob[classical_len:]
     # Evaluate both halves before combining, so a failure does not reveal which.
     classical_ok = _classical_verify(classical, c_pub, _classical_input(m2), c_sig)
     pqc_ok = backend.verify_native_context(pqc, p_pub, m2, p_sig, LABEL)

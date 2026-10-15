@@ -41,12 +41,17 @@ Choosing an algorithm
      - Hybrid KEM
      - —
      - When P-256 compatibility is required.
+   * - ``P-384+ML-KEM-1024``
+     - Hybrid KEM
+     - —
+     - For estates that hold CNSA 1.0 P-384 keys; the only ML-KEM level offered with P-384. The
+       classical half uses the whole 48-byte ECDH output.
 
 HybridKEM
 ---------
 
 :class:`~quantum_safe.kem.hybrid.HybridKEM` is the high-level hybrid KEM.
-It combines X25519 (or P-256) with an ML-KEM variant and derives the shared
+It combines X25519 (or P-256, or P-384) with an ML-KEM variant and derives the shared
 secret with a library-specific HKDF-SHA256 combiner::
 
    HKDF-SHA256(ikm  = ss_classical || ss_pqc,

@@ -57,7 +57,7 @@ class KEMAlgorithmSpec:
 class ClassicalKEMSpec:
     """Spec for a classical KEM used as the hybrid companion.
 
-    We only support X25519 and P-256 as classical companions. RSA-OAEP is
+    We only support X25519, P-256 and P-384 as classical companions. RSA-OAEP is
     deliberately excluded — it's larger and slower and provides no meaningful
     additional security in the hybrid context.
     """
@@ -192,6 +192,11 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
         public_key_bytes=65,  # uncompressed point
         shared_secret_bytes=32,
     ),
+    "P-384": ClassicalKEMSpec(
+        name="P-384",
+        public_key_bytes=97,  # uncompressed point
+        shared_secret_bytes=48,  # the whole ECDH x-coordinate
+    ),
 }
 
 # Valid hybrid combinations: classical_name -> [pqc_name, ...]
@@ -199,6 +204,7 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
 HYBRID_COMBINATIONS: dict[str, list[str]] = {
     "X25519": ["ML-KEM-768", "ML-KEM-512", "ML-KEM-1024"],
     "P-256": ["ML-KEM-512", "ML-KEM-768"],
+    "P-384": ["ML-KEM-1024"],
 }
 
 # The default hybrid: X25519 + ML-KEM-768, as recommended by

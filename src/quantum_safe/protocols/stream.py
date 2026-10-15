@@ -74,7 +74,7 @@ def _uses_sha384(algorithm: str) -> bool:
         from quantum_safe.kem.algorithms import KEM_ALGORITHMS, parse_hybrid_name
 
         classical, pqc = parse_hybrid_name(algorithm)
-        if classical in ("X25519", "P-256") and pqc in KEM_ALGORITHMS:
+        if classical in ("X25519", "P-256", "P-384") and pqc in KEM_ALGORITHMS:
             return False
     raise UnsupportedAlgorithm(
         algorithm,

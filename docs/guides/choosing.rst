@@ -251,6 +251,11 @@ Algorithm reference
      - 3
      - IETF drafts
      - Default hybrid combination. ``X-Wing`` is available for interoperability with other X-Wing implementations.
+   * - ``P-384+ML-KEM-1024``, ``P-384+ML-DSA-87``
+     - Hybrid
+     - 5
+     - library format
+     - For estates that hold CNSA 1.0 P-384 keys. ML-DSA-87 is the only level paired with P-384.
    * - ``Ed25519+ML-DSA-65-v2``
      - Hybrid signature
      - 3

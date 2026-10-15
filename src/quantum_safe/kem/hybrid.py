@@ -72,6 +72,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING, cast
 
+from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, SECP384R1
 from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey,
     X25519PublicKey,
@@ -130,6 +131,10 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
     return a, b
 
 
+# classical name -> (curve class, coordinate / ECDH output length in bytes)
+_EC_CURVES: dict[str, tuple[type, int]] = {"P-256": (SECP256R1, 32), "P-384": (SECP384R1, 48)}
+
+
 class HybridKEM:
     """Hybrid KEM: classical Diffie-Hellman + post-quantum KEM.
 
@@ -139,7 +144,7 @@ class HybridKEM:
     are not interchangeable with a TLS implementation.
 
     Args:
-        classical:      Classical KEM algorithm. Currently "X25519" or "P-256".
+        classical:      Classical KEM algorithm: "X25519", "P-256" or "P-384".
                         Default: "X25519".
         pqc:            PQC KEM algorithm. Default: "ML-KEM-768".
         backend:        Backend for PQC operations: "auto", "liboqs",
@@ -355,14 +360,12 @@ class HybridKEM:
             priv_bytes = priv.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
             pub_bytes = pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return priv_bytes, pub_bytes
-        elif self._classical == "P-256":
+        elif self._classical in _EC_CURVES:
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                SECP256R1,
-                generate_private_key,
-            )
+            from cryptography.hazmat.primitives.asymmetric.ec import generate_private_key
 
-            ec_priv = generate_private_key(SECP256R1(), default_backend())
+            curve_cls, _ = _EC_CURVES[self._classical]
+            ec_priv = generate_private_key(curve_cls(), default_backend())
             ec_pub = ec_priv.public_key()
             priv_bytes = ec_priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
             pub_bytes = ec_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
@@ -370,7 +373,7 @@ class HybridKEM:
         else:
             raise UnsupportedAlgorithm(
                 self._classical,
-                available=["X25519", "P-256"],
+                available=["X25519", "P-256", "P-384"],
             )
 
     def _encapsulate_classical(self, recipient_pub_bytes: bytes) -> tuple[bytes, bytes]:
@@ -396,36 +399,37 @@ class HybridKEM:
             ct = ephem_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return ct, shared
 
-        elif self._classical == "P-256":
+        elif self._classical in _EC_CURVES:
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 ECDH,
-                SECP256R1,
                 EllipticCurvePublicNumbers,
                 generate_private_key,
             )
 
-            ec_ephem_priv = generate_private_key(SECP256R1(), default_backend())
+            curve_cls, coord = _EC_CURVES[self._classical]
+            ec_ephem_priv = generate_private_key(curve_cls(), default_backend())
             ec_ephem_pub = ec_ephem_priv.public_key()
 
             # Load recipient's public key from uncompressed point
             # cryptography doesn't have a direct from_encoded_point in all versions
             # so we use the longer form
-            if len(recipient_pub_bytes) != 65 or recipient_pub_bytes[0] != 0x04:
+            if len(recipient_pub_bytes) != 1 + 2 * coord or recipient_pub_bytes[0] != 0x04:
                 raise DecapsulationError(algo=self._classical)
-            x = int.from_bytes(recipient_pub_bytes[1:33], "big")
-            y = int.from_bytes(recipient_pub_bytes[33:65], "big")
-            ec_recipient_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
+            x = int.from_bytes(recipient_pub_bytes[1 : 1 + coord], "big")
+            y = int.from_bytes(recipient_pub_bytes[1 + coord :], "big")
+            ec_recipient_pub = EllipticCurvePublicNumbers(x, y, curve_cls()).public_key(
                 default_backend()
             )
 
             shared_key = ec_ephem_priv.exchange(ECDH(), ec_recipient_pub)
-            if len(shared_key) < 32:
+            if len(shared_key) < coord:
                 raise DecapsulationError(algo=self._classical)
             ct = ec_ephem_pub.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
-            return ct, shared_key[:32]
+            # The whole ECDH x-coordinate: 32 bytes for P-256, 48 for P-384.
+            return ct, shared_key[:coord]
         else:
-            raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256"])
+            raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256", "P-384"])
 
     def _decapsulate_classical(self, secret_key_bytes: bytes, ciphertext_bytes: bytes) -> bytes:
         """Recover the classical shared secret.
@@ -445,40 +449,40 @@ class HybridKEM:
             except Exception as exc:
                 raise DecapsulationError(algo=self._algorithm) from exc
 
-        elif self._classical == "P-256":
+        elif self._classical in _EC_CURVES:
             try:
                 from cryptography.hazmat.backends import default_backend
                 from cryptography.hazmat.primitives.asymmetric.ec import (
                     ECDH,
-                    SECP256R1,
                     EllipticCurvePrivateKey,
                     EllipticCurvePublicNumbers,
                 )
                 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
+                curve_cls, coord = _EC_CURVES[self._classical]
                 ec_our_priv = cast(
                     EllipticCurvePrivateKey,
                     load_pem_private_key(
                         secret_key_bytes, password=None, backend=default_backend()
                     ),
                 )
-                if len(ciphertext_bytes) != 65 or ciphertext_bytes[0] != 0x04:
+                if len(ciphertext_bytes) != 1 + 2 * coord or ciphertext_bytes[0] != 0x04:
                     raise DecapsulationError(algo=self._algorithm)
-                x = int.from_bytes(ciphertext_bytes[1:33], "big")
-                y = int.from_bytes(ciphertext_bytes[33:65], "big")
-                sender_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(
+                x = int.from_bytes(ciphertext_bytes[1 : 1 + coord], "big")
+                y = int.from_bytes(ciphertext_bytes[1 + coord :], "big")
+                sender_pub = EllipticCurvePublicNumbers(x, y, curve_cls()).public_key(
                     default_backend()
                 )
                 shared = ec_our_priv.exchange(ECDH(), sender_pub)
-                if len(shared) < 32:
+                if len(shared) < coord:
                     raise DecapsulationError(algo=self._algorithm)
-                return shared[:32]
+                return shared[:coord]
             except DecapsulationError:
                 raise
             except Exception as exc:
                 raise DecapsulationError(algo=self._algorithm) from exc
         else:
-            raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256"])
+            raise UnsupportedAlgorithm(self._classical, available=["X25519", "P-256", "P-384"])
 
     def __repr__(self) -> str:
         return (

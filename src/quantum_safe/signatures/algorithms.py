@@ -165,12 +165,19 @@ CLASSICAL_SIGNATURE_ALGORITHMS: dict[str, ClassicalSignatureSpec] = {
         secret_key_bytes=32,
         signature_bytes=72,  # DER-encoded ECDSA, max
     ),
+    "P-384": ClassicalSignatureSpec(
+        name="P-384",
+        public_key_bytes=96,  # raw (x, y) coordinates
+        secret_key_bytes=48,
+        signature_bytes=104,  # DER-encoded ECDSA, max
+    ),
 }
 
 # Valid hybrid combinations: classical -> [pqc, ...]
 HYBRID_SIGNATURE_COMBINATIONS: dict[str, list[str]] = {
     "Ed25519": ["ML-DSA-65", "ML-DSA-44", "ML-DSA-87"],
     "P-256": ["ML-DSA-44", "ML-DSA-65"],
+    "P-384": ["ML-DSA-87"],
 }
 
 DEFAULT_HYBRID_CLASSICAL = "Ed25519"

@@ -206,8 +206,8 @@ Upgrade a classical **secret** key to a hybrid post-quantum key pair and write i
      --public-output PATH      Where to write the hybrid public key (default: <output>.pub)
      --target TEXT             Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an
                                X25519 key, Ed25519+ML-DSA-65-v2 for an Ed25519 key
-     --key-type {kem,sign}     Optional check that the input is a KEM (X25519) or signing
-                               (Ed25519) key
+     --key-type {kem,sign}     Check that the input is a KEM (X25519) or signing (Ed25519)
+                               key; required for P-256 and P-384 keys
      --force                   Replace --output / --public-output if they exist
 
    Examples:
@@ -216,11 +216,14 @@ Upgrade a classical **secret** key to a hybrid post-quantum key pair and write i
 
 What it does and does not do:
 
-- Supported inputs are **X25519** and **Ed25519** secret keys. The hybrid key keeps the
-  original secret unchanged next to a freshly generated post-quantum key, so a public
-  key alone cannot be upgraded; the command says so and stops. P-256, RSA, encrypted
-  keys and keys that are already hybrid or post-quantum are rejected with the reason
-  (use :class:`~quantum_safe.migrate.upgrader.Upgrader` from Python for other cases).
+- Supported inputs are **X25519**, **Ed25519**, **P-256** and **P-384** secret keys. An
+  elliptic-curve key can serve key agreement or signatures, so pass ``--key-type kem`` or
+  ``--key-type sign`` (default targets: ``P-256+ML-KEM-768`` / ``P-256+ML-DSA-65-v2`` and
+  ``P-384+ML-KEM-1024`` / ``P-384+ML-DSA-87-v2``). The hybrid key keeps the original secret
+  unchanged next to a freshly generated post-quantum key, so a public key alone cannot be
+  upgraded; the command says so and stops. RSA, other curves, encrypted keys and keys that
+  are already hybrid or post-quantum are rejected with the reason (use
+  :class:`~quantum_safe.migrate.upgrader.Upgrader` from Python for other cases).
 - ``--target`` must keep the input's classical algorithm and be an approved combination
   (for example ``X25519+ML-KEM-1024``); ``--key-type`` must match the input.
 - Before anything is written the result is parsed back and exercised (a KEM

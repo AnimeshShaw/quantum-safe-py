@@ -226,6 +226,7 @@ class TestInteropWithTypeScript:
         assert {v["algorithm"] for v in VECTORS} == {
             "X25519+ML-KEM-768",
             "P-256+ML-KEM-512",
+            "P-384+ML-KEM-1024",
             "ML-KEM-1024",
             "X-Wing",
         }

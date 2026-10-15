@@ -231,7 +231,7 @@ class TestRefusals:
 
     def test_unsupported_classical_algorithms(self, runner: CliRunner, tmp_path: Path) -> None:
         for name, key in (
-            ("p256.pem", ec.generate_private_key(ec.SECP256R1())),
+            ("p521.pem", ec.generate_private_key(ec.SECP521R1())),
             ("rsa.pem", rsa.generate_private_key(65537, 2048)),
         ):
             f = tmp_path / name

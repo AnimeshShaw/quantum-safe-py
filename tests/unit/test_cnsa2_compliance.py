@@ -206,11 +206,18 @@ class TestEnforce:
 
 
 class TestConstructors:
-    def test_hybrid_kem_no_longer_offers_p384(self) -> None:
-        """HybridKEM does not implement P-384, so the helper must not offer it."""
-        assert "P-384" not in cnsa2.CNSA2_HYBRID_CLASSICAL
+    def test_hybrid_kem_offers_x25519_and_p384_and_nothing_else(self) -> None:
+        assert cnsa2.CNSA2_HYBRID_CLASSICAL == ("X25519", "P-384")
         with pytest.raises(ValueError):
-            cnsa2.hybrid_kem(classical="P-384")
+            cnsa2.hybrid_kem(classical="P-256")
+
+    @pytest.mark.requires_liboqs
+    def test_p384_hybrid_is_built_and_reported_partial(self) -> None:
+        kem = cnsa2.hybrid_kem(classical="P-384")
+        assert kem.algorithm == "P-384+ML-KEM-1024"
+        report = cnsa2.report(kem=kem.algorithm, signature="ML-DSA-87", include_code_signing=False)
+        finding = next(c for c in report.checks if "Key establishment" in c.requirement)
+        assert finding.finding.name == "PARTIAL"
 
     @pytest.mark.requires_liboqs
     def test_pure_constructors_use_the_required_parameter_sets(self) -> None:

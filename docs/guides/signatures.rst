@@ -211,12 +211,13 @@ quantum-safe-ts, selected by an identifier suffix:
    sm = hybrid.sign(b"document", kp.secret, context=b"myapp-v1")
    hybrid.verify(sm, kp.public, context=b"myapp-v1")
 
-Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``
-and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
+Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``,
+``P-256+ML-DSA-44/65-v2`` and ``P-384+ML-DSA-87-v2`` (no SLH-DSA).  What differs:
 
 - **No prefix and no prefix length** in the signature, so there is no
   message/prefix boundary to move.  A hybrid signature is exactly
-  ``classical signature (64 bytes) || ML-DSA signature``.
+  ``classical signature || ML-DSA signature``, where the classical half is 64 bytes for
+  Ed25519 and P-256 and 96 bytes for P-384 (raw ``r || s``, low-S only).
 - The ML-DSA half is **plain FIPS 204** ``ML-DSA.Sign`` with the *native*
   context ``quantum-safe-sig-v2`` over
   ``M2 = u8(len(algo)) || algo || u8(len(ctx)) || ctx || message``, so any
