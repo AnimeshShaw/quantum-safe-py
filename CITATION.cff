@@ -11,7 +11,7 @@ authors:
     given-names: Animesh
     email: animesh15b@iimk.edu.in
 version: "0.4.0"
-date-released: "2026-10-05"
+date-released: "2026-10-18"
 url: "https://pypi.org/project/quantum-safe-py/"
 identifiers:
   - type: doi
