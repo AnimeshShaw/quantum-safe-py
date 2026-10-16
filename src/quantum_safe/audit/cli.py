@@ -358,7 +358,7 @@ if _HAS_CLICK:
     )
     @click.option(
         "--signature",
-        default="Ed25519+ML-DSA-65",
+        default="Ed25519+ML-DSA-65-v2",
         show_default=True,
         help="Signature or hybrid signature selection to evaluate.",
     )

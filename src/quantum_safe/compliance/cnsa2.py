@@ -197,7 +197,9 @@ def _check_pqc_selection(
     set; a hybrid with a recognised classical half is PARTIAL (see
     HYBRID_POLICY_NOTE), and anything else is NON_COMPLIANT.
     """
-    parts = algorithm.split("+")
+    # The -v2 signature format uses the same parameter sets as its base suite.
+    name = algorithm.removesuffix("-v2")
+    parts = name.split("+")
     if len(parts) > 2 or any(not p for p in parts):
         return CheckResult(
             requirement=requirement,
