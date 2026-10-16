@@ -157,8 +157,9 @@ What the profile does not cover
 - **Validation.** For National Security Systems, CNSA 2.0 is met through FIPS 140-3
   validated modules; the report covers parameter selection.
 - **Software and firmware signing.** LMS (RFC 8554) is available through the optional
-  ``[lms]`` extra, with a write-ahead state store because LMS is stateful; XMSS is not
-  implemented, and SP 800-208 also requires key generation inside a validated module.
+  ``[lms]`` extra, with a write-ahead state store because LMS is stateful. CNSA 2.0 asks for
+  LMS or XMSS, so LMS covers the requirement and XMSS is not implemented. SP 800-208 also
+  requires key generation inside a validated module.
 - **AES-256 and SHA-384/512 elsewhere in your stack.** The report can check a hash name you
   give it; it cannot see the rest of your system.
 - **Protocol profiles.** CNSA 2.0 profiles for TLS, IPsec and others are defined by their

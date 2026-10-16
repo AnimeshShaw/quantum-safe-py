@@ -37,7 +37,7 @@ The theme is "make the safe thing the only thing", and the two libraries change 
 
 ## Later (no release assigned)
 
-- XMSS next to the existing LMS support (SP 800-208).
+- XMSS, if a maintained library provides it. CNSA 2.0 asks for LMS or XMSS, and LMS is covered.
 
 ## What would make it 1.0
 
