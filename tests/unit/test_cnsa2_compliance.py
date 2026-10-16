@@ -282,4 +282,6 @@ class TestV2SignatureNames:
 
         default = f"{DEFAULT_HYBRID_CLASSICAL}+{DEFAULT_HYBRID_PQC}"
         result = cnsa2.check_signature(default)
-        assert "not a recognised" not in result.detail and "classical component" not in result.detail
+        assert (
+            "not a recognised" not in result.detail and "classical component" not in result.detail
+        )
