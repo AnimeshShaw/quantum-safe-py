@@ -70,6 +70,7 @@ _KNOWN_PUBLIC_KEY_SIZES: dict[str, int] = {
     "ML-DSA-87": 2592,
     "SLH-DSA-SHAKE-128s": 32,
     "SLH-DSA-SHAKE-128f": 32,
+    "X-Wing": 1216,
 }
 _KNOWN_SECRET_KEY_SIZES: dict[str, int] = {
     "ML-KEM-512": 1632,
@@ -80,7 +81,14 @@ _KNOWN_SECRET_KEY_SIZES: dict[str, int] = {
     "ML-DSA-87": 4896,
     "SLH-DSA-SHAKE-128s": 64,
     "SLH-DSA-SHAKE-128f": 64,
+    "X-Wing": 32,
 }
+# The remaining FIPS 205 parameter sets: key sizes depend only on the security level.
+for _family in ("SHAKE", "SHA2"):
+    for _level, (_pk, _sk) in {"128": (32, 64), "192": (48, 96), "256": (64, 128)}.items():
+        for _variant in ("s", "f"):
+            _KNOWN_PUBLIC_KEY_SIZES.setdefault(f"SLH-DSA-{_family}-{_level}{_variant}", _pk)
+            _KNOWN_SECRET_KEY_SIZES.setdefault(f"SLH-DSA-{_family}-{_level}{_variant}", _sk)
 
 
 class KeyType(Enum):

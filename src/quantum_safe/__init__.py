@@ -42,7 +42,7 @@ from quantum_safe.exceptions import (
     UnsupportedAlgorithm,
     VerificationError,
 )
-from quantum_safe.kem import KEM, HybridKEM
+from quantum_safe.kem import KEM, HybridKEM, XWing
 from quantum_safe.signatures import HybridSign, Sign
 from quantum_safe.types import (
     CipherText,
@@ -63,6 +63,7 @@ __all__ = [
     "__version_info__",
     # Main classes (most users only need these two)
     "HybridKEM",
+    "XWing",
     "HybridSign",
     # Single-algorithm variants
     "KEM",

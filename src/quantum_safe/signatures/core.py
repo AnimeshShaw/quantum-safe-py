@@ -66,7 +66,12 @@ import warnings
 from typing import TYPE_CHECKING
 
 from quantum_safe.backends import get_signature_backend
-from quantum_safe.exceptions import InsecureOperationError, UnsupportedAlgorithm, VerificationError
+from quantum_safe.exceptions import (
+    ContextOmittedWarning,
+    InsecureOperationError,
+    UnsupportedAlgorithm,
+    VerificationError,
+)
 from quantum_safe.signatures import _v2
 from quantum_safe.signatures.algorithms import (
     HEDGED_RANDOMNESS_BYTES,
@@ -84,19 +89,20 @@ def check_expected_context(
 ) -> None:
     """Require the message's context to equal the verifier's expected context.
 
-    ``expected=None`` keeps the pre-0.3.1 behaviour (the context is taken from
-    the message) and emits a DeprecationWarning.
+    ``expected=None`` means "expect an empty context": a message that carries a
+    context is rejected, and a :class:`ContextOmittedWarning` says why (without
+    revealing the context). The wire error stays the opaque VerificationError.
     """
     if expected is None:
-        warnings.warn(
-            "verify() without context= is deprecated: pass the context you expect. "
-            "The context in the message is attacker-controlled, so without it a "
-            "signature made for one purpose verifies for another. context= will be "
-            "required (default b'') in the next minor release.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        return
+        expected = b""
+        if signed_message.context:
+            warnings.warn(
+                "verify() was called without context= but the message carries a non-empty "
+                "context, so it is rejected: omitting context= means 'expect an empty "
+                "context'. Pass the context you expect.",
+                ContextOmittedWarning,
+                stacklevel=3,
+            )
     if not hmac.compare_digest(bytes(signed_message.context), bytes(expected)):
         raise VerificationError(algo=algorithm)
 
@@ -199,6 +205,78 @@ class Sign:
             backend_tag=self._backend.name,
         )
         return KeyPair(public=pub, secret=sec)
+
+    # ------------------------------------------------------------------
+    # Seed keys (pyca backend)
+    # ------------------------------------------------------------------
+
+    def _seed_backend(self) -> AbstractSignatureBackend:
+        """The backend that can derive a key from a seed: pyca/cryptography."""
+        if self._v2 or "ML-DSA" not in self._spec.name:
+            raise UnsupportedAlgorithm(
+                self._algorithm, available=["ML-DSA-44", "ML-DSA-65", "ML-DSA-87"]
+            )
+        if self._backend.name == "pyca":
+            return self._backend
+        return get_signature_backend("pyca")
+
+    def keypair_from_seed(self, seed: bytes) -> KeyPair:
+        """Rebuild an ML-DSA key pair from its 32-byte seed (FIPS 204's native secret key).
+
+        Needs the optional ``cryptography`` backend (``cryptography >= 48``). The result is a
+        *seed key*: ``secret.raw_bytes`` is the seed itself, which is what RFC 9964 stores in a
+        private JWK or COSE key, and what quantum-safe-ts's ``StandardKeyPair`` holds.
+        """
+        if len(seed) != 32:
+            raise ValueError(f"an ML-DSA seed is exactly 32 bytes, got {len(seed)}")
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen_from_seed(self._spec.name, bytes(seed))
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def generate_seed_keypair(self) -> KeyPair:
+        """Generate an ML-DSA key pair whose secret key is its 32-byte seed (pyca backend)."""
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen(self._spec.name)
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def export_seed(self, secret_key: SecretKey) -> bytes:
+        """The 32-byte seed of a seed key. Raises ``ValueError`` for an expanded (liboqs) key.
+
+        Treat the result as a secret: store or move it as carefully as the key itself.
+        """
+        raw = secret_key.raw_bytes
+        if len(raw) != 32:
+            raise ValueError(
+                "this secret key is an expanded key (made by liboqs); no seed can be recovered "
+                "from it. Generate a seed key with generate_seed_keypair()."
+            )
+        return bytes(raw)
 
     # ------------------------------------------------------------------
     # Signing
@@ -482,6 +560,30 @@ class Sign:
         )
         if not ok:
             raise VerificationError(algo=self._algorithm)
+
+    def sign_standard(
+        self,
+        message: bytes,
+        secret_key: SecretKey,
+        context: bytes = b"",
+    ) -> bytes:
+        """The standard FIPS 204 signature of ``message`` under ``context``.
+
+        Identical to :meth:`sign_raw`; this is the name that says what it is. The result is a
+        bare ``ML-DSA.Sign`` signature that any FIPS 204 implementation can verify from the
+        message and context, as opposed to :meth:`sign`, which is the library's own format.
+        """
+        return self.sign_raw(message, secret_key, context)
+
+    def verify_standard(
+        self,
+        message: bytes,
+        signature: bytes,
+        public_key: PublicKey,
+        context: bytes = b"",
+    ) -> None:
+        """Verify a standard FIPS 204 signature. Identical to :meth:`verify_raw`."""
+        self.verify_raw(message, signature, public_key, context)
 
     # ------------------------------------------------------------------
     # Internal: signature blob packing

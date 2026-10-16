@@ -50,11 +50,14 @@ What is compatible
      - Yes (through converters for the store)
      - Yes
 
-Not shared: X-Wing, streaming encryption and nine of the twelve SLH-DSA parameter sets
-(TypeScript only); LMS *signing* and the hybrid X.509 builder (Python only); RFC 9964
-**private** JWKs, whose ``priv`` member is a seed that liboqs cannot turn back into a key
-pair (so Python can verify a TypeScript-made token but cannot sign with a TypeScript-made
-private JWK).
+X-Wing, streaming encryption (format v3), all twelve SLH-DSA parameter sets, COSE_Sign1 and
+private RFC 9964 JWKs / COSE keys (a 32-byte seed) are shared with quantum-safe-ts 0.2.0. Private
+keys need the optional ``cryptography`` backend (``pip install 'quantum-safe-py[pyca]'``): a seed
+made in either library signs in the other. An *expanded* liboqs ML-DSA secret key has no
+recoverable seed, so TypeScript can verify what it signs but cannot sign with it.
+
+Not shared: LMS *signing* in browsers (TypeScript signs only in Node.js with durable state) and
+the hybrid X.509 builder (Python only).
 
 Settings that must match
 ------------------------

@@ -41,12 +41,17 @@ Choosing an algorithm
      - Hybrid KEM
      - —
      - When P-256 compatibility is required.
+   * - ``P-384+ML-KEM-1024``
+     - Hybrid KEM
+     - —
+     - For estates that hold CNSA 1.0 P-384 keys; the only ML-KEM level offered with P-384. The
+       classical half uses the whole 48-byte ECDH output.
 
 HybridKEM
 ---------
 
 :class:`~quantum_safe.kem.hybrid.HybridKEM` is the high-level hybrid KEM.
-It combines X25519 (or P-256) with an ML-KEM variant and derives the shared
+It combines X25519 (or P-256, or P-384) with an ML-KEM variant and derives the shared
 secret with a library-specific HKDF-SHA256 combiner::
 
    HKDF-SHA256(ikm  = ss_classical || ss_pqc,
@@ -118,6 +123,30 @@ symmetric key material:
 The ``info`` parameter provides domain separation — use a unique value for
 each derived key in your application.
 
+X-Wing
+------
+
+:class:`~quantum_safe.kem.xwing.XWing` is the hybrid KEM of ``draft-connolly-cfrg-xwing-kem``:
+ML-KEM-768 and X25519 joined by a SHA3-256 combiner that binds the X25519 ciphertext and public
+key. Choose it when the other side is a third-party X-Wing implementation (for example in HPKE,
+age, or a JavaScript service); choose :class:`~quantum_safe.kem.hybrid.HybridKEM` for the
+library's own formats (envelopes, migration). quantum-safe-ts reads and writes the same bytes
+(``new HybridKEM('X-Wing')``).
+
+.. code-block:: python
+
+   from quantum_safe import XWing
+
+   kem = XWing()
+   kp = kem.generate_keypair()          # secret key: a 32-byte seed; public key: 1216 bytes
+   ct, ss_sender = kem.encapsulate(kp.public)      # ciphertext: 1120 bytes
+   ss_receiver = kem.decapsulate(kp.secret, ct)
+   assert ss_sender == ss_receiver
+
+A modified ciphertext decapsulates to a different secret rather than raising (ML-KEM's implicit
+rejection), so authenticate whatever you derive from it. ``keypair_from_seed(seed)`` rebuilds a
+key pair from its 32-byte seed.
+
 Envelope (high-level encryption)
 ---------------------------------
 
@@ -160,10 +189,10 @@ encrypt data:
    An envelope is public-key encryption: anyone holding the recipient's
    public key can seal a message, with any AAD, and the AAD travels inside
    the message.  Pass ``expected_aad=`` to ``Envelope.open`` to bind a
-   message to a context; omitting it while the message carries AAD is
-   deprecated (``DeprecationWarning``) and will be an error-by-default in the
-   next minor release.  An envelope does **not** authenticate the sender;
-   sign the payload separately when the sender matters.
+   message to a context; omitting it accepts any AAD and emits an
+   ``AadOmittedWarning`` when the message carries one (see
+   :doc:`context-and-aad`).  An envelope does **not** authenticate the
+   sender; sign the payload separately when the sender matters.
 
 Key serialization
 -----------------

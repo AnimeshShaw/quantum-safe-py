@@ -2,18 +2,20 @@ FROM python:3.12-slim
 
 # ── Stage 1: build liboqs ──────────────────────────────────────────────────
 # oqs-python's auto-installer has a known bug: it tries to clone branch
-# matching its own version number (e.g. "0.14.1") instead of the correct
-# liboqs tag ("0.15.0"). We bypass it entirely by building liboqs from
+# matching its own version number (e.g. "0.16.0.1") instead of the correct
+# liboqs tag ("0.16.0"). We bypass it entirely by building liboqs from
 # source and installing it as a system library before pip install.
+# The tag below is the same one as src/quantum_safe/_liboqs_version.py (a test keeps them equal).
+# The numbers in the papers were measured with --build-arg LIBOQS_TAG=0.15.0.
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc cmake make git libssl-dev libc6-dev \
         && rm -rf /var/lib/apt/lists/*
 
-# Build liboqs 0.15.0 as a shared library and install to /usr/local
+# Build liboqs as a shared library and install to /usr/local
 # -DOQS_DIST_BUILD=ON  → portable binary (no CPU-feature detection at runtime)
-# -DBUILD_SHARED_LIBS=ON → produces liboqs.so.0.15.0 + symlinks
-ARG LIBOQS_TAG=0.15.0
+# -DBUILD_SHARED_LIBS=ON → produces liboqs.so.<version> + symlinks
+ARG LIBOQS_TAG=0.16.0
 RUN git clone --depth 1 --branch ${LIBOQS_TAG} \
         https://github.com/open-quantum-safe/liboqs.git /tmp/liboqs && \
     cmake -S /tmp/liboqs -B /tmp/liboqs/build \

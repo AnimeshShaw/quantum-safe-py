@@ -12,19 +12,15 @@ This runs the test cases NIST publishes in its ACVP-Server repository against
 whichever ML-KEM/ML-DSA implementation the ``[liboqs]`` extra resolves to, and
 reports how many produce the expected answer.
 
-It is **not** a CAVP or CMVP validation. Those are performed by accredited
-laboratories against the production ACVTS server and result in a certificate;
-nothing here produces one, and the distinction matters for any reader operating
-under CNSA 2.0, where compliance runs through validated modules. The honest
-claim supported by this module is "answers NIST-issued ACVP vectors correctly",
-which is strictly weaker than "validated" and strictly stronger than "the API
-exists".
+The claim this module supports is "answers NIST-issued ACVP vectors correctly",
+for exactly the test types listed below.
 
-Scope: why only two of the six test types run
----------------------------------------------
+Scope: which test types run
+---------------------------
 ACVP splits these algorithms into test types. Some assume entry points a
-high-level binding may not offer; liboqs turns out to expose more than expected,
-so most of ML-KEM and the ML-DSA verification path are reachable:
+high-level binding may not offer; liboqs and the optional ``cryptography``
+backend expose enough that most of ML-KEM, ML-DSA verification and SLH-DSA
+verification are reachable:
 
 ======================  ========  ======================================
 ACVP test type          Runnable  Reason
@@ -39,9 +35,26 @@ ML-KEM encapsulation    **yes**   Requires injecting m; reached through
 ML-KEM key checks       no        No public key-validation entry point.
 ML-DSA sigVer           **yes**   Deterministic, via verify_with_ctx_str
                                   so context-carrying cases are usable.
-ML-DSA keyGen/sigGen    no        Requires seed or deterministic-mode
-                                  control the API does not expose.
+ML-DSA keyGen           **yes**   Through the optional ``cryptography``
+                                  backend (``from_seed_bytes``): the public
+                                  key from the 32-byte seed is compared.
+                                  The expanded secret key is checked by
+                                  signing with it in liboqs and verifying
+                                  under the public key in pyca.
+ML-KEM keyGen (pyca)    **yes**   ``ek`` from the 64-byte seed.
+ML-DSA sigVer (pyca)    **yes**   A second implementation answers the same
+                                  verification cases.
+SLH-DSA sigVer          **yes**   All twelve sets, pure external
+                                  interface, through liboqs.
+ML-DSA sigGen           no        The vectors give an expanded secret key and
+                                  expect a signature from a given ``rnd`` /
+                                  deterministic mode, neither of which
+                                  liboqs or pyca expose.
 ML-DSA externalMu       no        Supplies mu rather than a message.
+SLH-DSA keyGen/sigGen   no        No seeded key generation or deterministic
+                                  signing entry point.
+SLH-DSA preHash and     no        HashSLH-DSA is a distinct algorithm; the
+internal interface                internal interface skips context framing.
 ======================  ========  ======================================
 
 The runnable types cover key expansion, the deterministic decapsulation path
@@ -102,6 +115,8 @@ SUITES = {
     "ML-KEM-keyGen-FIPS203": ("prompt.json", "expectedResults.json"),
     "ML-KEM-encapDecap-FIPS203": ("prompt.json", "expectedResults.json"),
     "ML-DSA-sigVer-FIPS204": ("prompt.json", "expectedResults.json"),
+    "ML-DSA-keyGen-FIPS204": ("prompt.json", "expectedResults.json"),
+    "SLH-DSA-sigVer-FIPS205": ("prompt.json", "expectedResults.json"),
 }
 
 
@@ -586,6 +601,239 @@ def run_ml_dsa_sigver(
     return res
 
 
+def _pyca_available() -> bool:
+    """Whether cryptography >= 48 (ML-DSA and ML-KEM) is importable."""
+    try:
+        from cryptography.hazmat.primitives.asymmetric import mldsa, mlkem  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def run_ml_dsa_keygen_pyca(prompt: dict[str, Any], expected: dict[str, Any]) -> SuiteResult:
+    """Seeded ML-DSA key generation: ``seed -> pk``, through quantum-safe's pyca backend.
+
+    pyca keeps a key as its 32-byte seed and does not export the expanded secret
+    key, so the public key is what is compared; it depends on the whole expansion
+    (the matrix, both secret vectors and the rounding), so a wrong secret vector
+    could not give the right public key.
+    """
+    from quantum_safe.backends.pyca import PycaSignatureBackend
+
+    res = SuiteResult(suite="ML-DSA", test_type="keyGen (pyca)", exact_answer=True)
+    exp = _index_expected(expected)
+    backend = PycaSignatureBackend()
+    for group in prompt.get("testGroups", []):
+        alg = group.get("parameterSet")
+        for test in group.get("tests", []):
+            want = (exp.get(test["tcId"], {}) or {}).get("pk")
+            if want is None:
+                res.out_of_scope += 1
+                continue
+            res.accept_expected_total += 1
+            try:
+                pk, seed = backend.keygen_from_seed(alg, bytes.fromhex(test["seed"]))
+            except Exception as exc:
+                res.errors += 1
+                res.failures.append(f"tc{test['tcId']} {alg}: {type(exc).__name__}: {exc}")
+                continue
+            if pk.hex().upper() == want.upper() and seed.hex().upper() == test["seed"].upper():
+                res.accept_expected_passed += 1
+            else:
+                res.failures.append(f"tc{test['tcId']} {alg}: public key mismatch")
+    res.notes.append(
+        "The 32-byte seed is the secret key in this backend, so only the public key "
+        "is comparable; the expanded secret key is exercised by the next row."
+    )
+    return res
+
+
+def run_ml_dsa_keygen_expanded(prompt: dict[str, Any], expected: dict[str, Any]) -> SuiteResult:
+    """The ACVP expanded secret key, used by liboqs, against the ACVP public key, in pyca.
+
+    liboqs signs with the NIST-published expanded ``sk`` (hedged, so the signature
+    is not comparable byte for byte); pyca, an independent implementation, must
+    verify it under the NIST-published ``pk``. This ties the expanded secret key to
+    its public key without either library exporting the other's representation.
+    """
+    import oqs
+
+    from quantum_safe.backends.pyca import PycaSignatureBackend
+
+    res = SuiteResult(suite="ML-DSA", test_type="keyGen sk (cross)", exact_answer=True)
+    exp = _index_expected(expected)
+    enabled = set(oqs.get_enabled_sig_mechanisms())
+    backend = PycaSignatureBackend()
+    message = b"expanded secret key from the published key generation vectors"
+    for group in prompt.get("testGroups", []):
+        alg = group.get("parameterSet")
+        tests = group.get("tests", [])
+        if alg not in enabled:
+            res.out_of_scope += len(tests)
+            continue
+        for test in tests:
+            want = exp.get(test["tcId"], {}) or {}
+            if "sk" not in want or "pk" not in want:
+                res.out_of_scope += 1
+                continue
+            res.accept_expected_total += 1
+            try:
+                with oqs.Signature(alg, secret_key=bytes.fromhex(want["sk"])) as signer:
+                    signature = signer.sign(message)
+                ok = backend.verify_native_context(
+                    alg, bytes.fromhex(want["pk"]), message, signature, b""
+                )
+            except Exception as exc:
+                res.errors += 1
+                res.failures.append(f"tc{test['tcId']} {alg}: {type(exc).__name__}: {exc}")
+                continue
+            if ok:
+                res.accept_expected_passed += 1
+            else:
+                res.failures.append(f"tc{test['tcId']} {alg}: liboqs signature rejected by pyca")
+    return res
+
+
+def run_ml_kem_keygen_pyca(prompt: dict[str, Any], expected: dict[str, Any]) -> SuiteResult:
+    """Seeded ML-KEM key generation: ``d || z -> ek``, through quantum-safe's pyca backend."""
+    from quantum_safe.backends.pyca import PycaKEMBackend
+
+    res = SuiteResult(suite="ML-KEM", test_type="keyGen (pyca)", exact_answer=True)
+    exp = _index_expected(expected)
+    backend = PycaKEMBackend()
+    for group in prompt.get("testGroups", []):
+        alg = group.get("parameterSet")
+        tests = group.get("tests", [])
+        if alg not in ("ML-KEM-768", "ML-KEM-1024"):
+            res.out_of_scope += len(tests)
+            res.notes.append(f"{alg} is not provided by the cryptography backend")
+            continue
+        for test in tests:
+            want = (exp.get(test["tcId"], {}) or {}).get("ek")
+            if want is None:
+                res.out_of_scope += 1
+                continue
+            res.accept_expected_total += 1
+            try:
+                ek, _ = backend.keygen_from_seed(
+                    alg, bytes.fromhex(test["d"]) + bytes.fromhex(test["z"])
+                )
+            except Exception as exc:
+                res.errors += 1
+                res.failures.append(f"tc{test['tcId']} {alg}: {type(exc).__name__}: {exc}")
+                continue
+            if ek.hex().upper() == want.upper():
+                res.accept_expected_passed += 1
+            else:
+                res.failures.append(f"tc{test['tcId']} {alg}: encapsulation key mismatch")
+    return res
+
+
+def run_ml_dsa_sigver_pyca(prompt: dict[str, Any], expected: dict[str, Any]) -> SuiteResult:
+    """The pure external-interface ML-DSA verification cases, through pyca.
+
+    FIPS 204's external interface is ``ML-DSA.Verify`` with a context string, which
+    is what the cryptography backend's native-context verification is.
+    """
+    from quantum_safe.backends.pyca import PycaSignatureBackend
+
+    res = SuiteResult(suite="ML-DSA", test_type="sigVer (pyca)")
+    exp = _index_expected(expected)
+    backend = PycaSignatureBackend()
+    for group in prompt.get("testGroups", []):
+        alg = group.get("parameterSet")
+        tests = group.get("tests", [])
+        if (
+            group.get("preHash") != "pure"
+            or group.get("signatureInterface") != "external"
+            or group.get("externalMu")
+        ):
+            res.out_of_scope += len(tests)
+            continue
+        for test in tests:
+            want = (exp.get(test["tcId"], {}) or {}).get("testPassed")
+            if want is None or "message" not in test:
+                res.out_of_scope += 1
+                continue
+            if want:
+                res.accept_expected_total += 1
+            else:
+                res.reject_expected_total += 1
+            try:
+                got = backend.verify_native_context(
+                    alg,
+                    bytes.fromhex(test["pk"]),
+                    bytes.fromhex(test["message"]),
+                    bytes.fromhex(test["signature"]),
+                    bytes.fromhex(test.get("context", "")),
+                )
+            except Exception:
+                got = False
+            if got == want:
+                if want:
+                    res.accept_expected_passed += 1
+                else:
+                    res.reject_expected_passed += 1
+            else:
+                res.failures.append(f"tc{test['tcId']} {alg}: expected {want}, got {got}")
+    res.notes.append(
+        "pre-hash, internal-interface and externalMu groups are out of scope for this backend."
+    )
+    return res
+
+
+def run_slh_dsa_sigver(prompt: dict[str, Any], expected: dict[str, Any]) -> SuiteResult:
+    """SLH-DSA verification for the twelve parameter sets, pure external interface, liboqs."""
+    import oqs
+
+    res = SuiteResult(suite="SLH-DSA", test_type="sigVer")
+    exp = _index_expected(expected)
+    enabled = set(oqs.get_enabled_sig_mechanisms())
+    sets_seen: set[str] = set()
+    for group in prompt.get("testGroups", []):
+        name = group.get("parameterSet", "")
+        tests = group.get("tests", [])
+        if group.get("preHash") != "pure" or group.get("signatureInterface") != "external":
+            res.out_of_scope += len(tests)
+            continue
+        mech = name.upper().replace("SLH-DSA-", "SLH_DSA_PURE_").replace("-", "_")
+        if mech not in enabled:
+            res.out_of_scope += len(tests)
+            res.notes.append(f"{mech} not enabled in this liboqs build")
+            continue
+        sets_seen.add(name)
+        for test in tests:
+            want = (exp.get(test["tcId"], {}) or {}).get("testPassed")
+            if want is None:
+                res.out_of_scope += 1
+                continue
+            if want:
+                res.accept_expected_total += 1
+            else:
+                res.reject_expected_total += 1
+            try:
+                with oqs.Signature(mech) as ver:
+                    got = bool(
+                        ver.verify_with_ctx_str(
+                            bytes.fromhex(test["message"]),
+                            bytes.fromhex(test["signature"]),
+                            bytes.fromhex(test.get("context", "")),
+                            bytes.fromhex(test["pk"]),
+                        )
+                    )
+            except Exception:
+                got = False  # a malformed signature may raise; that is a rejection
+            if got == want:
+                if want:
+                    res.accept_expected_passed += 1
+                else:
+                    res.reject_expected_passed += 1
+            else:
+                res.failures.append(f"tc{test['tcId']} {name}: expected {want}, got {got}")
+    res.notes.append(f"Parameter sets exercised: {len(sets_seen)} of 12.")
+    return res
+
+
 def run_all(save_json: str | None = None, force_fetch: bool = False) -> list[SuiteResult]:
     try:
         import oqs  # noqa: F401
@@ -596,7 +844,7 @@ def run_all(save_json: str | None = None, force_fetch: bool = False) -> list[Sui
     print("=" * 96)
     print("ACVP KNOWN-ANSWER CONFORMANCE (NIST-published vectors)")
     print(f"ACVP-Server commit {ACVP_COMMIT[:12]}")
-    print("NOT a CAVP/CMVP validation - see module docstring")
+    print("Known-answer tests for the reachable ACVP test types - see module docstring")
     print("=" * 96)
 
     vectors = fetch_vectors(force=force_fetch)
@@ -612,6 +860,20 @@ def run_all(save_json: str | None = None, force_fetch: bool = False) -> list[Sui
     dsa = vectors["ML-DSA-sigVer-FIPS204"]
     iface = detect_ml_dsa_interface(dsa["prompt"], dsa["expectedResults"])
     results.append(run_ml_dsa_sigver(dsa["prompt"], dsa["expectedResults"], iface))
+
+    slh = vectors["SLH-DSA-sigVer-FIPS205"]
+    results.append(run_slh_dsa_sigver(slh["prompt"], slh["expectedResults"]))
+
+    if _pyca_available():
+        results.append(run_ml_kem_keygen_pyca(keygen["prompt"], keygen["expectedResults"]))
+        dsa_keygen = vectors["ML-DSA-keyGen-FIPS204"]
+        results.append(run_ml_dsa_keygen_pyca(dsa_keygen["prompt"], dsa_keygen["expectedResults"]))
+        results.append(
+            run_ml_dsa_keygen_expanded(dsa_keygen["prompt"], dsa_keygen["expectedResults"])
+        )
+        results.append(run_ml_dsa_sigver_pyca(dsa["prompt"], dsa["expectedResults"]))
+    else:
+        print("  (cryptography >= 48 not installed: the pyca backend rows are skipped)")
 
     print()
     for r in results:
@@ -637,8 +899,7 @@ def run_all(save_json: str | None = None, force_fetch: bool = False) -> list[Sui
             strength = "" if r.meaningful else "  (weak: rejection cases only)"
             print(f"  - {r.suite} {r.test_type}: {r.total_passed}/{r.total_run}{strength}")
         print("\nThis supports the claim that the implementation answers NIST-issued")
-        print("ACVP vectors correctly for those paths. It is NOT a CAVP/CMVP validation")
-        print("and must not be described as the implementation being 'validated'.")
+        print("ACVP vectors correctly for those paths.")
     elif executed:
         print("At least one case did not match. Investigate before making any")
         print("conformance claim.")

@@ -140,7 +140,7 @@ if _HAS_CLICK:
         default=None,
         help=(
             "Hybrid algorithm to produce. Default: X25519+ML-KEM-768 for an X25519 key, "
-            "Ed25519+ML-DSA-65 for an Ed25519 key."
+            "Ed25519+ML-DSA-65-v2 for an Ed25519 key."
         ),
     )
     @click.option(
@@ -185,6 +185,111 @@ if _HAS_CLICK:
         click.echo(f"  hybrid public key: {done.public_path}")
         click.echo(f"  {done.notes}")
         click.echo(f"The original key {input_path} was not changed.")
+
+    @_cli.command("rewrap")
+    @click.argument("source", type=click.Path(exists=True, file_okay=False))
+    @click.argument("destination", required=False, type=click.Path(file_okay=False))
+    @click.option(
+        "--old-secret",
+        required=True,
+        type=click.Path(exists=True, dir_okay=False),
+        help="Library secret-key PEM the envelopes are sealed to today.",
+    )
+    @click.option(
+        "--new-public",
+        required=True,
+        type=click.Path(exists=True, dir_okay=False),
+        help="Library public-key PEM to seal them to.",
+    )
+    @click.option(
+        "--new-secret",
+        default=None,
+        type=click.Path(exists=True, dir_okay=False),
+        help="The matching new secret-key PEM: each result is opened again and compared.",
+    )
+    @click.option("--aad", default=None, help="The AAD every envelope must carry (UTF-8 text).")
+    @click.option(
+        "--aad-from-path",
+        is_flag=True,
+        help="Expect each envelope's AAD to be its path relative to SOURCE (UTF-8).",
+    )
+    @click.option(
+        "--in-place", is_flag=True, help="Replace files in SOURCE (atomic, one at a time)."
+    )
+    @click.option("--dry-run", is_flag=True, help="Check everything, write nothing.")
+    @click.option(
+        "--report", default=None, type=click.Path(dir_okay=False), help="Write the JSON report."
+    )
+    @click.option(
+        "--cbom", default=None, type=click.Path(dir_okay=False), help="Write a CycloneDX report."
+    )
+    def rewrap_cmd(
+        source: str,
+        destination: str | None,
+        old_secret: str,
+        new_public: str,
+        new_secret: str | None,
+        aad: str | None,
+        aad_from_path: bool,
+        in_place: bool,
+        dry_run: bool,
+        report: str | None,
+        cbom: str | None,
+    ) -> None:
+        """Re-wrap every sealed envelope under SOURCE to a new recipient key.
+
+        Writes to DESTINATION (the source is not touched), or replaces files with --in-place.
+        Safe to run again: files already migrated are recognised and left alone. Exits 1 if any
+        file failed or did not verify.
+        """
+        import json
+        from pathlib import Path
+
+        from quantum_safe.migrate.rewrap import rewrap_directory
+        from quantum_safe.types import PublicKey, SecretKey
+
+        if aad is not None and aad_from_path:
+            click.echo("Error: use --aad or --aad-from-path, not both.", err=True)
+            sys.exit(2)
+        expected: bytes | None | object = None
+        if aad is not None:
+            expected = aad.encode("utf-8")
+        elif aad_from_path:
+            expected = lambda rel: rel.encode("utf-8")  # noqa: E731
+        try:
+            result = rewrap_directory(
+                source,
+                None if in_place else destination,
+                old_secret=SecretKey.from_pem(Path(old_secret).read_text(encoding="utf-8")),
+                new_public=PublicKey.from_pem(Path(new_public).read_text(encoding="utf-8")),
+                new_secret=(
+                    SecretKey.from_pem(Path(new_secret).read_text(encoding="utf-8"))
+                    if new_secret
+                    else None
+                ),
+                expected_aad=expected,  # type: ignore[arg-type]
+                in_place=in_place,
+                dry_run=dry_run,
+            )
+        except (ValueError, OSError) as exc:
+            click.echo(f"Error: {exc}", err=True)
+            sys.exit(2)
+
+        counts = result.counts
+        click.echo(
+            f"{'Would re-wrap' if dry_run else 'Re-wrapped'} to {result.new_algorithm}: "
+            + ", ".join(f"{k} {v}" for k, v in counts.items())
+        )
+        for item in result.items:
+            if item.status == "failed":
+                click.echo(f"  FAILED {item.name}: {item.error}", err=True)
+        if not result.aad_checked:
+            click.echo("  note: no --aad given, so each message's own AAD was accepted and kept.")
+        if report:
+            Path(report).write_text(json.dumps(result.to_dict(), indent=2), encoding="utf-8")
+        if cbom:
+            Path(cbom).write_text(json.dumps(result.to_cbom(), indent=2), encoding="utf-8")
+        sys.exit(0 if result.ok else 1)
 
     @_cli.command("status")
     @click.argument("store-path", default=".", type=click.Path())

@@ -45,10 +45,12 @@ import struct
 import time
 from typing import TYPE_CHECKING, cast
 
+from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, SECP384R1
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
     NoEncryption,
@@ -97,15 +99,25 @@ def _unpack_components(data: bytes, context: str = "") -> tuple[bytes, bytes]:
     return a, b
 
 
+# classical name -> (curve class, coordinate length in bytes, ECDSA digest class)
+_EC_SIGNING: dict[str, tuple[type, int, type]] = {
+    "P-256": (SECP256R1, 32, SHA256),
+    "P-384": (SECP384R1, 48, SHA384),
+}
+
+
 class HybridSign:
     """Hybrid signature scheme: classical + PQC combined.
 
-    Default: Ed25519 + ML-DSA-65. Both sub-signatures must be valid for
-    verification to pass.
+    Default: Ed25519 + ML-DSA-65 in the ``-v2`` format (``Ed25519+ML-DSA-65-v2``).
+    Both sub-signatures must be valid for verification to pass.
 
     Args:
-        classical:  Classical signature algorithm: "Ed25519" or "P-256".
-        pqc:        PQC signature algorithm. Default: "ML-DSA-65".
+        classical:  Classical signature algorithm: "Ed25519", "P-256" or "P-384".
+        pqc:        PQC signature algorithm. Default: "ML-DSA-65-v2" (the original
+                    prefix format is "ML-DSA-65"; name it to keep using it). With
+                    ``hedged=False`` and no ``pqc``, the original format is used,
+                    because ``-v2`` is always hedged.
         backend:    PQC backend: "auto", "liboqs", "rustcrypto".
         hedged:     Hedged signing mode (default True). Prepends 32 random
                     bytes before signing to prevent fault injection. A
@@ -126,11 +138,16 @@ class HybridSign:
     def __init__(
         self,
         classical: str = DEFAULT_HYBRID_CLASSICAL,
-        pqc: str = DEFAULT_HYBRID_PQC,
+        pqc: str | None = None,
         backend: str = "auto",
         hedged: bool = True,
         validate: bool = True,
     ) -> None:
+        if pqc is None:
+            # The default suite is the -v2 format. It is always hedged inside ML-DSA, so a caller
+            # that asks for ``hedged=False`` without naming a suite gets the original format, the
+            # only one with an unhedged mode (this keeps verifiers built that way working).
+            pqc = DEFAULT_HYBRID_PQC if hedged else DEFAULT_HYBRID_PQC.removesuffix(_v2.SUFFIX)
         # A ``-v2`` suffix on the PQC half selects the v2 signature format.
         self._v2 = _v2.is_v2(pqc)
         if self._v2:
@@ -405,24 +422,22 @@ class HybridSign:
             pub_bytes = pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
             return pub_bytes, priv_bytes
 
-        elif self._classical == "P-256":
+        elif self._classical in _EC_SIGNING:
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives.asymmetric.ec import (
-                SECP256R1,
-                generate_private_key,
-            )
+            from cryptography.hazmat.primitives.asymmetric.ec import generate_private_key
 
-            ec_priv = generate_private_key(SECP256R1(), default_backend())
+            curve_cls, coord, _ = _EC_SIGNING[self._classical]
+            ec_priv = generate_private_key(curve_cls(), default_backend())
             ec_pub = ec_priv.public_key()
             priv_bytes = ec_priv.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
-            # Store public key as raw 64-byte (x, y)
+            # Store public key as raw (x, y): 64 bytes for P-256, 96 for P-384
             pub_nums = ec_pub.public_numbers()
-            x_bytes = pub_nums.x.to_bytes(32, "big")
-            y_bytes = pub_nums.y.to_bytes(32, "big")
+            x_bytes = pub_nums.x.to_bytes(coord, "big")
+            y_bytes = pub_nums.y.to_bytes(coord, "big")
             return x_bytes + y_bytes, priv_bytes
 
         else:
-            raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256"])
+            raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256", "P-384"])
 
     def _sign_classical(
         self,
@@ -438,24 +453,24 @@ class HybridSign:
             priv = Ed25519PrivateKey.from_private_bytes(secret_key_bytes)
             return priv.sign(msg_with_ctx)
 
-        elif self._classical == "P-256":
+        elif self._classical in _EC_SIGNING:
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 ECDSA,
                 EllipticCurvePrivateKey,
             )
             from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
+            _, _, digest_cls = _EC_SIGNING[self._classical]
             msg_with_ctx = bytes([len(context)]) + context + message
             ec_priv = cast(
                 EllipticCurvePrivateKey,
                 load_pem_private_key(secret_key_bytes, password=None, backend=default_backend()),
             )
-            return ec_priv.sign(msg_with_ctx, ECDSA(hashes.SHA256()))
+            return ec_priv.sign(msg_with_ctx, ECDSA(digest_cls()))
 
         else:
-            raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256"])
+            raise UnsupportedAlgorithm(self._classical, available=["Ed25519", "P-256", "P-384"])
 
     def _verify_classical(
         self,
@@ -475,22 +490,21 @@ class HybridSign:
             except Exception:  # noqa: BLE001
                 return False
 
-        elif self._classical == "P-256":
+        elif self._classical in _EC_SIGNING:
             from cryptography.hazmat.backends import default_backend
-            from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 ECDSA,
-                SECP256R1,
                 EllipticCurvePublicNumbers,
             )
 
+            curve_cls, coord, digest_cls = _EC_SIGNING[self._classical]
             try:
-                if len(public_key_bytes) != 64:
+                if len(public_key_bytes) != 2 * coord:
                     return False
-                x = int.from_bytes(public_key_bytes[:32], "big")
-                y = int.from_bytes(public_key_bytes[32:], "big")
-                ec_pub = EllipticCurvePublicNumbers(x, y, SECP256R1()).public_key(default_backend())
-                ec_pub.verify(signature, msg_with_ctx, ECDSA(hashes.SHA256()))
+                x = int.from_bytes(public_key_bytes[:coord], "big")
+                y = int.from_bytes(public_key_bytes[coord:], "big")
+                ec_pub = EllipticCurvePublicNumbers(x, y, curve_cls()).public_key(default_backend())
+                ec_pub.verify(signature, msg_with_ctx, ECDSA(digest_cls()))
                 return True
             except Exception:  # noqa: BLE001
                 return False

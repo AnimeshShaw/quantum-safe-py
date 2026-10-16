@@ -7,8 +7,8 @@ carries its own context. The documented domain separation was not enforced.
 
 Now verify(..., context=...) compares the message's context with the
 expected one (constant time) and raises VerificationError on mismatch.
-Omitting context keeps the old behaviour for one release and emits a
-DeprecationWarning.
+Omitting context means "expect an empty context" (0.4.0): a message that
+carries a context is rejected, with a ContextOmittedWarning saying why.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import warnings
 
 import pytest
 
-from quantum_safe.exceptions import VerificationError
+from quantum_safe.exceptions import ContextOmittedWarning, VerificationError
 from quantum_safe.signatures.core import Sign
 from quantum_safe.signatures.hybrid import HybridSign
 
@@ -51,10 +51,11 @@ def test_other_context_is_rejected(setup, expected: bytes) -> None:
         signer.verify(sm, kp.public, context=expected)
 
 
-def test_omitting_context_warns_and_keeps_old_behaviour(setup) -> None:
+def test_omitting_context_rejects_a_message_that_carries_one_and_warns(setup) -> None:
     signer, kp, sm = setup
-    with pytest.warns(DeprecationWarning, match="context"):
-        signer.verify(sm, kp.public)
+    with pytest.warns(ContextOmittedWarning, match="non-empty context"):
+        with pytest.raises(VerificationError):
+            signer.verify(sm, kp.public)
 
 
 def test_empty_context_round_trip() -> None:

@@ -87,9 +87,11 @@ def test_known_secret_key_size_table_uses_fips_204_sizes(name: str) -> None:
 def test_kem_registry_sizes_match_liboqs(name: str) -> None:
     import oqs
 
-    liboqs_name = _KEM_LIBOQS_NAMES.get(name, name)
-    if liboqs_name not in _enabled_kems():
-        pytest.skip(f"{liboqs_name} not enabled in this liboqs build")
+    candidates = _KEM_LIBOQS_NAMES.get(name, (name,))
+    enabled = _enabled_kems()
+    liboqs_name = next((c for c in candidates if c in enabled), None)
+    if liboqs_name is None:
+        pytest.skip(f"{' / '.join(candidates)} not enabled in this liboqs build")
     spec = KEM_ALGORITHMS[name]
     d = oqs.KeyEncapsulation(liboqs_name).details
     assert spec.public_key_bytes == d["length_public_key"]

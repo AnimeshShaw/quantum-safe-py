@@ -48,6 +48,7 @@ and a CI-ready audit scanner — all in one library.
 
    guides/kem
    guides/signatures
+   guides/context-and-aad
    guides/protocols
    guides/migration
    guides/interop
@@ -56,6 +57,7 @@ and a CI-ready audit scanner — all in one library.
    guides/audit
    guides/cli
    guides/benchmarks
+   guides/reproducible-build
 
 .. toctree::
    :maxdepth: 1
@@ -75,6 +77,7 @@ and a CI-ready audit scanner — all in one library.
    :maxdepth: 1
    :caption: Project
 
+   guides/upgrading-0.4
    guides/upgrading
    changelog
    Roadmap <https://github.com/AnimeshShaw/quantum-safe-py/blob/master/ROADMAP.md>

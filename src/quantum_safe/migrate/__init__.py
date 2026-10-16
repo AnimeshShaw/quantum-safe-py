@@ -31,6 +31,7 @@ Quick start::
     new_kp = Upgrader.upgrade(old_kp, target="X25519+ML-KEM-768")
 """
 
+from quantum_safe.migrate.file_store import FileMigrationStore
 from quantum_safe.migrate.scanner import Finding, Scanner, ScanReport, Severity
 from quantum_safe.migrate.state import MemoryMigrationStore, MigrationRecord, MigrationStateManager
 from quantum_safe.migrate.upgrader import Upgrader, UpgradeResult
@@ -47,5 +48,6 @@ __all__ = [
     # State machine
     "MigrationStateManager",
     "MemoryMigrationStore",
+    "FileMigrationStore",
     "MigrationRecord",
 ]

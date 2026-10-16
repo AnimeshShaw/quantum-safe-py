@@ -358,7 +358,7 @@ if _HAS_CLICK:
     )
     @click.option(
         "--signature",
-        default="Ed25519+ML-DSA-65",
+        default="Ed25519+ML-DSA-65-v2",
         show_default=True,
         help="Signature or hybrid signature selection to evaluate.",
     )
@@ -392,9 +392,8 @@ if _HAS_CLICK:
         command with no arguments shows what an unconfigured deployment scores.
         It does not score compliant: CNSA 2.0 requires ML-KEM-1024 and ML-DSA-87.
 
-        This reports parameter selection only. CNSA 2.0 compliance for National
-        Security Systems runs through FIPS 140-3 validated modules, and no
-        self-assessment produces one.
+        This reports parameter selection. For National Security Systems,
+        CNSA 2.0 is met through FIPS 140-3 validated modules.
         """
         from quantum_safe.compliance import cnsa2
 

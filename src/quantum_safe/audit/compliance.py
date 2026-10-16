@@ -184,7 +184,7 @@ class NISTComplianceChecker:
             "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
             "check_rule_ids": {"QS001", "QS010", "QS015"},
             "remediation": "Replace ECDSA/RSA/DSA signatures with HybridSign() "
-            "(Ed25519+ML-DSA-65 by default).",
+            "(Ed25519+ML-DSA-65-v2 by default).",
         },
         {
             "id": "FIPS205-2.1",

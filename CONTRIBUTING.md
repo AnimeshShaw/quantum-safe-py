@@ -61,6 +61,8 @@ Add a test in `tests/unit/test_migrate.py::TestScanner*`.
 
 Run without slow/liboqs tests: `pytest -m "not requires_liboqs and not slow"`
 
+Code quality: `ruff check src tests`, `ruff format src tests`, `mypy src/quantum_safe`. Benchmarks and the statistical helpers are described in `docs/guides/benchmarks.rst`.
+
 ## Commit conventions
 
 - `feat: add X` — new feature
@@ -91,3 +93,6 @@ background:
 2. Update `CHANGELOG.md` with release notes
 3. `git tag v0.x.y && git push --tags`
 4. CI builds and publishes to PyPI automatically
+5. Write the artifact record from the built files and attach it to the GitHub release:
+   `python scripts/artifact_record.py dist/ --out artifact-record-0.x.y.json`
+   (see `docs/guides/reproducible-build.rst`). Zenodo archives the release and assigns its DOI.

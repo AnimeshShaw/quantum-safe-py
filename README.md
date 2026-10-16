@@ -1,800 +1,91 @@
-# quantum-safe
+# quantum-safe-py
 
-Production-grade post-quantum cryptography for Python. Hybrid KEM, hybrid signatures, migration tooling, protocol helpers, and a CI-ready audit scanner — all in one library.
+Post-quantum cryptography for Python: hybrid key exchange, hybrid signatures, encrypted envelopes, a migration toolkit and a CI-ready audit scanner in one library.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![Algorithms: FIPS 203/204/205](https://img.shields.io/badge/algorithms-FIPS_203%2F204%2F205-purple.svg)](https://csrc.nist.gov/pubs/fips)
-[![Not FIPS 140-3 validated](https://img.shields.io/badge/FIPS_140--3-not_validated-lightgrey.svg)](SECURITY.md)
-[![Status: alpha](https://img.shields.io/badge/status-alpha-orange.svg)](ROADMAP.md)
 [![CI](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml/badge.svg)](https://github.com/AnimeshShaw/quantum-safe-py/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/quantum-safe-py?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLUE&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/quantum-safe-py)
 [![Roadmap](https://img.shields.io/badge/roadmap-0.4.0-blue.svg)](ROADMAP.md)
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/2605.17061)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008259.svg)](https://doi.org/10.5281/zenodo.23008259)
 
----
+## What you get
 
-## Why this library exists
+- **Hybrid by default**: `X25519+ML-KEM-768` key exchange and `Ed25519+ML-DSA-65` signatures, with pure ML-KEM, ML-DSA, SLH-DSA (all 12 sets) and X-Wing available.
+- **Envelopes**: KEM + AES-256-GCM in one self-describing, CBOR-encoded message, plus a streaming format for large files.
+- **Standards formats**: RFC 9964 JOSE/JWT and COSE_Sign1 for ML-DSA, FIPS 204 native-context signatures.
+- **Migration**: scan code for classical crypto, upgrade existing keys to hybrid, track progress per key.
+- **Audit**: SARIF and JSON reports, a CycloneDX Cryptographic Bill of Materials, CNSA 2.0 parameter reporting and enforcement.
+- **Same bytes as TypeScript**: keys, ciphertexts and signatures are byte-compatible with [quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts).
+- **Tested against NIST vectors**: 638 of 638 runnable ACVP known-answer cases pass.
 
-We audited nine PQC libraries against nine dimensions anchored to CNSA 2.0,
-CMVP, the TNO CADI market survey, and the IETF hybrid draft — not to our own
-design, so the audit can (and does) score this library below others on some
-dimensions. Full methodology, per-dimension sources, and a re-auditable
-verification procedure: [`docs/production_readiness_rubric.md`](docs/production_readiness_rubric.md).
+## Install
 
-| Gap (September 2026 audit, 7 libraries with verified evidence) | Ecosystem | This library |
-|-----|---------------------|--------------|
-| Cryptographic discovery/inventory | **0 of 7** provide it | ✓ CycloneDX CBOM (`qs-audit cbom`) |
-| Stateful hash-based signing (LMS/XMSS) | 1 of 7 (Bouncy Castle: both) | Partial — LMS only, optional `[lms]` extra |
-| Conformance evidence vs. NIST vectors | 1 of 5 holds a real CMVP cert (Bouncy Castle) | 225/225 ACVP known-answer cases — **not** a CMVP validation |
-| Hybrid KEM combiner | 3 of 6 have one (up from 1 of 9 nine months ago) | ✓ Default mode |
-| CNSA 2.0 parameter sets by default | n/a (raw primitives, no opinion) | **Partial** — defaults are ML-KEM-768/ML-DSA-65, below CNSA 2.0; `qs-audit cnsa2` reports or `cnsa2.enforce()` blocks it |
-| Migration path for existing keys | 1 of 7 partial | ✓ `Upgrader` + state machine |
-| Protocol helpers (TLS, JWT, X.509) | 3 of 7 (partial-to-full) | ✓ `protocols` module |
+```bash
+pip install quantum-safe-py                  # classical primitives, formats, scanner, audit
+pip install 'quantum-safe-py[liboqs]'        # ML-KEM, ML-DSA, SLH-DSA through liboqs
+pip install 'quantum-safe-py[pyca]'          # ML-KEM and ML-DSA through cryptography>=48 (no compiler)
+```
 
-We are not the strongest library on every axis — Bouncy Castle holds an
-actual CMVP FIPS 140-3 certificate and supports both LMS and XMSS, ahead of
-us on both. We report that rather than the version of this table that would
-look better.
-
----
+Python 3.10 or later. Prebuilt wheels carry liboqs; the other extras (`lms`, `rustcrypto`) are in [Installation](docs/guides/installation.rst).
 
 ## Quick start
 
 ```python
 from quantum_safe import HybridKEM, HybridSign
+from quantum_safe.protocols import Envelope
 
-# Key exchange — hybrid X25519 + ML-KEM-768 (NIST transition-period standard)
+# Key exchange: hybrid X25519 + ML-KEM-768
 kem = HybridKEM()
-kp  = kem.generate_keypair()
+kp = kem.generate_keypair()
 ct, shared_secret = kem.encapsulate(kp.public)
-ss2 = kem.decapsulate(kp.secret, ct)
-assert shared_secret == ss2
+assert shared_secret == kem.decapsulate(kp.secret, ct)
 
-# Digital signatures — hybrid Ed25519 + ML-DSA-65
+# Encrypt to a public key: KEM + AES-256-GCM, and state the AAD you expect on open
+sealed = Envelope.seal(b"plaintext", kp.public, aad=b"record-42")
+plain = Envelope.open(sealed, kp.secret, expected_aad=b"record-42")
+
+# Sign: hybrid Ed25519 + ML-DSA-65, and state the context you expect on verify
 signer = HybridSign()
-kp     = signer.generate_keypair()
-sm     = signer.sign(b"important document", kp.secret, context=b"myapp-v1")
-signer.verify(sm, kp.public, context=b"myapp-v1")  # raises VerificationError if invalid
+sk = signer.generate_keypair()
+sm = signer.sign(b"important document", sk.secret, context=b"myapp-v1")
+signer.verify(sm, sk.public, context=b"myapp-v1")  # raises VerificationError if invalid
 ```
 
----
+## Scan, then migrate
 
-## What's new
-
-### 0.3.2
-
-- `Sign.sign_raw()` and a standard `Sign.verify_raw()`: plain FIPS 204 ML-DSA with a native
-  context, for exchanging signatures with other ML-DSA implementations. Before this,
-  `verify_raw()` rejected every standard signature. See [Signatures](docs/guides/signatures.rst).
-- The wheels now carry the liboqs licence text.
-
-What is planned next (0.4.0 and beyond) is in the [roadmap](ROADMAP.md).
-
-### 0.3.1
-
-0.3.1 is a security and quality release. **Nothing 0.3.0 wrote stops working**;
-the library now refuses input it should never have accepted and asks verifiers
-to state what they expect. Start with the
-[upgrade guide](docs/guides/upgrading.rst).
-
-**Security fixes**
-- **Signature prefix forgery (High; every release up to 0.3.0).** The unsigned
-  prefix-length byte let bytes be moved between a signed message and its prefix.
-  Verifiers now require the prefix length of their own hedging mode. Advisory:
-  [GHSA-wqv6-gm9x-69x8](https://github.com/AnimeshShaw/quantum-safe-py/security/advisories/GHSA-wqv6-gm9x-69x8).
-  If you run 0.3.0 or earlier, upgrade.
-- `verify(..., context=...)` and `Envelope.open(..., expected_aad=...)`: the
-  verifier states the context or AAD it expects.
-- Strict key and message loaders with one typed error (`KeyParseError`); exact
-  hybrid signature payloads.
-
-**New**
-- **`-v2` signatures** (`Sign("ML-DSA-65-v2")`, `HybridSign("Ed25519",
-  "ML-DSA-65-v2")`): no prefix, FIPS 204 native context, byte-compatible
-  with quantum-safe-ts (for plain FIPS 204 interop use `sign_raw`).
-- **Envelope v2**: sealing to a pure `ML-KEM-1024` key derives with HKDF-SHA-384
-  (the CNSA 2.0 profile).
-- **`StandardJwt`** (RFC 9964): tokens any JOSE library can verify.
-- **Compare-and-set migration store**: safe across processes, no external lock.
-- A leakage harness with a **positive control** and public-data calibrations.
-- CNSA 2.0 report: every hybrid is `PARTIAL` (NSA's FAQ does not call a hybrid
-  compliant); a key-derivation row; `cnsa2.pqc_kem()` / `cnsa2.pqc_sign()`.
-
----
+```bash
+qs-audit scan ./src                                      # find classical crypto, with fix hints
+qs-audit scan ./src --format sarif --output audit.sarif  # GitHub Code Scanning
+qs-audit cbom ./src --output cbom.json                   # CycloneDX Cryptographic Bill of Materials
+qs-audit cnsa2                                           # CNSA 2.0 parameter-set report
+qs-migrate status                                        # migration progress per key
+```
 
 ## Documentation
 
-Full documentation: <https://quantum-safe-py.readthedocs.io/en/latest/>.
-
-| If you want to... | Read |
-|---|---|
-| Try it in five minutes | [Quick start](docs/guides/quickstart.rst) |
-| Pick the right algorithm, format and token | [Choosing what to use](docs/guides/choosing.rst) |
-| Copy a working recipe (encrypt a file, sign a release, rotate keys...) | [Cookbook](docs/guides/cookbook.rst) |
-| Understand keys, contexts, hedging, formats | [Concepts](docs/guides/concepts.rst) |
-| Upgrade from 0.3.0 | [Upgrading to 0.3.1](docs/guides/upgrading.rst) |
-| Exchange data with Node.js, browsers or other ecosystems | [Interoperability](docs/guides/interop.rst) |
-| Check CNSA 2.0 parameters | [CNSA 2.0 and standards](docs/guides/compliance.rst) |
-| Understand the threat model, report a vulnerability | [Security model](docs/guides/security.rst) |
-| Migrate a fleet of keys | [Migration](docs/guides/migration.rst) |
-| See what is planned | [Roadmap](ROADMAP.md) |
-
-The TypeScript counterpart, byte-compatible with this library, is
-[quantum-safe-ts](https://github.com/AnimeshShaw/quantum-safe-ts).
-
----
-
-## Installation
-
-### Core (classical crypto only, no PQC backend required)
-
-```bash
-pip install quantum-safe-py
-```
-
-The core package works without liboqs. Key generation, serialization, hybrid
-construction, Envelope, JWT, TLS helpers, scanner, auditor, and SBOM enrichment
-all work with the classical (X25519/Ed25519) components.
-
-### With liboqs backend (full ML-KEM / ML-DSA support)
-
-```bash
-pip install 'quantum-safe-py[liboqs]'
-```
-
-`liboqs-python` itself (the dependency behind this extra) does **not** ship a
-prebuilt liboqs binary — on its own, the first `import oqs` downloads and
-compiles liboqs from source, needing `git`, `CMake`, and a C compiler.
-
-Our own released wheels work around that: for common platforms — Linux
-x86_64, Windows x64, and macOS arm64 (14+) — we compile liboqs ourselves as
-part of the release process and bundle the binary directly into the wheel
-(see `hatch_build.py`). On those platforms, `pip install
-'quantum-safe-py[liboqs]'` just works, no compiler needed. Outside them
-(32-bit, other architectures, Intel Mac, macOS <14), liboqs-python falls back
-to its normal build-from-source path, so you'll still need `git`/`CMake`/a C
-compiler there.
-
-Verify installation:
-```bash
-python -c "from quantum_safe.backends import list_available_backends; print(list_available_backends())"
-# → {'rustcrypto': False, 'liboqs': True, 'noble': False}
-```
-
-### Development install
-
-```bash
-git clone https://github.com/AnimeshShaw/quantum-safe-py
-cd quantum-safe-py
-pip install -e '.[dev]'
-pre-commit install
-```
-
----
-
-## Core concepts
-
-### Hybrid mode is the default
-
-During the NIST transition period, every security standard (NIST, CISA, BSI, NCSC)
-recommends hybrid classical + PQC. This library makes hybrid the default so you
-have to explicitly opt out, not in.
-
-```python
-from quantum_safe import HybridKEM, KEM
-
-# Default: X25519 + ML-KEM-768 (hybrid)
-kem = HybridKEM()
-
-# Override to pure PQC (not recommended for new deployments)
-kem = KEM("ML-KEM-768")
-
-# Override to a different hybrid combination
-kem = HybridKEM(classical="X25519", pqc="ML-KEM-1024")
-```
-
-### Typed outputs prevent accidents
-
-Raw bytes are never returned from key operations. Every output is a distinct type:
-
-```python
-from quantum_safe import HybridKEM, HybridSign
-
-kem, signer = HybridKEM(), HybridSign()
-kp = kem.generate_keypair()          # KeyPair: .public (PublicKey) and .secret (SecretKey)
-ct, ss = kem.encapsulate(kp.public)  # HybridCipherText, then SharedSecret (call ss.derive_key())
-sig_kp = signer.generate_keypair()
-sm = signer.sign(b"message", sig_kp.secret, context=b"readme")  # SignedMessage: message, signature, metadata
-print(type(kp).__name__, type(ct).__name__, type(ss).__name__, type(sm).__name__)
-```
-
-This prevents the class of bug where you accidentally pass a `SharedSecret`
-as a `CipherText`.
-
-### Keys know their format
-
-Every key carries its algorithm name, migration state, and supports multiple
-serialization formats:
-
-```python
-from quantum_safe import HybridKEM
-from quantum_safe.types import PublicKey
-
-kp = HybridKEM().generate_keypair()
-pub = kp.public
-print(pub.algorithm)         # "X25519+ML-KEM-768"
-print(pub.migration_state)   # MigrationState.HYBRID_TRANSITION
-print(pub.fingerprint())     # "3a7f1c2e..." (sha256 hex)
-
-# Serialize
-pem  = pub.to_pem()    # PEM string with qs-version and qs-algo headers
-cbor = pub.to_cbor()   # CBOR bytes (compact, binary)
-jwk  = pub.to_jwk()    # JSON Web Key dict
-
-# Round-trip (Python ↔ TypeScript ↔ Rust — same format)
-pub2 = PublicKey.from_pem(pem)
-pub3 = PublicKey.from_cbor(cbor)
-pub4 = PublicKey.from_jwk(jwk)
-```
-
----
-
-## Key encapsulation (KEM)
-
-```python
-from quantum_safe import HybridKEM
-from quantum_safe.protocols import Envelope, SealedMessage
-
-# Option 1: Low-level (you manage the shared secret)
-kem  = HybridKEM()
-kp   = kem.generate_keypair()
-ct, ss = kem.encapsulate(kp.public)
-ss2    = kem.decapsulate(kp.secret, ct)
-
-# Derive AES keys from shared secret
-enc_key = ss.derive_key(32, info=b"myapp-encryption-v1")
-mac_key = ss.derive_key(32, info=b"myapp-mac-v1")
-
-# Option 2: High-level (recommended for most use cases)
-# Envelope = KEM + AES-256-GCM, fully self-describing
-sealed  = Envelope.seal(b"plaintext", kp.public)
-plain   = Envelope.open(sealed, kp.secret)
-
-# Serialize for network transport
-wire   = sealed.to_bytes()   # or .to_hex()
-sealed = SealedMessage.from_bytes(wire)  # or .from_hex()
-
-# With authenticated metadata (visible but authenticated)
-sealed = Envelope.seal(b"payload", kp.public, aad=b"recipient-id:user-42")
-
-# On open, state the AAD you expect: a message sealed for another context
-# (user, record) will not open here. Envelopes do not authenticate the sender.
-plain = Envelope.open(sealed, kp.secret, expected_aad=b"recipient-id:user-42")
-```
-
----
-
-## Digital signatures
-
-```python
-from quantum_safe import HybridSign, Sign
-from quantum_safe.types import SignedMessage
-
-# Hybrid (Ed25519 + ML-DSA-65) — recommended
-signer = HybridSign()
-kp     = signer.generate_keypair()
-sm     = signer.sign(b"document", kp.secret, context=b"myapp-v2-docs")
-signer.verify(sm, kp.public, context=b"myapp-v2-docs")  # raises VerificationError if invalid
-
-# Hedged mode is on by default — two signings of the same message differ
-sm1 = signer.sign(b"same", kp.secret)
-sm2 = signer.sign(b"same", kp.secret)
-assert sm1.signature != sm2.signature  # different random prefix each time
-
-# Store and retrieve a signed message
-cbor_bytes = sm.to_cbor()
-sm2 = SignedMessage.from_cbor(cbor_bytes)
-
-# Include signer fingerprint for key lookup
-sm = signer.sign_with_fingerprint(b"doc", kp)
-print(sm.signer_fingerprint)  # "3a7f1c2e..."
-```
-
----
-
-## Protocol helpers
-
-### Encrypted envelopes
-
-See Key Encapsulation section above.
-
-### JWT (PQC-aware)
-
-```python
-from quantum_safe import HybridSign
-from quantum_safe.protocols.jwt import JWTSigner, JWTVerifier
-
-keypair = HybridSign().generate_keypair()
-
-# Sign
-signer = JWTSigner(keypair, issuer="auth.myapp.com")
-token  = signer.sign({"sub": "user123", "role": "admin"})
-
-# Verify
-verifier = JWTVerifier(keypair.public, issuer="auth.myapp.com")
-claims   = verifier.verify(token)
-# raises VerificationError on invalid, expired, or wrong issuer
-```
-
-### TLS hybrid key exchange
-
-```python
-import ssl
-from quantum_safe.protocols.tls import configure_hybrid_context, HybridTLSConfig
-
-ctx = ssl.create_default_context()
-configure_hybrid_context(ctx, HybridTLSConfig(
-    kem_algorithm="X25519+ML-KEM-768",
-    fallback_classical=True,   # include X25519 as fallback
-))
-# ctx now prefers X25519MLKEM768 when the OQS provider is available
-```
-
-### Hybrid X.509 certificates
-
-```python
-from quantum_safe.protocols.x509 import HybridCertificateBuilder, generate_classical_keypair_for_cert
-
-classical_key = generate_classical_keypair_for_cert("Ed25519")
-hybrid_kp     = HybridSign().generate_keypair()
-
-builder = HybridCertificateBuilder(
-    subject_cn="service.internal",
-    classical_private_key=classical_key,
-    pqc_keypair=hybrid_kp,
-    dns_names=["api.service.internal"],
-    validity_days=365,
-)
-cert_pem, cosig_bundle = builder.build()
-```
-
----
-
-## Migration tooling
-
-### Scan a codebase for classical crypto
-
-```python
-import sys
-
-from quantum_safe.migrate import Scanner
-
-report = Scanner.scan_directory("./src")
-print(report.summary())
-# Scanned 42 files in './src': 2 CRITICAL, 5 HIGH, 3 MEDIUM
-
-for finding in report.high + report.critical:
-    print(f"{finding.file}:{finding.line} [{finding.rule_id}] {finding.message}")
-    print(f"  Fix: {finding.fix_hint}")
-
-# Exit 1 in CI if blocking findings exist
-if report.has_blocking_findings:
-    sys.exit(1)
-```
-
-### Upgrade an existing key to hybrid
-
-```python
-from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat, PublicFormat
-
-from quantum_safe.migrate import Upgrader
-
-# Stand-in for your existing key; in real use, load the raw bytes you already have.
-existing = X25519PrivateKey.generate()
-x25519_private_bytes = existing.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
-x25519_public_bytes = existing.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
-
-result = Upgrader.upgrade_kem_key(
-    classical_secret_bytes=x25519_private_bytes,  # your existing X25519 key
-    classical_public_bytes=x25519_public_bytes,
-    classical_algorithm="X25519",
-    target_pqc="ML-KEM-768",
-)
-# result.new_keypair contains X25519 + ML-KEM-768. The original X25519 key is
-# retained inside it, but the hybrid key format is not readable by X25519-only
-# senders: keep publishing the original key to them during the transition.
-print(result.notes)
-```
-
-### Track migration progress
-
-```python
-from quantum_safe.migrate import MigrationStateManager
-from quantum_safe.types import MigrationState
-
-store = {}  # replace with Redis / DynamoDB / Postgres
-mgr   = MigrationStateManager(store)
-
-mgr.transition(
-    key_id="user-123",
-    from_state=MigrationState.CLASSICAL_ONLY,
-    to_state=MigrationState.HYBRID_TRANSITION,
-    algorithm="X25519+ML-KEM-768",
-    actor="key-rotation-v2",
-)
-print(mgr.migration_progress())
-# {'classical_only': 0, 'hybrid_transition': 1, ...}
-```
-
----
-
-## Audit and compliance
-
-### CI audit gate
-
-```python
-import sys
-
-from quantum_safe.audit import Auditor, AuditPolicy
-
-# Returns 0 (pass) or 1 (fail) — use directly in CI
-exit_code = Auditor.ci_gate(
-    "./src",
-    policy=AuditPolicy(allow_classical_only=False, hybrid_required=True),
-    output_sarif="audit.sarif",   # GitHub Code Scanning
-    output_json="audit.json",
-)
-sys.exit(exit_code)
-```
-
-### NIST compliance report
-
-```python
-from quantum_safe.audit import NISTComplianceChecker
-from quantum_safe.migrate import Scanner
-
-scan   = Scanner.scan_directory("./src")
-report = NISTComplianceChecker.check(scan, target="./src")
-print(report.to_json())
-# Maps findings to FIPS 203, FIPS 204, FIPS 205, SP 800-208, CISA checklist
-```
-
-### CycloneDX SBOM enrichment
-
-```python
-from quantum_safe.audit import SBOMEnricher
-
-with open("sbom.json") as f:
-    sbom = json.load(f)
-
-enriched, assessments = SBOMEnricher.enrich(sbom)
-# Each component gets quantum-safe:pqc-readiness: READY|PARTIAL|NOT_READY|UNKNOWN
-
-not_ready = [a for a in assessments if a.readiness.value == "NOT_READY"]
-for a in not_ready:
-    print(f"NOT READY: {a.name} {a.version} → {a.action}")
-```
-
-### CycloneDX Cryptographic Bill of Materials (CBOM)
-
-Every audited library in our September 2026 survey scored **None** on
-automated cryptographic discovery — this is the actual gap, not the hybrid-KEM
-one an older library snapshot suggested. `qs-audit cbom` closes it: a
-CycloneDX 1.6 `cryptographic-asset` inventory, one component per detected
-classical algorithm (file:line, quantum-vulnerability flag) plus the
-post-quantum algorithms available to migrate to.
-
-```bash
-qs-audit cbom ./src --output cbom.json
-```
-
-This is an inventory, not a compliance verdict — pair it with `qs-audit cnsa2`
-below, and note that neither is a FIPS 140-3 validation.
-
-### CNSA 2.0 parameter-set compliance
-
-CNSA 2.0 mandates specific parameter sets — ML-KEM-**1024**, ML-DSA-**87** —
-not just "uses post-quantum algorithms". **This library's own defaults
-(ML-KEM-768, ML-DSA-65) are below that suite.** We report this against
-ourselves rather than let it stay implicit:
-
-```python
-from quantum_safe.compliance import cnsa2
-
-report = cnsa2.report(kem="X25519+ML-KEM-768", signature="Ed25519+ML-DSA-65")
-print(report.render())
-# [FAIL] Key establishment ... requires ML-KEM-1024
-# [FAIL] Signatures ... requires ML-DSA-87
-# OVERALL: NOT compliant
-
-kem    = cnsa2.pqc_kem()      # ML-KEM-1024, compliant
-signer = cnsa2.pqc_sign()     # ML-DSA-87, compliant
-
-# Hybrids carry the required PQC parameter set but are reported PARTIAL:
-# Hybrids carry the required PQC parameter set but are PARTIAL: NSA's CNSA 2.0
-# FAQ says hybrids are not required and should not be used on NSS mission
-# systems except for exceptions NSA specifically recommends (IKEv2 is the one
-# it names).
-kem    = cnsa2.hybrid_kem()   # X25519 + ML-KEM-1024, PARTIAL
-signer = cnsa2.hybrid_sign()  # Ed25519 + ML-DSA-87, PARTIAL
-```
-
-Or from the CLI: `qs-audit cnsa2` (defaults to checking this library's own
-defaults — which fail, on purpose, so you see it immediately).
-
-### ACVP conformance evidence
-
-**225 of 225 runnable ACVP known-answer cases**, run against NIST's own
-published test vectors — ML-KEM keyGen (75/75, exact `ek`+`dk`), ML-KEM
-encapsulation (75/75), ML-KEM decapsulation (30/30, including
-implicit-rejection cases), ML-DSA sigVer (45/45, both acceptance and
-rejection). Testing against ACVP vectors is not unique to this library
-(noble-post-quantum, for one, does too; see
-[the production-readiness rubric](docs/production_readiness_rubric.md)); what
-is reported here is the result for this library's own backend.
-
-**This is conformance evidence, not a CAVP or CMVP validation** — validation
-is performed by an accredited laboratory and produces a certificate; nothing
-here does. Bouncy Castle is the one library in our audit holding an actual
-CMVP FIPS 140-3 certificate, and we say so rather than blur the distinction.
-
-```bash
-python tests/conformance/acvp_kat.py --save results/acvp_kat.json
-```
-
-Full methodology, including exactly which ACVP test types remain unreachable
-through a high-level API and why: `results/BENCHMARKS.md`.
-
----
-
-## CLI tools
-
-### qs-audit
-
-```bash
-# Scan for classical crypto — text output
-qs-audit scan ./src
-
-# SARIF output for GitHub Code Scanning
-qs-audit scan ./src --format sarif --output audit.sarif
-
-# JSON report with strict policy
-qs-audit scan ./src --format json --preset-policy strict
-
-# Fail CI if HIGH or above findings exist (default)
-qs-audit scan ./src --fail-on high && echo "PASSED" || echo "FAILED"
-
-# Enrich a CycloneDX SBOM
-qs-audit sbom sbom.json --output sbom-pqc.json
-
-# Quick requirements.txt check
-qs-audit requirements requirements.txt
-
-# NIST SP 800-208 compliance report
-qs-audit compliance ./src --format json --output compliance.json
-
-# CNSA 2.0 parameter-set check (defaults to checking this library's own defaults)
-qs-audit cnsa2
-
-# CycloneDX Cryptographic Bill of Materials
-qs-audit cbom ./src --output cbom.json
-```
-
-### qs-migrate
-
-```bash
-# Scan a codebase for classical crypto
-qs-migrate scan ./src --format sarif --output migrate.sarif
-
-# Check migration progress
-qs-migrate status
-```
-
----
-
-## Security notes
-
-### Memory safety
-
-`SecretKey` and `SharedSecret` zero their memory on deletion using
-`ctypes.memset` against the live `bytearray` buffer.  A Python byte-loop
-is subject to dead-store elimination by the optimizer; `ctypes.memset`
-operates at the C level and cannot be elided.
-
-Python's garbage collector still makes hard guarantees impossible, but this
-approach minimises the window during which secret material is visible in
-heap dumps.  Callers that need to zero a copy immediately after use should
-call `SecretKey._raw_bytearray` (returns a fresh `bytearray`) and zero it
-with `ctypes.memset` in a `try/finally` block.
-
-For high-security deployments, use an HSM or a secrets manager with key isolation.
-
-### Constant-time operations
-
-We use `hmac.compare_digest()` for all secret comparisons.  Hybrid signature
-verification evaluates **both** sub-signatures unconditionally before combining
-the result, preventing timing oracles that would reveal which component failed.
-The underlying liboqs implementations are designed for constant-time operation.
-
-Two distinct measurements back this, and it matters which one you're reading:
-CoV (Coefficient of Variation) is computed with the secret held fixed, so it
-shows timing *stability under repetition* — not secret independence.
-A separate fixed-vs-random test needs controls to be interpretable: a
-random-vs-random control, and (new in 0.3.1) a public-data calibration and a
-positive control that reports the smallest deliberate leak the harness
-detects. Without them, a fixed-vs-random signal can be a measurement artifact:
-on the development host, encapsulation, which uses no secret, reproduces the
-fixed-vs-random decapsulation signal. See `docs/guides/benchmarks.rst`.
-The harness screens for gross secret dependence; it is not a formal
-constant-time proof (`dudect` or `ct-verif` against the compiled backend
-would be), and everything is measured through the Python binding.
-
-> The ML-KEM-768 decapsulation CoV and latency figures published for 0.3.0
-> were measured with a harness defect that made decapsulation exercise the
-> implicit-rejection path (see `CHANGELOG.md`). The harness is fixed and the
-> figures are superseded: the benchmarks were re-run on 2026-10-06 with the harness fixed (one warm-up run plus
-> 15 timed runs, raw samples in `results/`), and `--iterations`, which the old harness ignored, now works.
-
-### Serialization safety
-
-The `_internal.serialization` layer caps all incoming payloads at **10 MB**
-before parsing, guarding against memory-exhaustion via deeply nested or padded
-CBOR / JSON structures.  Deserialised key payloads with `version < 1` are
-rejected immediately to prevent version-rollback attacks.
-
-### Thread safety
-
-`MigrationStateManager` is safe across processes and hosts when its store has
-a `compare_and_set(key, expected, value) -> bool` method (`MemoryMigrationStore`
-is the in-process reference; `manager.cross_process_safe` tells you which mode
-you are in): exactly one concurrent writer wins, with no external lock. With a
-plain dict it holds a per-key `threading.Lock`, which covers threads in **one
-process only**; with several workers sharing a store (e.g. Gunicorn and Redis)
-you must hold an external distributed lock on the `key_id` around
-`transition()`. See `docs/guides/migration.rst`.
-
-### Hedged signing
-
-`HybridSign` and `Sign` default to hedged mode: a 32-byte random prefix
-is prepended before signing.  This prevents fault-injection attacks that have
-been demonstrated on lattice signatures in lab conditions.  Opt out with
-`hedged=False` only if you have a specific need for deterministic signatures.
-
-**A verifier accepts only signatures made in its own hedging mode** (the prefix
-length is not covered by the signature, so it is not read from it). Build the
-verifier with the signer's `hedged` value and use one mode per key. The `-v2`
-signature format has no prefix and no hedging mode.
-
-### Verify with the context you expect
-
-`verify(sm, public_key, context=...)` and `Envelope.open(sealed, secret_key,
-expected_aad=...)` state what the verifier expects. The context and AAD carried
-inside a message come from whoever supplied it, so without these a signature
-made for one purpose verifies for another and a ciphertext sealed for one
-record opens for another. Omitting them is deprecated in 0.3.1.
-
-### Hybrid mode rationale
-
-ML-KEM was standardized in 2024. Hybrid mode (X25519 + ML-KEM-768) means:
-- If ML-KEM is broken, X25519 still protects you.
-- If X25519 is broken by a quantum computer, ML-KEM still protects you.
-- Both would need to fail simultaneously.
-
-This is the position of NIST, CISA, BSI, NCSC, and every TLS library
-that has added PQC support.
-
----
-
-## Algorithm reference
-
-| Algorithm | Type | NIST Level | Standard | Notes |
-|-----------|------|-----------|----------|-------|
-| ML-KEM-512 | KEM | 1 | FIPS 203 | Smallest. Use ML-KEM-768 for new deployments. |
-| ML-KEM-768 | KEM | 3 | FIPS 203 | **Recommended default.** |
-| ML-KEM-1024 | KEM | 5 | FIPS 203 | Maximum security. |
-| ML-DSA-44 | Sign | 2 | FIPS 204 | Smallest ML-DSA. |
-| ML-DSA-65 | Sign | 3 | FIPS 204 | **Recommended default.** |
-| ML-DSA-87 | Sign | 5 | FIPS 204 | Maximum security. |
-| SLH-DSA-SHAKE-128s | Sign | 1 | FIPS 205 | Hash-based. Very slow to sign. |
-| SLH-DSA-SHAKE-128f | Sign | 1 | FIPS 205 | Hash-based. Larger sigs, faster sign. |
-| X25519+ML-KEM-768 | Hybrid KEM | — | IETF draft | **Default hybrid combination.** |
-| Ed25519+ML-DSA-65 | Hybrid Sign | — | IETF draft | **Default hybrid combination.** |
-
----
-
-## Development
-
-### Running tests
-
-```bash
-# Unit tests only (no liboqs needed)
-python -m pytest tests/unit/ -v
-
-# With liboqs installed
-python -m pytest tests/ -v -m "not slow"
-
-# Integration tests
-python -m pytest tests/integration/ -v
-
-# Skip liboqs-dependent tests
-python -m pytest tests/ -v -m "not requires_liboqs"
-```
-
-### Running benchmarks
-
-The recommended environment is Docker (Linux kernel + from-source liboqs with AVX2):
-
-```bash
-# Build the benchmark image once (~3 min, compiles liboqs from source)
-docker build -t quantum-safe-bench .
-
-# Full KEM suite — CPU pinned, 3,000 iterations (recommended)
-docker run --rm --cpuset-cpus="0,1" \
-  -v "$(pwd)/results:/app/results" quantum-safe-bench \
-  python -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000 \
-  --save /app/results/bench_kem_$(date +%Y-%m-%d).json
-
-# Signature suite — CPU pinned, 3,000 iterations
-docker run --rm --cpuset-cpus="0,1" \
-  -v "$(pwd)/results:/app/results" quantum-safe-bench \
-  python -X utf8 tests/bench/bench_signatures.py --with-pqc --iterations 3000 \
-  --save /app/results/bench_sig_$(date +%Y-%m-%d).json
-```
-
-Native (Windows/Linux, no Docker):
-
-```bash
-python -X utf8 tests/bench/bench_kem.py --with-pqc --iterations 3000
-python -X utf8 tests/bench/bench_signatures.py --with-pqc --iterations 3000
-```
-
-Benchmark results and methodology are in [results/BENCHMARKS.md](results/BENCHMARKS.md).
-Headline numbers (ENV-2, Docker/WSL2, 2026-03-29): full hybrid KEM handshake **~243 µs**,
-throughput **~2,848 ops/s** at 5,000 concurrent users.
-The `cov_pct` (coefficient of variation) column is the timing side-channel proxy —
-values near the AES-256-GCM baseline (~2.1%) indicate constant-time behaviour.
-
-### Statistical analysis
-
-`tests/bench/bench_stats.py` provides research-grade statistical utilities
-used to generate paper-quality numbers from raw benchmark samples:
-
-```python
-from tests.bench.bench_stats import bootstrap_ci, welch_t_test, cohens_d, latex_table
-
-lo, median, hi = bootstrap_ci(samples_us, confidence=0.95)
-result = welch_t_test(classical_samples, hybrid_samples)
-print(f"p={result.p_value:.4f}, d={cohens_d(classical_samples, hybrid_samples):.2f}")
-```
-
-### Code quality
-
-```bash
-# Type checking
-mypy src/quantum_safe --strict
-
-# Linting
-ruff check src/ tests/
-
-# Formatting
-black src/ tests/
-```
-
----
-
-## Independent review wanted
-
-No part of this library has had an independent cryptographic review, and the second internal audit found a High-severity flaw that had shipped in every release up to 0.3.0. [REVIEW_WANTED.md](REVIEW_WANTED.md) lists exactly which constructions need a second pair of eyes (the `-v2` signature format, the hybrid KEM combiner and the envelope first), where they are in the code, what claim to check, and what a useful review looks like. Partial reviews are welcome.
-
----
+Everything else is on the documentation site: [quantum-safe-py.readthedocs.io](https://quantum-safe-py.readthedocs.io/en/latest/).
+
+| If you want to...                                           | Read                                                                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Try it in five minutes                                      | [Quick start](docs/guides/quickstart.rst)                                                                    |
+| Pick the right algorithm, format and token                  | [Choosing what to use](docs/guides/choosing.rst)                                                             |
+| Copy a working recipe (encrypt a file, sign a release, ...) | [Cookbook](docs/guides/cookbook.rst)                                                                         |
+| Understand keys, contexts, hedging and formats              | [Concepts](docs/guides/concepts.rst)                                                                         |
+| Encrypt, sign, issue tokens                                 | [KEM](docs/guides/kem.rst), [Signatures](docs/guides/signatures.rst), [Protocols](docs/guides/protocols.rst) |
+| Migrate keys and track progress                             | [Migration](docs/guides/migration.rst)                                                                       |
+| Audit a codebase, produce a CBOM, check CNSA 2.0            | [Audit](docs/guides/audit.rst), [CNSA 2.0 and standards](docs/guides/compliance.rst)                         |
+| Exchange data with Node.js and browsers                     | [Interoperability](docs/guides/interop.rst)                                                                  |
+| Upgrade from an earlier release                             | [Upgrading to 0.4](docs/guides/upgrading-0.4.rst)                                                            |
+| Threat model, design notes, report a vulnerability          | [Security](docs/guides/security.rst)                                                                         |
+| Benchmarks and methodology                                  | [Benchmarks](docs/guides/benchmarks.rst)                                                                     |
+| What changed in each release / what is planned              | [CHANGELOG](CHANGELOG.md), [Roadmap](ROADMAP.md)                                                             |
 
 ## Cite this work
-
-If you use quantum-safe-py in research or build on the methodology, please cite the accompanying paper:
 
 ```bibtex
 @article{shaw2026quantumsafe,
@@ -808,30 +99,12 @@ If you use quantum-safe-py in research or build on the methodology, please cite 
 }
 ```
 
-To cite the software itself, use the Zenodo concept DOI
-[10.5281/zenodo.23008259](https://doi.org/10.5281/zenodo.23008259), which always resolves to the
-latest release; for an exact version use that release's own DOI from the same page.
+To cite the software itself, use the Zenodo concept DOI [10.5281/zenodo.23008259](https://doi.org/10.5281/zenodo.23008259), which resolves to the latest release.
+A machine-readable [CITATION.cff](CITATION.cff) is included for GitHub's "Cite this repository" button.
 
-A machine-readable [CITATION.cff](CITATION.cff) is also provided for GitHub's
-"Cite this repository" button.
+## Contributing and license
 
----
+See [CONTRIBUTING.md](CONTRIBUTING.md). Apache 2.0, see [LICENSE](LICENSE).
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
-
-## License
-
-Apache 2.0. See [LICENSE](LICENSE).
-
----
-
-## Acknowledgements
-
-Built on:
-- [Open Quantum Safe / liboqs](https://openquantumsafe.org/) — reference PQC implementations
-- [PyCA cryptography](https://cryptography.io/) — classical primitives and X.509
-- [NIST PQC Standardization](https://csrc.nist.gov/projects/post-quantum-cryptography) — FIPS 203/204/205
+Built on [Open Quantum Safe / liboqs](https://openquantumsafe.org/), [PyCA cryptography](https://cryptography.io/) and the
+[NIST PQC standards](https://csrc.nist.gov/projects/post-quantum-cryptography) (FIPS 203, 204, 205).

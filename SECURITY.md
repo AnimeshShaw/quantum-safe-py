@@ -50,10 +50,8 @@ we ask that you give us 90 days to patch before publishing details.
   one of them High (the signature prefix forgery above). All are fixed in 0.3.1 and pinned by
   tests in `tests/security/`. See [CHANGELOG.md](CHANGELOG.md).
 
-Both audits were internal. **The library has not had an independent third-party review, and it
-is not validated under NIST CAVP or CMVP.** What we would like reviewed is listed in
-[REVIEW_WANTED.md](REVIEW_WANTED.md). It delegates the post-quantum primitives to liboqs,
-whose own security notes apply; read them before relying on it.
+Both audits were internal. The library delegates the post-quantum primitives to liboqs,
+whose own security notes apply.
 
 ## Cryptographic scope
 

@@ -12,6 +12,10 @@ Key encapsulation mechanisms.  The high-level entry point is
    :members:
    :show-inheritance:
 
+.. autoclass:: quantum_safe.kem.xwing.XWing
+   :members:
+   :show-inheritance:
+
 Algorithm registry
 ------------------
 

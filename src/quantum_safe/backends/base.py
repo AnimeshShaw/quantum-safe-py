@@ -96,6 +96,20 @@ class AbstractKEMBackend(ABC):
         """
         ...
 
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Generate a key pair deterministically from a seed (FIPS 203 ``d || z``, 64 bytes).
+
+        Used by constructions that define their keys as an expansion of a short seed, such as
+        X-Wing. Backends that cannot do seeded key generation inherit this default, which raises
+        ``UnsupportedAlgorithm``.
+
+        Returns:
+            (public_key_bytes, secret_key_bytes)
+        """
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        raise UnsupportedAlgorithm(f"{algorithm} seeded key generation on backend '{self.name}'")
+
     @abstractmethod
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         """Decapsulate: recover the shared secret from a ciphertext.
@@ -151,6 +165,16 @@ class AbstractSignatureBackend(ABC):
             (public_key_bytes, secret_key_bytes)
         """
         ...
+
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Generate a signing key pair deterministically from a seed (ML-DSA: 32 bytes).
+
+        Backends without seeded generation inherit this default, which raises
+        ``UnsupportedAlgorithm``. Returns ``(public_key_bytes, secret_key_bytes)``.
+        """
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        raise UnsupportedAlgorithm(f"{algorithm} seeded key generation on backend '{self.name}'")
 
     @abstractmethod
     def sign(

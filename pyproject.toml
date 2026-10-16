@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quantum-safe-py"
-version = "0.3.2"
+version = "0.4.0"
 description = "Production-grade post-quantum cryptography with hybrid KEM, migration tooling, and protocol helpers"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -48,7 +48,13 @@ dependencies = [
 
 [project.optional-dependencies]
 liboqs = [
-    "liboqs-python>=0.10.0",
+    "liboqs-python>=0.16.0,<0.17",
+]
+# ML-KEM-768/1024 and ML-DSA through pyca/cryptography with seeded keys (private RFC 9964 JWKs and COSE
+# keys, seed export for quantum-safe-ts). No compiler and no liboqs needed. 48 is the first release
+# with ML-DSA and ML-KEM.
+pyca = [
+    "cryptography>=48.0",
 ]
 # LMS stateful hash-based signatures (RFC 8554 / SP 800-208), required by
 # CNSA 2.0 for software and firmware signing and not available through liboqs.
@@ -177,11 +183,11 @@ addopts = [
     "--strict-markers",
     "-ra",
 ]
-# The library's own tests must state the context they expect when verifying;
-# only the test that exercises the deprecated path may omit it (pytest.warns).
+# The library's own tests must state the context and AAD they expect; only a test that
+# exercises the omitted-argument path may leave it out (pytest.warns).
 filterwarnings = [
-    "error:verify\\(\\) without context=:DeprecationWarning",
-    "error:Envelope.open\\(\\) without expected_aad=:DeprecationWarning",
+    "error::quantum_safe.exceptions.ContextOmittedWarning",
+    "error::quantum_safe.exceptions.AadOmittedWarning",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m not slow')",

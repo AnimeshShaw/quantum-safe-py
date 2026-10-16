@@ -37,6 +37,31 @@ from __future__ import annotations
 from typing import Any
 
 
+class QuantumSafeWarning(UserWarning):
+    """Base class for the library's runtime advisories.
+
+    A ``UserWarning`` (shown by default, unlike ``DeprecationWarning``), so a developer sees it the
+    first time it happens at each call site. Silence a category with the standard ``warnings``
+    filters, for example ``warnings.filterwarnings("ignore", category=ContextOmittedWarning)``.
+    """
+
+
+class ContextOmittedWarning(QuantumSafeWarning):
+    """``verify()`` was called without ``context=`` for a message that carries a non-empty context.
+
+    Omitting ``context`` means "expect an empty context", so the message is rejected. The warning
+    exists so the rejection is not a silent mystery: pass the context you expect.
+    """
+
+
+class AadOmittedWarning(QuantumSafeWarning):
+    """``Envelope.open()`` was called without ``expected_aad=`` for a message that carries AAD.
+
+    The message was opened, but the opener did not check what the AAD was bound to. Pass the AAD you
+    expect so a message sealed for another record or user cannot be accepted here.
+    """
+
+
 class QuantumSafeError(Exception):
     """Base class for all quantum-safe library errors."""
 

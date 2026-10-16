@@ -19,6 +19,7 @@ import pytest
 from cryptography.exceptions import InvalidTag
 
 from quantum_safe import HybridKEM
+from quantum_safe.exceptions import AadOmittedWarning
 from quantum_safe.protocols.envelope import Envelope
 
 pytestmark = pytest.mark.requires_liboqs
@@ -55,7 +56,7 @@ def test_expected_aad_on_an_aad_less_message(kp) -> None:
 
 def test_omitting_expected_aad_warns_when_the_message_has_aad(kp) -> None:
     sealed = Envelope.seal(b"payload", kp.public, aad=b"user-A")
-    with pytest.warns(DeprecationWarning, match="expected_aad"):
+    with pytest.warns(AadOmittedWarning, match="expected_aad"):
         assert Envelope.open(sealed, kp.secret) == b"payload"
 
 

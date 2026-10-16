@@ -93,7 +93,9 @@ a per-key state machine tracking where each key sits in the migration path:
    sharing the store with **no external lock**: exactly one concurrent writer
    wins and the others get a stale-state ``ValueError``.
    :class:`~quantum_safe.migrate.state.MemoryMigrationStore` is the in-process
-   reference; for Redis use ``WATCH``/``MULTI`` or a Lua script, for Postgres
+   reference and :class:`~quantum_safe.migrate.file_store.FileMigrationStore`
+   is a directory-backed store that is safe across processes on one host (below);
+   for Redis use ``WATCH``/``MULTI`` or a Lua script, for Postgres
    ``UPDATE ... WHERE value = expected`` (and ``INSERT ... ON CONFLICT DO
    NOTHING`` for absent), for DynamoDB a ``ConditionExpression``.
    ``manager.cross_process_safe`` tells you which mode you are in.
@@ -105,6 +107,13 @@ a per-key state machine tracking where each key sits in the migration path:
    races produced more than one winner; with a compare-and-set store, none did.
    Hold an external distributed lock (Redis ``SETNX``, a ``SELECT … FOR UPDATE``
    row lock) on the ``key_id`` in that case.
+
+   **File store**: ``FileMigrationStore("/var/lib/myapp/migration")`` keeps one file per key
+   (named by the hex of the key; keys are at most 100 bytes), takes a per-key ``mkdir`` lock
+   with a heartbeat, and writes through a fsynced temporary file that is renamed into place,
+   so several worker processes on one host can share it with no external lock. Files are
+   mode 0600 in a 0700 directory. It is not distributed: do not put it on NFS or SMB or share
+   it between hosts. The same design is in quantum-safe-ts (``FileMigrationStore``).
 
    **Layout and durability**: the layout is unchanged (``<key_id>_current`` and
    ``<key_id>_history``).  With compare-and-set the history entry is the single
@@ -133,6 +142,55 @@ a per-key state machine tracking where each key sits in the migration path:
    progress = mgr.migration_progress()
    print(progress)
    # {'classical_only': 847, 'hybrid_transition': 152, 'pqc_only': 1}
+
+Re-wrapping sealed envelopes
+----------------------------
+
+Upgrading a key does not touch what was already encrypted to it. To move stored envelopes to the
+new key, **re-wrap** them: open under the old secret key, seal the plaintext to the new public
+key, keep the AAD.
+
+.. code-block:: python
+
+   from quantum_safe.protocols.envelope import Envelope
+
+   moved = Envelope.rewrap(
+       sealed, old_secret, new_public, expected_aad=b"record-42"
+   )   # a new SealedMessage; the original is untouched
+
+For a directory of envelopes use :func:`quantum_safe.migrate.rewrap.rewrap_directory`:
+
+.. code-block:: python
+
+   from quantum_safe.migrate.rewrap import rewrap_directory
+
+   report = rewrap_directory(
+       "store/", "store-new/",
+       old_secret=old_secret, new_public=new_public, new_secret=new_secret,
+       expected_aad=lambda rel: rel.encode(),      # what each message's AAD must be
+   )
+   print(report.counts)        # {'rewrapped': 1204, 'skipped': 3, 'failed': 0}
+   assert report.ok
+   cbom = report.to_cbom()     # CycloneDX 1.6: algorithms migrated from and to
+
+What the driver guarantees:
+
+- **The source is not touched** unless you pass ``in_place=True``, which replaces files one at a
+  time through a temporary file and an atomic rename.
+- **Resumable and idempotent.** A file whose output already exists and is a valid migrated copy is
+  reported ``already_migrated``. A second run does nothing; an interrupted run continues.
+- **Verified.** With ``new_secret`` every written file is opened again and its plaintext compared
+  (SHA-256) with the original. Without it ``verified`` is ``None``: nothing was checked.
+- **One bad file does not stop the run.** Each item ends ``rewrapped``, ``skipped`` (not an
+  envelope), ``already_migrated``, ``would_rewrap`` (``dry_run=True``) or ``failed``, with a reason
+  that contains no secret. The report holds names, algorithms and counts, never keys or plaintext.
+- **The AAD is checked.** Pass ``expected_aad`` (bytes, or a function of the relative path); if you
+  omit it each message's own AAD is accepted and kept, and the report says ``aad_checked`` is false.
+
+The same operation exists in quantum-safe-ts (``Envelope.rewrap`` and ``rewrapDirectory`` from
+``quantum-safe-ts/rewrap``), and what one library re-wraps the other opens. Streaming envelopes
+(format v3) are a different container: read them with :mod:`quantum_safe.protocols.stream` and
+seal a new stream.
 
 Drop-in shims
 -------------

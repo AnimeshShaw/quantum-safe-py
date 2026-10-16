@@ -6,12 +6,14 @@ The file handling behind ``qs-migrate upgrade-key``: read a classical secret key
 upgrade it with :class:`~quantum_safe.migrate.upgrader.Upgrader`, check the result
 and write it without ever leaving a partial or world-readable key file behind.
 
-Supported inputs are an X25519 or Ed25519 **secret** key, either as a standard
-PKCS#8 ``PRIVATE KEY`` PEM or as this library's own ``QUANTUM SAFE SECRET KEY`` PEM.
-A public key alone cannot be upgraded: the hybrid key must contain the existing
-secret, and the new post-quantum secret has to be stored with it. Everything else
-(P-256, RSA, encrypted keys, keys that are already hybrid or post-quantum) is
-rejected with a message that says why, before anything is written.
+Supported inputs are an X25519, Ed25519, P-256 or P-384 **secret** key, either as a
+standard PKCS#8 ``PRIVATE KEY`` PEM or as this library's own ``QUANTUM SAFE SECRET KEY``
+PEM. An elliptic-curve key (P-256, P-384) can serve key agreement or signatures, so the
+caller says which one it is (``--key-type kem`` or ``sign``). A public key alone cannot
+be upgraded: the hybrid key must contain the existing secret, and the new post-quantum
+secret has to be stored with it. Everything else (RSA, encrypted keys, keys that are
+already hybrid or post-quantum) is rejected with a message that says why, before
+anything is written.
 """
 
 from __future__ import annotations
@@ -26,7 +28,14 @@ from quantum_safe.types import KeyPair, MigrationState, PublicKey, SecretKey
 #: Algorithm -> (key type, default hybrid target) for the inputs the CLI upgrades.
 SUPPORTED_INPUTS: dict[str, tuple[str, str]] = {
     "X25519": ("kem", "X25519+ML-KEM-768"),
-    "Ed25519": ("sign", "Ed25519+ML-DSA-65"),
+    "Ed25519": ("sign", "Ed25519+ML-DSA-65-v2"),
+}
+
+#: Elliptic-curve inputs: the key can be used either way, so the key type is chosen by the caller.
+#: Curve -> {key type -> default hybrid target}.
+EC_INPUTS: dict[str, dict[str, str]] = {
+    "P-256": {"kem": "P-256+ML-KEM-768", "sign": "P-256+ML-DSA-65-v2"},
+    "P-384": {"kem": "P-384+ML-KEM-1024", "sign": "P-384+ML-DSA-87-v2"},
 }
 
 _MAX_KEY_FILE_BYTES = 64 * 1024
@@ -54,8 +63,18 @@ def _classical_from_raw(algorithm: str, raw: bytes) -> tuple[bytes, bytes]:
     """Return (secret, public) raw bytes for an X25519 / Ed25519 secret key."""
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
-    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        PublicFormat,
+        load_pem_private_key,
+    )
 
+    if algorithm in EC_INPUTS:
+        # The classical secret is kept as PKCS#8 PEM text (as the hybrid keys store it); the
+        # public key is the uncompressed SEC1 point. A signing key uses it without the 0x04 tag.
+        key = load_pem_private_key(raw, password=None)
+        point = key.public_key().public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+        return raw, point
     if len(raw) != 32:
         raise KeyUpgradeError(f"a {algorithm} secret key is 32 bytes, this one is {len(raw)}")
     priv = X25519PrivateKey if algorithm == "X25519" else Ed25519PrivateKey
@@ -104,14 +123,15 @@ def load_classical_secret(path: str | Path) -> tuple[str, bytes, bytes]:
             f"'{_SECRET_LABEL}' PEM"
         )
 
-    if algorithm not in SUPPORTED_INPUTS:
+    if algorithm not in SUPPORTED_INPUTS and algorithm not in EC_INPUTS:
         if "+" in algorithm or algorithm.startswith(("ML-", "SLH-", "BIKE", "HQC")):
             raise KeyUpgradeError(
                 f"the key is already post-quantum ({algorithm}); there is nothing to upgrade"
             )
         raise KeyUpgradeError(
             f"{algorithm} keys are not upgraded by this command (supported: "
-            f"{', '.join(SUPPORTED_INPUTS)}). Use Upgrader from Python for other algorithms."
+            f"{', '.join([*SUPPORTED_INPUTS, *EC_INPUTS])}). Use Upgrader from Python for other "
+            f"algorithms."
         )
     secret, public = _classical_from_raw(algorithm, raw)
     return algorithm, secret, public
@@ -131,6 +151,23 @@ def _from_pkcs8(text: str) -> tuple[str, bytes]:
         key = load_pem_private_key(text.encode("ascii"), password=None)
     except Exception as exc:
         raise KeyUpgradeError(f"could not parse the PKCS#8 key: {exc}") from exc
+    from cryptography.hazmat.primitives.asymmetric.ec import (
+        SECP256R1,
+        SECP384R1,
+        EllipticCurvePrivateKey,
+    )
+
+    if isinstance(key, EllipticCurvePrivateKey):
+        if isinstance(key.curve, SECP384R1):
+            curve = "P-384"
+        elif isinstance(key.curve, SECP256R1):
+            curve = "P-256"
+        else:
+            raise KeyUpgradeError(
+                f"EC keys on the curve {key.curve.name} are not upgraded by this command "
+                f"(supported curves: {', '.join(EC_INPUTS)})"
+            )
+        return curve, key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
     if isinstance(key, X25519PrivateKey):
         algorithm = "X25519"
     elif isinstance(key, Ed25519PrivateKey):
@@ -138,7 +175,7 @@ def _from_pkcs8(text: str) -> tuple[str, bytes]:
     else:
         raise KeyUpgradeError(
             f"{type(key).__name__.removesuffix('PrivateKey')} keys are not upgraded by this "
-            f"command (supported: {', '.join(SUPPORTED_INPUTS)})"
+            f"command (supported: {', '.join([*SUPPORTED_INPUTS, *EC_INPUTS])})"
         )
     return algorithm, key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
 
@@ -150,7 +187,15 @@ def resolve_target(
 
     Returns ``(key_type, classical, pqc)``.
     """
-    expected_type, default_target = SUPPORTED_INPUTS[algorithm]
+    if algorithm in EC_INPUTS:
+        if key_type not in ("kem", "sign"):
+            raise KeyUpgradeError(
+                f"a {algorithm} key can be used for key agreement or for signatures: "
+                f"pass --key-type kem or --key-type sign"
+            )
+        expected_type, default_target = key_type, EC_INPUTS[algorithm][key_type]
+    else:
+        expected_type, default_target = SUPPORTED_INPUTS[algorithm]
     if key_type is not None and key_type != expected_type:
         raise KeyUpgradeError(
             f"--key-type {key_type} does not match the input: an {algorithm} key is a "
@@ -170,7 +215,13 @@ def resolve_target(
             from quantum_safe.kem.algorithms import validate_hybrid_combination
         else:
             from quantum_safe.signatures.algorithms import validate_hybrid_combination
-        validate_hybrid_combination(classical, pqc)
+        base = pqc.removesuffix("-v2") if expected_type == "sign" else pqc
+        validate_hybrid_combination(classical, base)
+        if expected_type == "sign" and base != pqc:
+            from quantum_safe.signatures import _v2
+
+            if base not in _v2.V2_HYBRIDS.get(classical, ()):
+                raise ValueError(f"{classical}+{pqc} is not a -v2 combination")
     except ValueError as exc:
         raise KeyUpgradeError(str(exc)) from exc
     return expected_type, classical, pqc
@@ -260,6 +311,8 @@ def upgrade_key_file(
     algorithm, secret_raw, public_raw = load_classical_secret(src)
     kind, classical, pqc = resolve_target(algorithm, key_type, target)
 
+    if kind == "sign" and algorithm in EC_INPUTS:
+        public_raw = public_raw[1:]  # a signing key stores the raw x || y, without the 0x04 tag
     try:
         if kind == "kem":
             result = Upgrader.upgrade_kem_key(secret_raw, public_raw, classical, pqc, backend)
