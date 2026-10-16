@@ -85,21 +85,6 @@ Everything else is on the documentation site: [quantum-safe-py.readthedocs.io](h
 | Benchmarks and methodology                                  | [Benchmarks](docs/guides/benchmarks.rst)                                                                     |
 | What changed in each release / what is planned              | [CHANGELOG](CHANGELOG.md), [Roadmap](ROADMAP.md)                                                             |
 
-## How it compares
-
-From a September 2026 audit of nine post-quantum libraries (methodology and sources in the
-[production readiness rubric](docs/production_readiness_rubric.md)):
-
-| Capability                               | Ecosystem                | This library                            |
-| ---------------------------------------- | ------------------------ | --------------------------------------- |
-| Cryptographic discovery and inventory    | 0 of 7 libraries         | CycloneDX CBOM (`qs-audit cbom`)        |
-| Hybrid KEM combiner                      | 3 of 6                   | Default mode                            |
-| Stateful hash-based signing (LMS / XMSS) | 1 of 7 (Bouncy Castle)   | LMS (`[lms]` extra)                     |
-| CMVP certificate                         | 1 of 5 (Bouncy Castle)   | 638 of 638 ACVP known-answer cases pass |
-| Migration path for existing keys         | 1 of 7                   | `Upgrader` and a per-key state machine  |
-| Protocol helpers (JWT, COSE, TLS, X.509) | 3 of 7                   | `protocols` module                      |
-| CNSA 2.0 reporting and enforcement       | none                     | `qs-audit cnsa2`, `cnsa2.enforce()`     |
-
 ## Cite this work
 
 ```bibtex
