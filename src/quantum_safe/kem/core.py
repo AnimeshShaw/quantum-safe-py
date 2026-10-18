@@ -62,8 +62,9 @@ class KEM:
         algorithm:        PQC algorithm name. Defaults to ML-KEM-768.
         backend:          Backend name: "auto", "liboqs", "rustcrypto".
                           "auto" tries rustcrypto first, then liboqs.
-        allow_low_security: If True, allows NIST level 1 algorithms without
-                          warning. Default False (warns on L1).
+        allow_low_security: Accepted for forward compatibility. It has no effect today: every
+                          algorithm in the registry meets ``MINIMUM_NIST_LEVEL`` (level 1),
+                          so there is nothing to warn about.
         strict:           If True, raises instead of warning for non-standard
                           configurations. Default False.
     """

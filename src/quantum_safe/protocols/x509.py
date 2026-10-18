@@ -22,12 +22,13 @@ The approach follows two IETF drafts:
     the PQC public key alongside the classical one.
 
 We implement a simplified version: the certificate is signed with a classical
-key (ECDSA P-256 or Ed25519) using standard X.509, and the PQC co-signature
-is stored in a non-critical extension (OID 1.3.6.1.4.1.99999.1) as a DER
-OCTET STRING. This is backward compatible: classical verifiers ignore the
-unknown extension; our verifier checks both.
+key (ECDSA P-256 or Ed25519) using standard X.509 and carries the PQC public
+key in a non-critical extension (OID 1.3.6.1.4.1.99999.2). The PQC co-signature
+over the certificate is a separate CBOR bundle that the builder returns next to
+the certificate. This is backward compatible: classical verifiers ignore the
+unknown extension; ``verify_cosig`` checks the bundle against the certificate.
 
-Note on the OID 1.3.6.1.4.1.99999.1: this is a placeholder. A real
+Note on the OID 1.3.6.1.4.1.99999.2: this is a placeholder. A real
 deployment would need a registered OID from IANA or a private enterprise
 arc. We document this prominently so it's never accidentally used as-is
 in production.
@@ -335,6 +336,9 @@ class HybridCertificateBuilder:
             bundle = _ser.loads(cosig_bundle)
         except Exception as exc:
             raise KeyParseError("cbor", f"Failed to decode cosig bundle: {exc}") from exc
+
+        if not isinstance(bundle, dict):
+            raise KeyParseError("cbor", "cosig bundle is not a map")
 
         algo = bundle.get("algo", "")
         sig = bytes(bundle.get("sig", b""))

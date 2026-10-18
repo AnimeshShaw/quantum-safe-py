@@ -183,7 +183,7 @@ class JWTSigner:
         now = int(time.time())
 
         # Merge standard claims with caller-supplied claims.
-        # Caller claims take precedence except for iat.
+        # Caller claims take precedence, including iat and exp, so a caller can set both.
         full_claims: dict[str, Any] = {}
         if self._issuer:
             full_claims["iss"] = self._issuer

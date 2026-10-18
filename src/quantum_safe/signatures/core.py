@@ -351,7 +351,8 @@ class Sign:
 
         Returns:
             SignedMessage containing the message, signature, algorithm,
-            context, signer fingerprint, and timestamp. The SignedMessage
+            context and timestamp. ``signer_fingerprint`` is empty here (this method has only
+            the secret key); use :meth:`sign_with_fingerprint` to record it. The SignedMessage
             is self-contained — pass it to verify() directly.
 
         Raises:

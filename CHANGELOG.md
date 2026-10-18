@@ -28,6 +28,12 @@ All notable changes to quantum-safe are documented here.
 - `Envelope.open()` without `expected_aad=` still accepts any AAD; its warning is now an `AadOmittedWarning` (was a `DeprecationWarning`, hidden by default).
 - `AuditPolicy` and `AuditPolicy.from_dict` / `from_file` now fail closed: an unknown field (for example a misspelt `min_security_lvl`), a string where a boolean is expected (`"false"` is truthy), or an invalid `require_migration_state` raises `ValueError`. Policy files that carried such mistakes were silently weaker than they read; they now need correcting. `version` is still accepted. `qs-audit scan` exits non-zero with a message for an unreadable policy or inventory.
 - `AuditPolicy.transition()` and `permissive()` set `require_migration_state="classical_only"` so they keep tolerating classical-only keys now that the field is enforced. Default pass/fail for source scans without an inventory is unchanged.
+- **`AuditPolicy`: a MEDIUM finding in `fail_on` is now a violation** (`classical_crypto_detected`, unless `allow_classical_only` is set). `AuditPolicy.strict()` lists MEDIUM and used to ignore it.
+- **The scanner's `exclude` patterns match paths** (`tests/**`, `scripts/s.py`) as the CLI help documents, and `*.egg-info` directories are skipped. Before, only a file or directory name matched.
+- **Scanner rules `QS050` / `QS051` (pycryptodome RSA / ECC) can fire**: they had no call patterns. `QS030` no longer reports `hashlib.sha224`. `Scanner.scan_source` sorts its findings like the other entry points.
+- **Compliance report:** the broken-hash / 3DES control is `SP800131A-1` (NIST SP 800-131A; it was labelled SP 800-208) and also covers `QS021`; `QS050` / `QS051` count against the FIPS 203 and FIPS 204 controls, so a file with only those findings is no longer reported compliant.
+- **Key inventory and SBOM:** `-v2` signature names classify like their base names; the SBOM knowledge base knows `quantum-safe-py`, matches package names as pip does, lists `cryptography` ML-KEM / ML-DSA from 48.0, compares `48.0` with `48.0.0` correctly and takes a requirement's version only from `==`, `~=`, `>=` and `>`.
+- `qs-audit scan --metadata` needs `KEY=VALUE`; the SARIF, SBOM and `--version` output name the installed version (they said 0.1.0).
 
 ### Fixed
 
@@ -37,6 +43,9 @@ All notable changes to quantum-safe are documented here.
 - **COSE parsing has one reading per message.** `verify_sign1`, `inspect_sign1` and `decode_cose_key` refuse indefinite-length and non-minimal encodings, duplicate map labels, a header label present in both the protected and unprotected buckets, and trailing bytes: the re-encoding of what was decoded must equal the input. quantum-safe-ts applies the same rules. (Found by review before release; tests in `test_cose_strictness.py`.)
 - **`FileMigrationStore` stale-lock breaking re-checks what it moved**: a lock that replaced the stale one between the age check and the rename is put back instead of removed, so a live holder is not turned into a "lock lost" failure by a concurrent waiter. Writes were never unsafe (ownership is checked before every rename).
 - **CBOM: SLH-DSA OIDs corrected.** `SLH-DSA-SHAKE-128s` and `-256s` were listed with the SHA2 variants' OIDs (...3.20 and ...3.24); the SHAKE sets are ...3.26 and ...3.30 (FIPS 205 / RFC 9909), which is what quantum-safe-ts already had. All twelve sets are now listed with their own OID.
+- **`MigrationStateManager` no longer overwrites a history it cannot read**: the transition raises `ValueError` and leaves the stored bytes alone (it used to start a new history and lose the audit trail).
+- **`qs-migrate upgrade-key --force` puts the previous files back** if it fails after replacing one of them, instead of leaving a new secret key beside an old public key.
+- `HybridCertificateBuilder.verify_cosig` raises `KeyParseError` for a bundle that is not a map; the pyca backend lets `UnsupportedAlgorithm` / `BackendNotAvailable` through from `sign`; `__version_info__` is `(0, 4, 0)`; install hints name `quantum-safe-py`.
 
 ### Documentation
 

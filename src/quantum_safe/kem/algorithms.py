@@ -213,7 +213,8 @@ DEFAULT_HYBRID_CLASSICAL = "X25519"
 DEFAULT_HYBRID_PQC = "ML-KEM-768"
 
 # Minimum NIST level we'll use in non-strict mode.
-# Algorithms below this need explicit opt-in via allow_low_security=True.
+# An algorithm below this level would need opt-in via allow_low_security=True; the registry
+# has none today, so the flag has no effect.
 MINIMUM_NIST_LEVEL = NISTLevel.L1
 
 

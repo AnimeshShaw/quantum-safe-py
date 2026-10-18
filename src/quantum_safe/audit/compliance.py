@@ -186,7 +186,7 @@ class NISTComplianceChecker:
             "title": "ML-KEM key encapsulation",
             "description": "Key encapsulation shall use ML-KEM-512, ML-KEM-768, or ML-KEM-1024 "
             "as specified in FIPS 203. RSA and ECDH are not quantum-safe.",
-            "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016"},
+            "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016", "QS050", "QS051"},
             "remediation": "Replace RSA/ECDH key exchange with HybridKEM() "
             "(X25519+ML-KEM-768 by default).",
         },
@@ -196,7 +196,7 @@ class NISTComplianceChecker:
             "title": "ML-DSA digital signatures",
             "description": "Digital signatures shall use ML-DSA-44, ML-DSA-65, or ML-DSA-87 "
             "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
-            "check_rule_ids": {"QS001", "QS010", "QS015"},
+            "check_rule_ids": {"QS001", "QS010", "QS015", "QS050", "QS051"},
             "remediation": "Replace ECDSA/RSA/DSA signatures with HybridSign() "
             "(Ed25519+ML-DSA-65-v2 by default).",
         },
@@ -213,14 +213,14 @@ class NISTComplianceChecker:
             "informational": True,
         },
         {
-            "id": "SP800208-3.1",
-            "standard": "NIST SP 800-208",
-            "title": "Deprecated algorithm deprecation",
-            "description": "SHA-1 and MD5 must not be used for any cryptographic purpose. "
-            "AES-128 should be phased out in favor of AES-256.",
-            "check_rule_ids": {"QS030", "QS031", "QS020"},
+            "id": "SP800131A-1",
+            "standard": "NIST SP 800-131A",
+            "title": "Disallowed and deprecated algorithms",
+            "description": "SHA-1, MD5 and 3DES must not be used for any cryptographic purpose. "
+            "AES-128 should be replaced by AES-256, as CNSA 2.0 requires.",
+            "check_rule_ids": {"QS030", "QS031", "QS020", "QS021"},
             "remediation": "Replace SHA-1/MD5 with SHA-256 or SHA3-256. "
-            "Replace AES-128 with AES-256.",
+            "Replace 3DES and AES-128 with AES-256.",
         },
         {
             "id": "CISA-PQC-1",

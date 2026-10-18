@@ -31,6 +31,8 @@ import json
 import sys
 from pathlib import Path
 
+from quantum_safe._version import __version__
+
 try:
     import click
 
@@ -58,7 +60,7 @@ def main() -> None:
 if _HAS_CLICK:
 
     @click.group(no_args_is_help=True)
-    @click.version_option(version="0.1.0", prog_name="qs-audit")
+    @click.version_option(version=__version__, prog_name="qs-audit")
     def _cli() -> None:
         """quantum-safe PQC audit tools."""
 
@@ -167,9 +169,10 @@ if _HAS_CLICK:
         # Parse metadata pairs
         meta: dict[str, str] = {}
         for item in metadata:
-            if "=" in item:
-                k, _, val = item.partition("=")
-                meta[k.strip()] = val.strip()
+            if "=" not in item:
+                raise click.UsageError(f"--metadata expects KEY=VALUE, got {item!r}")
+            k, _, val = item.partition("=")
+            meta[k.strip()] = val.strip()
 
         inventory = None
         if inventory_file:

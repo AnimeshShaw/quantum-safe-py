@@ -50,6 +50,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any
 
+from quantum_safe._version import __version__
+
 
 class Severity(IntEnum):
     """Finding severity levels, ordered so higher = worse."""
@@ -241,7 +243,7 @@ class ScanReport:
                     "tool": {
                         "driver": {
                             "name": "qs-audit",
-                            "version": "0.1.0",
+                            "version": __version__,
                             "rules": rules,
                         }
                     },
@@ -391,7 +393,7 @@ _RULES: list[dict[str, Any]] = [
         "message": "SHA-1 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or SHA-3",
         "imports": {"cryptography.hazmat.primitives.hashes", "hashlib"},
-        "calls": {("hashes", "SHA1"), ("hashlib", "sha1"), ("hashlib", "sha224")},
+        "calls": {("hashes", "SHA1"), ("hashlib", "sha1")},
         "string_patterns": {"SHA1", "SHA-1"},
     },
     {
@@ -421,7 +423,12 @@ _RULES: list[dict[str, Any]] = [
         "message": "pycryptodome RSA usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridKEM or HybridSign",
         "imports": {"Crypto.PublicKey.RSA", "Cryptodome.PublicKey.RSA"},
-        "calls": set(),
+        "calls": {
+            ("RSA", "generate"),
+            ("RSA", "construct"),
+            ("RSA", "import_key"),
+            ("RSA", "importKey"),
+        },
     },
     {
         "id": "QS051",
@@ -429,7 +436,11 @@ _RULES: list[dict[str, Any]] = [
         "message": "pycryptodome ECC usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridSign",
         "imports": {"Crypto.PublicKey.ECC", "Cryptodome.PublicKey.ECC"},
-        "calls": set(),
+        "calls": {
+            ("ECC", "generate"),
+            ("ECC", "construct"),
+            ("ECC", "import_key"),
+        },
     },
 ]
 
@@ -580,6 +591,20 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
 # ---------------------------------------------------------------------------
 
 
+def _is_excluded(name: str, rel_path: str, patterns: set[str]) -> bool:
+    """True if a glob in ``patterns`` matches the entry's name or its path below the scan root.
+
+    ``rel_path`` uses forward slashes. A directory also matches a pattern written with a trailing
+    ``/`` or ``/**``, such as ``tests/**``.
+    """
+    return any(
+        fnmatch.fnmatch(name, pat)
+        or fnmatch.fnmatch(rel_path, pat)
+        or fnmatch.fnmatch(rel_path + "/", pat)
+        for pat in patterns
+    )
+
+
 class Scanner:
     """Scans Python source files for classical cryptography usage.
 
@@ -621,8 +646,12 @@ class Scanner:
 
         Args:
             directory:          Root directory to scan.
-            exclude:            Glob patterns to exclude.
-                                Default excludes: .git, __pycache__, .venv, node_modules.
+            exclude:            Glob patterns to exclude. A pattern is matched against a file or
+                                directory name and against its path below ``directory``
+                                (forward slashes), so ``tests`` and ``tests/**`` both work.
+                                Default excludes: .git, __pycache__, .venv, venv, node_modules,
+                                .mypy_cache, .pytest_cache, dist, build, ``*.egg-info``. Directories
+                                whose name starts with a dot are never entered.
             max_file_size_kb:   Skip files larger than this
                                 (avoid scanning minified/generated code).
 
@@ -667,11 +696,12 @@ class Scanner:
             filename: Name used as the report root and as ``Finding.file``.
 
         Returns:
-            ScanReport with the findings in visit order. Source that does not parse is recorded
-            in ``errors`` and ``files_scanned`` stays 0.
+            ScanReport with the findings sorted by line and column. Source that does not parse is
+            recorded in ``errors`` and ``files_scanned`` stays 0.
         """
         report = ScanReport(root=filename)
         cls._scan_source_text(source, filename, report)
+        report.findings.sort(key=lambda f: (f.file, f.line, f.col))
         return report
 
     # ------------------------------------------------------------------
@@ -686,13 +716,19 @@ class Scanner:
     ) -> Iterator[pathlib.Path]:
         """Yield .py files under root, respecting exclusions."""
         for dirpath, dirnames, filenames in os.walk(root):
-            # Prune excluded directories in-place
-            dirnames[:] = [d for d in dirnames if d not in excluded and not d.startswith(".")]
+            rel_dir = pathlib.PurePath(os.path.relpath(dirpath, root)).as_posix()
+            prefix = "" if rel_dir == "." else rel_dir + "/"
+            # Prune excluded directories in-place (hidden directories are never entered)
+            dirnames[:] = [
+                d
+                for d in dirnames
+                if not d.startswith(".") and not _is_excluded(d, prefix + d, excluded)
+            ]
             for filename in filenames:
                 if not filename.endswith(".py"):
                     continue
-                # Check filename against exclusion patterns (supports fnmatch globs)
-                if any(fnmatch.fnmatch(filename, pat) for pat in excluded):
+                # A pattern may name the file or its path below the scanned directory
+                if _is_excluded(filename, prefix + filename, excluded):
                     continue
                 full = pathlib.Path(dirpath) / filename
                 try:

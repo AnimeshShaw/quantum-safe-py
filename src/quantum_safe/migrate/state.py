@@ -337,7 +337,7 @@ class MigrationStateManager:
             # History first, then the current state: a crash between the two
             # leaves _current behind the audit log rather than the log behind
             # the state.
-            history = self._load_history(key_id)
+            history = self._history_for_write(key_id, self._store.get(f"{key_id}_history"))
             history.append(record.to_dict())
             self._store[f"{key_id}_history"] = _ser.dumps(history)
             self._store[f"{key_id}_current"] = record.to_bytes()
@@ -382,7 +382,7 @@ class MigrationStateManager:
         history_key = f"{key_id}_history"
         for _ in range(_MAX_CAS_ATTEMPTS):
             raw = store.get(history_key)
-            history = self._parse_history(raw)
+            history = self._history_for_write(key_id, raw)
             current = self._state_from(history, key_id)
             if current is not None and current != from_state:
                 raise ValueError(
@@ -506,6 +506,31 @@ class MigrationStateManager:
             else:
                 counts["unknown"] += 1
         return counts
+
+    def _history_for_write(self, key_id: str, raw: bytes | None) -> list[dict[str, Any]]:
+        """The stored history of ``key_id``, for a write that will append to it.
+
+        An absent history is ``[]``. A history that is present but cannot be read raises
+        ``ValueError``: appending to ``[]`` would replace the existing audit trail, so the write is
+        refused until the stored value is repaired or removed. ``raw`` is the stored bytes when the
+        caller read for ``<key_id>_history`` (``None`` when the entry is absent).
+        """
+        history_key = f"{key_id}_history"
+        if raw is None:
+            return []
+        try:
+            data = _ser.loads(raw)
+        except Exception as exc:
+            raise ValueError(
+                f"The migration history of key '{key_id}' cannot be read; refusing to overwrite "
+                f"it. Repair or remove the stored '{history_key}' entry."
+            ) from exc
+        if not isinstance(data, list):
+            raise ValueError(
+                f"The migration history of key '{key_id}' is not a list; refusing to overwrite "
+                f"it. Repair or remove the stored '{history_key}' entry."
+            )
+        return data
 
     def _load_history(self, key_id: str) -> list[dict[str, Any]]:
         """The stored history of ``key_id`` as record dicts; ``[]`` if absent or unreadable."""

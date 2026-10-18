@@ -80,3 +80,25 @@ on quantum-safe-ts, and **not** on 0.3.0 or earlier.
 * ``HybridSign(hedged=False)`` without a suite keeps selecting the original format (``-v2`` is always
   hedged), so existing unhedged verifiers need no change.
 * Never use the same key material in both formats.
+
+Audit and scanner corrections
+-----------------------------
+
+These change what ``qs-audit`` and the scanner report; the output formats are unchanged.
+
+* ``fail_on`` now applies to every severity it names. A policy with ``MEDIUM`` in ``fail_on``
+  (``AuditPolicy.strict()``) reports MEDIUM findings as ``classical_crypto_detected`` violations
+  unless ``allow_classical_only`` is set; before, they were ignored.
+* ``--exclude`` and the ``exclude`` argument match a path below the scanned directory as well as a
+  name, so ``tests/**`` works as documented, and ``*.egg-info`` directories are skipped.
+* ``QS050`` and ``QS051`` (pycryptodome RSA and ECC) report ``generate``, ``construct`` and
+  ``import_key`` calls; before they could not fire. ``QS030`` no longer reports ``hashlib.sha224``.
+* The compliance control for broken hashes and 3DES is ``SP800131A-1`` (NIST SP 800-131A); it was
+  labelled ``SP800208-3.1``. It now includes ``QS021``, and the RSA/ECC rules ``QS050`` and ``QS051``
+  count against the FIPS 203 and FIPS 204 controls.
+* ``Ed25519+ML-DSA-65-v2`` and the other ``-v2`` signature names are recognised by the key
+  inventory instead of being reported as unknown algorithms.
+* ``qs-audit scan --metadata`` requires ``KEY=VALUE`` and exits with a usage error otherwise.
+* The SBOM knowledge base lists ``cryptography`` ML-KEM and ML-DSA support from 48.0, knows the
+  library as ``quantum-safe-py``, matches package names the way pip does, and reads only the lower
+  bounds (``==``, ``~=``, ``>=``, ``>``) of a requirement as its version.

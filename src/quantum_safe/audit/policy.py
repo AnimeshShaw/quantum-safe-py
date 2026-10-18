@@ -277,7 +277,7 @@ class AuditPolicy:
 
             # Check if this finding's severity triggers a policy failure
             if finding.severity in fail_severities:
-                if not self.allow_classical_only and finding.severity >= Severity.HIGH:
+                if not self.allow_classical_only:
                     violations.append(
                         PolicyViolation(
                             rule="classical_crypto_detected",

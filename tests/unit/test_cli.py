@@ -260,7 +260,9 @@ class TestAuditScan:
     def test_version_flag(self, runner: CliRunner) -> None:
         result = runner.invoke(audit_cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        from quantum_safe import __version__
+
+        assert __version__ in result.output
 
     def test_output_to_file(self, runner: CliRunner, classical_py: Path, tmp_path: Path) -> None:
         """--output writes the report to disk and echoes the filename."""

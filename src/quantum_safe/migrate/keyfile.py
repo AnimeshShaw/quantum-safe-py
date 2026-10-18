@@ -312,6 +312,27 @@ def _write_temp(directory: Path, name: str, text: str) -> Path:
     return tmp
 
 
+def _copy_private(path: Path) -> Path:
+    """Copy ``path`` to a new hidden ``.<name>.<random>.bak`` file in its directory.
+
+    The copy is created exclusively with mode 0600, flushed and fsynced; its path is returned. It
+    holds what ``path`` held, so a ``--force`` run can put the previous file back if it fails
+    half way. The copy is removed again if writing fails.
+    """
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    backup = path.parent / f".{path.name}.{secrets.token_hex(6)}.bak"
+    fd = os.open(backup, flags, 0o600)
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(path.read_bytes())
+            fh.flush()
+            os.fsync(fh.fileno())
+    except BaseException:
+        backup.unlink(missing_ok=True)
+        raise
+    return backup
+
+
 def upgrade_key_file(
     input_path: str | Path,
     output_path: str | Path,
@@ -328,8 +349,9 @@ def upgrade_key_file(
     ``output_path`` and the hybrid public key to ``public_output_path`` (default:
     ``output_path`` + ``.pub``). The input
     file is never modified. Neither output is replaced unless ``force`` is set, both are
-    written through temporary files and renamed into place, and on any failure neither
-    exists afterwards.
+    written through temporary files and renamed into place, and on any failure the outputs are
+    as they were before the call: a file this run created is removed, and with ``force`` a file
+    it replaced is put back.
 
     Raises :class:`KeyUpgradeError` with a user-facing message on every failure.
 
@@ -394,25 +416,31 @@ def upgrade_key_file(
     existed = {out: out.exists(), pub_out: pub_out.exists()}
     temps: list[Path] = []
     placed: list[Path] = []
+    backups: dict[Path, Path] = {}
     try:
         sec_tmp = _write_temp(out.parent, out.name, secret_pem)
         temps.append(sec_tmp)
         pub_tmp = _write_temp(pub_out.parent, pub_out.name, public_pem)
         temps.append(pub_tmp)
+        for path in (out, pub_out):
+            if existed[path]:  # only with --force: keep what is replaced until both are in place
+                backups[path] = _copy_private(path)
         os.replace(sec_tmp, out)
         temps.remove(sec_tmp)
         placed.append(out)
         os.replace(pub_tmp, pub_out)
         temps.remove(pub_tmp)
     except OSError as exc:
-        # Do not leave a secret key without its public key behind. A file that was
-        # already there before a --force run cannot be restored, only one we created.
+        # Do not leave a new secret key beside the old public key (or the reverse): put back the
+        # file a --force run replaced, and remove a file this run created.
         for path in placed:
-            if not existed[path]:
+            if path in backups:
+                os.replace(backups.pop(path), path)
+            elif not existed[path]:
                 path.unlink(missing_ok=True)
         raise KeyUpgradeError(f"could not write the output: {exc.strerror or exc}") from exc
     finally:
-        for tmp in temps:
+        for tmp in [*temps, *backups.values()]:
             tmp.unlink(missing_ok=True)
 
     return UpgradedFiles(

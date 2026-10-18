@@ -70,30 +70,39 @@ class AlgorithmInfo:
     is_nist_standard: bool | None = None
 
 
+def _without_v2(name: str) -> str:
+    """``name`` without the ``-v2`` suffix that marks the native-context signature format."""
+    return name[:-3] if name.endswith("-v2") else name
+
+
 def classify_algorithm(name: str) -> AlgorithmInfo:
     """Classify an algorithm name using the library's own registries.
 
     A hybrid name is ``<classical>+<pqc>``. It is only classified as hybrid if
     both halves are known and the classical half belongs to the same family
-    (KEM or signature) as the post-quantum half; anything else is ``UNKNOWN``.
+    (KEM or signature) as the post-quantum half; anything else is ``UNKNOWN``. A signature
+    name may carry the ``-v2`` suffix (``Ed25519+ML-DSA-65-v2``, ``ML-DSA-65-v2``); it is
+    classified like the name without it.
     """
     if not isinstance(name, str):
         return AlgorithmInfo(str(name), AlgorithmKind.UNKNOWN)
     if "+" in name:
         classical, _, pqc = name.partition("+")
-        for classical_registry, pqc_registry in (
-            (CLASSICAL_KEM_ALGORITHMS, KEM_ALGORITHMS),
-            (CLASSICAL_SIGNATURE_ALGORITHMS, SIGNATURE_ALGORITHMS),
+        for classical_registry, pqc_registry, has_v2 in (
+            (CLASSICAL_KEM_ALGORITHMS, KEM_ALGORITHMS, False),
+            (CLASSICAL_SIGNATURE_ALGORITHMS, SIGNATURE_ALGORITHMS, True),
         ):
-            if classical in classical_registry and pqc in pqc_registry:
-                spec = pqc_registry[pqc]
+            pqc_name = _without_v2(pqc) if has_v2 else pqc
+            if classical in classical_registry and pqc_name in pqc_registry:
+                spec = pqc_registry[pqc_name]
                 return AlgorithmInfo(
                     name, AlgorithmKind.HYBRID, int(spec.nist_level), spec.is_nist_standard
                 )
         return AlgorithmInfo(name, AlgorithmKind.UNKNOWN)
-    for pqc_registry in (KEM_ALGORITHMS, SIGNATURE_ALGORITHMS):
-        if name in pqc_registry:
-            spec = pqc_registry[name]
+    for pqc_registry, has_v2 in ((KEM_ALGORITHMS, False), (SIGNATURE_ALGORITHMS, True)):
+        base = _without_v2(name) if has_v2 else name
+        if base in pqc_registry:
+            spec = pqc_registry[base]
             return AlgorithmInfo(
                 name, AlgorithmKind.PQC, int(spec.nist_level), spec.is_nist_standard
             )

@@ -552,7 +552,7 @@ class LiboqsKEMBackend(AbstractKEMBackend):
             kem = oqs.KeyEncapsulation(liboqs_name, secret_key=bytes(sk_buf))
             shared_secret = kem.decap_secret(ciphertext)
             result = bytes(shared_secret)
-            # 32 bytes expected for all standardized algorithms
+            # 32 bytes for ML-KEM, 64 for the larger shared secrets some mechanisms return
             if len(result) not in (32, 64):
                 raise DecapsulationError(algo=algorithm)
             return result

@@ -182,7 +182,7 @@ class PycaSignatureBackend(AbstractSignatureBackend):
             return bytes(
                 self._private(algorithm, secret_key).sign(bytes([len(context)]) + context + message)
             )
-        except ValueError:
+        except (ValueError, UnsupportedAlgorithm, BackendNotAvailable):
             raise
         except Exception as exc:
             raise CryptoError(
@@ -263,7 +263,7 @@ class PycaSignatureBackend(AbstractSignatureBackend):
             return bytes(
                 self._private(algorithm, secret_key).sign(bytes(message), bytes(context) or None)
             )
-        except ValueError:
+        except (ValueError, UnsupportedAlgorithm, BackendNotAvailable):
             raise
         except Exception as exc:
             raise CryptoError(
