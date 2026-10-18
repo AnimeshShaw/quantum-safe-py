@@ -36,6 +36,7 @@ from __future__ import annotations
 import hashlib
 import os
 import struct
+from collections import deque
 from collections.abc import Iterable, Iterator
 from typing import Any, BinaryIO
 
@@ -254,6 +255,14 @@ class StreamSealer(_Cipher):
 
     def seal_chunk(self, plaintext: bytes, last: bool = False) -> bytes:
         """Seal the next chunk. Pass ``last=True`` for the final one (exactly once)."""
+        return self._seal(plaintext, last, copy=True)
+
+    def _seal(self, plaintext: Any, last: bool, copy: bool) -> bytes:  # noqa: ANN401
+        """Seal one chunk. ``copy=False`` lets ``seal_stream`` pass a view of its own bytes.
+
+        The checks and the nonce handling are the same for both; only the defensive ``bytes()``
+        copy of the caller's buffer is skipped, because the caller here owns the buffer.
+        """
         if self._finished:
             raise ValueError("stream is finished; no further chunks are accepted")
         if len(plaintext) > self.chunk_size or (not last and len(plaintext) != self.chunk_size):
@@ -261,7 +270,9 @@ class StreamSealer(_Cipher):
                 "plaintext chunk has the wrong length: every chunk except the last must be exactly "
                 "the chunk size, and none may exceed it"
             )
-        out = self._aes.encrypt(self._nonce(last), bytes(plaintext), self._aad)
+        out = self._aes.encrypt(
+            self._nonce(last), bytes(plaintext) if copy else plaintext, self._aad
+        )
         self._advance(last)
         return out
 
@@ -290,6 +301,10 @@ class StreamOpener(_Cipher):
         or truncated, or the key or AAD is wrong; ``ValueError`` for a wrong length or a finished
         stream.
         """
+        return self._open(ciphertext, last, copy=True)
+
+    def _open(self, ciphertext: Any, last: bool, copy: bool) -> bytes:  # noqa: ANN401
+        """Open one chunk. ``copy=False`` lets ``open_stream`` pass a view of its own bytes."""
         if self._finished:
             raise ValueError("stream is finished or has failed; no further chunks are accepted")
         n = len(ciphertext)
@@ -298,7 +313,9 @@ class StreamOpener(_Cipher):
             self._finished = True
             raise ValueError("encrypted chunk has the wrong length for its position in the stream")
         try:
-            plaintext = self._aes.decrypt(self._nonce(last), bytes(ciphertext), self._aad)
+            plaintext = self._aes.decrypt(
+                self._nonce(last), bytes(ciphertext) if copy else ciphertext, self._aad
+            )
         except InvalidTag:
             self._finished = True
             raise
@@ -338,42 +355,88 @@ def seal_stream(
     sealer = StreamSealer(public_key, aad=aad, chunk_size=chunk_size)
     yield MAGIC + struct.pack(">I", len(sealer.header)) + sealer.header
     cs = sealer.chunk_size
-    pending = bytearray()
+    pending = bytearray()  # the bytes carried over from earlier pieces; never more than ``cs``
     for piece in _pieces(source):
-        pending += piece
+        view = memoryview(piece)
+        pos = 0
         # Emit a full chunk only when MORE data exists beyond it, so the final chunk is known last.
-        while len(pending) > cs:
-            chunk = bytes(pending[:cs])
-            del pending[:cs]
-            ct = sealer.seal_chunk(chunk, last=False)
+        if pending and len(pending) + len(view) > cs:
+            pos = cs - len(pending)
+            pending += view[:pos]
+            ct = sealer._seal(pending, False, copy=False)
+            pending.clear()
             yield struct.pack(">I", len(ct)) + ct
+        while len(view) - pos > cs:
+            ct = sealer._seal(view[pos : pos + cs], False, copy=False)
+            pos += cs
+            yield struct.pack(">I", len(ct)) + ct
+        pending += view[pos:]
     ct = sealer.seal_chunk(bytes(pending), last=True)
     yield struct.pack(">I", len(ct)) + ct
 
 
 class _Reader:
+    """Buffers the pieces a source delivers and hands out exact byte counts, in order.
+
+    The pieces are kept as read-only views (``_pieces`` already gave each one as immutable
+    ``bytes``), so a frame that lies inside one piece is returned without being copied.
+    """
+
     def __init__(self, source: Iterable[bytes] | BinaryIO) -> None:
         self._it = _pieces(source)
-        self._buf = bytearray()
+        self._views: deque[memoryview] = deque()
+        self._size = 0
         self._ended = False
 
     def fill(self, n: int) -> None:
-        while not self._ended and len(self._buf) < n:
+        while not self._ended and self._size < n:
             try:
-                self._buf += next(self._it)
+                piece = next(self._it)
             except StopIteration:
                 self._ended = True
+            else:
+                if piece:
+                    self._views.append(memoryview(piece))
+                    self._size += len(piece)
 
     def __len__(self) -> int:
-        return len(self._buf)
+        return self._size
 
     def take(self, n: int) -> bytes:
-        out = bytes(self._buf[:n])
-        del self._buf[:n]
-        return out
+        return bytes(self.take_view(n))
+
+    def take_view(self, n: int) -> memoryview | bytes:
+        """Remove and return the first ``n`` bytes (fewer if fewer are buffered)."""
+        views = self._views
+        if views and len(views[0]) >= n:
+            head = views[0]
+            out = head[:n]
+            if len(head) == n:
+                views.popleft()
+            else:
+                views[0] = head[n:]
+            self._size -= n
+            return out
+        parts = bytearray()
+        while views and len(parts) < n:
+            head = views[0]
+            need = n - len(parts)
+            if len(head) <= need:
+                parts += head
+                views.popleft()
+            else:
+                parts += head[:need]
+                views[0] = head[need:]
+        self._size -= len(parts)
+        return bytes(parts)
 
     def peek_u32(self) -> int:
-        return struct.unpack(">I", bytes(self._buf[:4]))[0]  # type: ignore[no-any-return]
+        head = bytearray()
+        for view in self._views:
+            head += view[: 4 - len(head)]
+            if len(head) >= 4:
+                break
+        return struct.unpack(">I", bytes(head))[0]  # type: ignore[no-any-return]
 
 
 def open_stream(
@@ -416,9 +479,9 @@ def open_stream(
         if len(r) < 4 + n:
             raise ValueError("stream ended inside a frame (truncated)")
         r.take(4)
-        ciphertext = r.take(n)
+        ciphertext = r.take_view(n)
         last = len(r) == 0
-        yield opener.open_chunk(ciphertext, last=last)
+        yield opener._open(ciphertext, last, copy=False)
         if last:
             return
 
