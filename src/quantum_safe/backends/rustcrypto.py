@@ -19,7 +19,7 @@ If you need those, use the liboqs backend.
 
 Installation::
 
-    pip install 'quantum-safe[rustcrypto]'
+    pip install 'quantum-safe-py[rustcrypto]'
 
 Status: The quantum-safe-py PyO3 crate is currently in development.
 This module will be fully functional when the crate reaches 0.1.0.

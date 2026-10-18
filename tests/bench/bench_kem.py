@@ -700,7 +700,7 @@ def run_all(
 
     print()
     print("Note: ML-KEM/ML-DSA benchmarks require liboqs-python.")
-    print("      Install with: pip install 'quantum-safe[liboqs]'")
+    print("      Install with: pip install 'quantum-safe-py[liboqs]'")
     print("      Then run: python tests/bench/bench_kem.py --with-pqc")
     print()
 

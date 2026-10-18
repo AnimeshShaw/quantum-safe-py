@@ -252,8 +252,8 @@ class BackendNotAvailable(BackendError):
 
     # Maps backend names to install instructions
     _INSTALL_HINTS: dict[str, str] = {
-        "liboqs": "pip install 'quantum-safe[liboqs]'",
-        "rustcrypto": "pip install 'quantum-safe[rustcrypto]'",
+        "liboqs": "pip install 'quantum-safe-py[liboqs]'",
+        "rustcrypto": "pip install 'quantum-safe-py[rustcrypto]'",
     }
 
     def __init__(self, backend: str) -> None:

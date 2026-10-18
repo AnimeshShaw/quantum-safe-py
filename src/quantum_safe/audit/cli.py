@@ -47,7 +47,7 @@ def main() -> None:
     """
     if not _HAS_CLICK:
         print(
-            "Error: click is required for the CLI. Install with: pip install 'quantum-safe[dev]'",
+            "Error: click is required for the CLI. Install with: pip install 'quantum-safe-py[dev]'",
             file=sys.stderr,
         )
         sys.exit(2)

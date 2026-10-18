@@ -14,7 +14,7 @@ is faster and doesn't require a compiled C library.
 
 Installation::
 
-    pip install 'quantum-safe[liboqs]'
+    pip install 'quantum-safe-py[liboqs]'
 
 The actual install pulls liboqs-python, which on its own does not ship a
 prebuilt liboqs binary — on first ``import oqs`` it uses a system liboqs if
