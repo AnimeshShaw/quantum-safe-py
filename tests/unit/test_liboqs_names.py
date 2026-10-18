@@ -139,3 +139,29 @@ class TestRegistrySizesFromARealBuild:
             assert _KNOWN_PUBLIC_KEY_SIZES[name] == pk
         if name in _KNOWN_SECRET_KEY_SIZES:
             assert _KNOWN_SECRET_KEY_SIZES[name] == sk
+
+
+class TestVendoredDirLookupIsCached:
+    """The bundled-liboqs lookup runs on every KEM and signature call; it must not touch the disk each time."""
+
+    def test_filesystem_is_consulted_once(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import importlib.resources
+
+        from quantum_safe.backends import liboqs as backend
+
+        calls: list[str] = []
+        real_files = importlib.resources.files
+
+        def counting_files(package: str):  # type: ignore[no-untyped-def]
+            calls.append(package)
+            return real_files(package)
+
+        backend._vendored_liboqs_dir.cache_clear()
+        monkeypatch.setattr(importlib.resources, "files", counting_files)
+        try:
+            first = backend._vendored_liboqs_dir()
+            for _ in range(50):
+                assert backend._vendored_liboqs_dir() == first
+            assert len(calls) == 1
+        finally:
+            backend._vendored_liboqs_dir.cache_clear()

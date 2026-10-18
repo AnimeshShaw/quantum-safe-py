@@ -34,6 +34,7 @@ new one per call rather than sharing instances.
 from __future__ import annotations
 
 import ctypes
+import functools
 import importlib.resources
 import os
 from pathlib import Path
@@ -306,6 +307,7 @@ _LEGACY_SPHINCS_NAMES: dict[str, str] = {
 _SIG_LIBOQS_NAMES.update(_LEGACY_SPHINCS_NAMES)
 
 
+@functools.lru_cache(maxsize=1)
 def _vendored_liboqs_dir() -> Path | None:
     """Return the bundled liboqs directory shipped inside our own wheel, if any.
 
@@ -314,6 +316,9 @@ def _vendored_liboqs_dir() -> Path | None:
     wheels). A plain `pip install -e .` / sdist install has no such directory,
     and liboqs-python falls back to its normal system-lib-or-build-from-source
     behavior.
+
+    The answer cannot change while the process runs, so it is computed once: this
+    function is on the path of every KEM and signature call.
     """
     try:
         base = Path(str(importlib.resources.files("quantum_safe"))) / "_vendor" / "liboqs"
