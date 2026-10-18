@@ -37,6 +37,11 @@ from quantum_safe.migrate.scanner import Finding, ScanReport, Severity
 
 
 class ComplianceLevel(str, Enum):
+    """The assessed compliance level of a control or of a whole report.
+
+    The members are strings, so a level compares equal to its value (``"COMPLIANT"``, ...).
+    """
+
     COMPLIANT = "COMPLIANT"
     PARTIAL = "PARTIAL"
     NON_COMPLIANT = "NON_COMPLIANT"
@@ -66,6 +71,7 @@ class ComplianceControl:
     remediation: str = ""
 
     def to_dict(self) -> dict[str, Any]:
+        """The control as a JSON-serialisable dict; ``level`` is the level's string value."""
         return {
             "control_id": self.control_id,
             "standard": self.standard,
@@ -96,13 +102,20 @@ class ComplianceReport:
 
     @property
     def non_compliant_controls(self) -> list[ComplianceControl]:
+        """The controls assessed as NON_COMPLIANT."""
         return [c for c in self.controls if c.level == ComplianceLevel.NON_COMPLIANT]
 
     @property
     def partial_controls(self) -> list[ComplianceControl]:
+        """The controls assessed as PARTIAL."""
         return [c for c in self.controls if c.level == ComplianceLevel.PARTIAL]
 
     def to_dict(self) -> dict[str, Any]:
+        """The report as a JSON-serialisable dict.
+
+        Holds the header fields, every control, a ``summary`` with the number of controls per
+        level and the metadata.
+        """
         return {
             "generated_at": self.generated_at,
             "target": self.target,
@@ -121,6 +134,7 @@ class ComplianceReport:
         }
 
     def to_json(self, indent: int = 2) -> str:
+        """Serialise :meth:`to_dict` to a JSON string indented by ``indent`` spaces."""
         return json.dumps(self.to_dict(), indent=indent)
 
     def summary_lines(self) -> list[str]:
@@ -258,6 +272,12 @@ class NISTComplianceChecker:
 
         Returns:
             ComplianceReport with one ComplianceControl per NIST requirement.
+
+        A control is NON_COMPLIANT when a HIGH or CRITICAL finding from one of its scanner rules
+        exists, PARTIAL when only lower-severity findings do, and COMPLIANT when none do.
+        Informational controls without findings, and controls without rules, are NOT_APPLICABLE.
+        The overall level is the worst of NON_COMPLIANT, PARTIAL and COMPLIANT among the controls.
+        ``target`` defaults to the scan report's root.
         """
         # Index findings by rule_id for fast lookup
         findings_by_rule: dict[str, list[Finding]] = {}

@@ -128,6 +128,11 @@ class Upgrader:
 
         Returns:
             UpgradeResult with the new hybrid KeyPair.
+
+        Raises:
+            ValueError: if ``classical_algorithm`` and ``target_pqc`` are not an approved hybrid
+                KEM combination, or the backend name is unknown.
+            BackendNotAvailable: if the requested backend is not installed.
         """
         from quantum_safe.backends import get_kem_backend
         from quantum_safe.kem.algorithms import canonical_hybrid_name, validate_hybrid_combination
@@ -198,6 +203,12 @@ class Upgrader:
 
         Returns:
             UpgradeResult with the new hybrid signing KeyPair.
+
+        Raises:
+            ValueError: if ``classical_algorithm`` and ``target_pqc`` (without any ``-v2`` suffix)
+                are not an approved hybrid signature combination, if a ``-v2`` target is not a v2
+                combination for that classical algorithm, or if the backend name is unknown.
+            BackendNotAvailable: if the requested backend is not installed.
         """
         from quantum_safe.backends import get_signature_backend
         from quantum_safe.signatures import _v2
@@ -334,6 +345,10 @@ class Upgrader:
         """Return a human-readable description of a key's migration status.
 
         Useful for reporting tools and dashboards.
+
+        The dict has the keys ``algorithm``, ``migration_state`` (the state's value),
+        ``is_hybrid``, ``needs_upgrade``, ``fingerprint`` (first 16 characters of the public key
+        fingerprint followed by ``...``), ``public_key_size`` (bytes) and ``recommendation``.
         """
         pub = keypair.public
         is_hybrid = "+" in keypair.algorithm
@@ -350,6 +365,7 @@ class Upgrader:
 
     @staticmethod
     def _recommend(state: MigrationState, is_hybrid: bool) -> str:
+        """The next-step text for a migration state; ``is_hybrid`` does not affect the result."""
         if state == MigrationState.CLASSICAL_ONLY:
             return (
                 "Upgrade to HYBRID_TRANSITION using "

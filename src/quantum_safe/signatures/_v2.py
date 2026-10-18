@@ -88,6 +88,11 @@ def base_of(algorithm: str) -> str | None:
 
 
 def require_base(algorithm: str) -> str:
+    """Return the base suite of a supported v2 identifier.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+    """
     base = base_of(algorithm)
     if base is None:
         raise UnsupportedAlgorithm(algorithm, available=all_identifiers())
@@ -95,13 +100,23 @@ def require_base(algorithm: str) -> str:
 
 
 def all_identifiers() -> list[str]:
+    """Every supported v2 identifier: the three ML-DSA suites, then each v2 hybrid."""
     out = [f"{p}{SUFFIX}" for p in V2_ML_DSA]
     out += [f"{c}+{p}{SUFFIX}" for c, ps in V2_HYBRIDS.items() for p in ps]
     return out
 
 
 def signed_input(algorithm: str, context: bytes, message: bytes) -> bytes:
-    """``M2``: the bytes both halves sign (the classical half adds a label in front)."""
+    """``M2``: the bytes both halves sign (the classical half adds a label in front).
+
+    Args:
+        algorithm: The full v2 identifier, ASCII, at most 255 bytes.
+        context: The caller's context, at most 255 bytes.
+        message: The message.
+
+    Raises:
+        ValueError: if ``algorithm`` or ``context`` is longer than 255 bytes.
+    """
     a = algorithm.encode("ascii")
     if len(a) > 255 or len(context) > 255:
         raise ValueError("algorithm and context must each be at most 255 bytes")
@@ -109,14 +124,21 @@ def signed_input(algorithm: str, context: bytes, message: bytes) -> bytes:
 
 
 def _classical_input(m2: bytes) -> bytes:
+    """The bytes the classical half signs: ``LABEL || 0x00 || M2``."""
     return LABEL + b"\x00" + m2
 
 
 def pack_components(a: bytes, b: bytes) -> bytes:
+    """Return ``len(a)`` (2 bytes, big-endian) || ``a`` || ``b``, the hybrid key framing."""
     return struct.pack(">H", len(a)) + a + b
 
 
 def unpack_components(data: bytes) -> tuple[bytes, bytes]:
+    """Split data packed by :func:`pack_components` into ``(a, b)``.
+
+    Raises:
+        ValueError: if ``data`` is shorter than its length prefix or the prefixed length.
+    """
     if len(data) < 2:
         raise ValueError("hybrid key too short")
     (n,) = struct.unpack(">H", data[:2])
@@ -140,12 +162,21 @@ def _curve(classical: str) -> tuple[int, int, Any]:
 
 
 def _curve_class(classical: str) -> Any:  # noqa: ANN401
+    """The ``cryptography`` curve class for P-384, or P-256 for any other name."""
     from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, SECP384R1
 
     return SECP384R1 if classical == "P-384" else SECP256R1
 
 
 def _classical_sign(classical: str, secret: bytes, data: bytes) -> bytes:
+    """Sign ``data`` with the classical half: Ed25519, or ECDSA as raw low-S ``r || s``.
+
+    ``secret`` is the raw Ed25519 key or a PEM-encoded EC key.
+
+    Raises:
+        UnsupportedAlgorithm: if ``classical`` is not Ed25519, P-256 or P-384.
+        ValueError: if an EC secret key is not an EC key.
+    """
     if classical == "Ed25519":
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -167,6 +198,7 @@ def _classical_sign(classical: str, secret: bytes, data: bytes) -> bytes:
 
 
 def _classical_verify(classical: str, public: bytes, data: bytes, sig: bytes) -> bool:
+    """Verify the classical half; any failure, including a high-S ECDSA signature, is False."""
     try:
         if classical == "Ed25519":
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -211,7 +243,25 @@ def sign(
     context: bytes,
     backend: AbstractSignatureBackend,
 ) -> bytes:
-    """Return the v2 signature blob for ``message`` under ``algorithm``."""
+    """Return the v2 signature blob for ``message`` under ``algorithm``.
+
+    The blob is the ML-DSA signature for an ML-DSA suite, or ``classical signature || ML-DSA
+    signature`` for a hybrid. The ML-DSA half is made with ``sign_native_context`` and the
+    context :data:`LABEL`.
+
+    Args:
+        algorithm: The full v2 identifier, e.g. ``"ML-DSA-65-v2"`` or ``"Ed25519+ML-DSA-65-v2"``.
+        secret: The secret key bytes; for a hybrid, the length-prefixed packed classical and
+            ML-DSA secret keys.
+        message: The message to sign.
+        context: The caller's context, at most 255 bytes.
+        backend: The signature backend that signs the ML-DSA half.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+        ValueError: if ``context`` is longer than 255 bytes, or a hybrid secret key is
+            truncated.
+    """
     base = require_base(algorithm)
     m2 = signed_input(algorithm, context, message)
     if "+" not in base:
@@ -230,7 +280,25 @@ def verify(
     context: bytes,
     backend: AbstractSignatureBackend,
 ) -> None:
-    """Verify a v2 blob; raises :class:`VerificationError` if it is not valid."""
+    """Verify a v2 blob; raises :class:`VerificationError` if it is not valid.
+
+    For a hybrid, both halves are always checked before the result is combined, so a failure
+    does not show which half failed.
+
+    Args:
+        algorithm: The full v2 identifier, e.g. ``"ML-DSA-65-v2"`` or ``"Ed25519+ML-DSA-65-v2"``.
+        public: The public key bytes; for a hybrid, the length-prefixed packed classical and
+            ML-DSA public keys.
+        message: The signed message. An empty message is refused.
+        blob: The v2 signature blob.
+        context: The context the verifier expects, at most 255 bytes.
+        backend: The signature backend that verifies the ML-DSA half.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+        VerificationError: if the signature is invalid, the blob or key is malformed, the
+            context is longer than 255 bytes, or the message is empty.
+    """
     base = require_base(algorithm)
     if len(context) > 255 or not message:
         raise VerificationError(algo=algorithm)

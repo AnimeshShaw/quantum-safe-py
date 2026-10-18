@@ -128,6 +128,15 @@ class JWTSigner:
         issuer: str | None = None,
         backend: str = "auto",
     ) -> None:
+        """Create a signer for the algorithm of ``keypair``.
+
+        Args:
+            keypair: The signing keypair. Its algorithm (a single ML-DSA level or a hybrid such as
+                ``Ed25519+ML-DSA-65``) goes into the token header.
+            hedged: Use hedged signing. A verifier must be built with the same value.
+            issuer: If set, added to every token as the ``iss`` claim.
+            backend: Signature backend: ``"auto"``, ``"liboqs"`` or ``"rustcrypto"``.
+        """
         self._keypair = keypair
         self._hedged = hedged
         self._issuer = issuer
@@ -164,6 +173,10 @@ class JWTSigner:
             context:     Signing context for domain separation.
                          Default b"jwt" — override to prevent cross-purpose reuse.
 
+        Claims in ``claims`` replace the automatic ones of the same name. The header is
+        ``{"alg": <key algorithm>, "typ": "JWT", "qs-version": 1}``, and the signature part is the
+        base64url of the library's signature blob.
+
         Returns:
             JWT string in the form "header.payload.signature".
         """
@@ -199,6 +212,7 @@ class JWTSigner:
 
     @property
     def algorithm(self) -> str:
+        """The signature algorithm of the signing key, as written in the token header."""
         return self._algorithm
 
 
@@ -229,6 +243,15 @@ class JWTVerifier:
         backend: str = "auto",
         hedged: bool = True,
     ) -> None:
+        """Create a verifier for the algorithm of ``public_key``.
+
+        Args:
+            public_key: The signer's public key. Tokens must carry the same algorithm in ``alg``.
+            issuer: If set, the token's ``iss`` claim must equal it.
+            audience: If set, the token's ``aud`` claim (a string or a list) must contain it.
+            backend: Signature backend: ``"auto"``, ``"liboqs"`` or ``"rustcrypto"``.
+            hedged: Must equal the signer's ``hedged`` value.
+        """
         self._public_key = public_key
         self._issuer = issuer
         self._audience = audience
@@ -237,6 +260,7 @@ class JWTVerifier:
         self._verifier = self._build_verifier(public_key.algorithm, backend, hedged)
 
     def _build_verifier(self, algorithm: str, backend: str, hedged: bool) -> Sign | HybridSign:
+        """Create the verifier: ``HybridSign`` if the algorithm contains ``+``, else ``Sign``."""
         if "+" in algorithm:
             # Use the normal constructor to ensure validate_hybrid_combination()
             # runs and unapproved algorithm pairs are rejected.
@@ -268,6 +292,10 @@ class JWTVerifier:
         Raises:
             VerificationError:    If the signature is invalid or claims fail.
             ValueError:           If the token is structurally malformed.
+            UnsupportedAlgorithm: If the header's ``alg`` differs from the verifier's algorithm.
+
+        ``exp`` and ``nbf`` are checked with a tolerance of 30 seconds. A failed ``exp``, ``nbf``,
+        ``iss`` or ``aud`` check raises ``VerificationError`` without saying which claim failed.
         """
         parts = token.split(_JWT_SEP)
         if len(parts) != 3:
@@ -346,4 +374,5 @@ class JWTVerifier:
 
     @property
     def algorithm(self) -> str:
+        """The signature algorithm of the verification key; tokens must carry it in ``alg``."""
         return self._algorithm

@@ -92,6 +92,8 @@ for _family in ("SHAKE", "SHA2"):
 
 
 class KeyType(Enum):
+    """Whether a key is the public or the secret half of a key pair."""
+
     PUBLIC = auto()
     SECRET = auto()
 
@@ -213,6 +215,10 @@ class BaseKey(ABC):
             hash_algo: Any algorithm accepted by hashlib. Defaults to sha256.
                        For BLAKE3 (faster, still secure), install the blake3
                        package — we'll detect and use it if available.
+
+        Returns:
+            The digest as lowercase hex. With ``hash_algo="blake3"`` and no ``blake3`` package
+            installed, a warning is issued and the SHA-256 fingerprint is returned.
         """
         if hash_algo == "blake3":
             try:
@@ -235,7 +241,14 @@ class BaseKey(ABC):
         return digest
 
     def fingerprint_colon(self, hash_algo: str = "sha256") -> str:
-        """Return fingerprint as colon-separated pairs: aa:bb:cc:..."""
+        """Return fingerprint as colon-separated pairs: aa:bb:cc:...
+
+        Args:
+            hash_algo: Hash algorithm, as for :meth:`fingerprint`.
+
+        Returns:
+            The hex fingerprint split into two-character pairs joined by colons.
+        """
         raw = self.fingerprint(hash_algo)
         return ":".join(raw[i : i + 2] for i in range(0, len(raw), 2))
 
@@ -258,6 +271,13 @@ class BaseKey(ABC):
             -----END QUANTUM SAFE PUBLIC KEY-----
 
         The blank line between headers and body follows RFC 7468 §2.
+
+        Returns:
+            The PEM text, ending with a newline. The body is the base64 of the CBOR payload
+            described in :meth:`to_cbor`, wrapped at 64 characters per line.
+
+        Raises:
+            UnsupportedFormatError: If the key class does not support PEM.
         """
         if "pem" not in self._supported_formats:
             raise UnsupportedFormatError("pem", self.algorithm)
@@ -289,6 +309,12 @@ class BaseKey(ABC):
                 "ktype": "pub"|"sec",
                 "key": <bstr>,       # raw key bytes
             }
+
+        Returns:
+            The CBOR-encoded map.
+
+        Raises:
+            UnsupportedFormatError: If the key class does not support CBOR.
         """
         if "cbor" not in self._supported_formats:
             raise UnsupportedFormatError("cbor", self.algorithm)
@@ -303,15 +329,24 @@ class BaseKey(ABC):
         Only public keys can be serialized to JWK by default. Serializing
         a secret key requires passing allow_secret=True and is strongly
         discouraged — use CBOR for secret key storage instead.
+
+        Returns:
+            The JWK as a dict.
+
+        Raises:
+            UnsupportedFormatError: If the key class does not support JWK. ``SecretKey`` does
+                not, so calling this on a secret key always raises.
         """
         if "jwk" not in self._supported_formats:
             raise UnsupportedFormatError("jwk", self.algorithm)
         return self._to_jwk_payload()
 
     def _to_cbor_payload(self) -> bytes:
+        """Return the CBOR encoding of :meth:`_to_cbor_payload_dict`; the PEM body is its base64."""
         return _ser.dumps(self._to_cbor_payload_dict())
 
     def _to_cbor_payload_dict(self) -> dict[str, Any]:
+        """Return the map that :meth:`to_cbor` encodes: v, algo, ms, ktype and key."""
         return {
             "v": _CURRENT_KEY_VERSION,
             "algo": self.algorithm,
@@ -321,6 +356,7 @@ class BaseKey(ABC):
         }
 
     def _to_jwk_payload(self) -> dict[str, Any]:
+        """Return the JWK dict; the base class raises ``UnsupportedFormatError``."""
         # Default: not implemented. Subclasses override for JWK support.
         raise UnsupportedFormatError("jwk", self.algorithm)
 
@@ -375,6 +411,10 @@ class BaseKey(ABC):
         """Parse PEM, returning (headers_dict, raw_cbor_bytes).
 
         Handles both public and secret key labels.
+
+        Raises:
+            KeyParseError: If ``pem`` is not a ``str``, lacks the BEGIN/END lines, has no body
+                after the blank line that ends the headers, or the body is not valid base64.
         """
         if not isinstance(pem, str):
             raise KeyParseError("pem", f"expected a str, got {type(pem).__name__}")
@@ -418,6 +458,9 @@ class PublicKey(BaseKey):
 
     Public keys are safe to share, log, and store without special handling.
     They support all serialization formats including JWK.
+
+    The constructor checks the length of ``raw`` against the known public key size of
+    ``algorithm`` for single (non-hybrid) algorithms.
     """
 
     __slots__ = ("_raw", "_algorithm", "_migration_state", "_backend_tag", "_cached_fp")
@@ -431,6 +474,20 @@ class PublicKey(BaseKey):
         migration_state: MigrationState = MigrationState.HYBRID_TRANSITION,
         backend_tag: str = "unknown",
     ) -> None:
+        """Create a public key from its raw encoding.
+
+        Args:
+            raw: The key bytes as produced by the backend (``bytes`` or ``bytearray``; stored
+                as ``bytes``).
+            algorithm: Algorithm identifier, e.g. ``"ML-KEM-768"`` or ``"X25519+ML-KEM-768"``.
+            migration_state: Migration state recorded with the key.
+            backend_tag: Name of the backend that created the key.
+
+        Raises:
+            TypeError: If ``raw`` is not ``bytes`` or ``bytearray``.
+            ValueError: If ``raw`` is empty, or if ``algorithm`` has no ``"+"`` and is a known
+                algorithm whose public key size differs from ``len(raw)``.
+        """
         if not isinstance(raw, (bytes, bytearray)):
             raise TypeError(f"raw must be bytes, got {type(raw).__name__}")
         if not raw:
@@ -453,22 +510,27 @@ class PublicKey(BaseKey):
 
     @property
     def raw_bytes(self) -> bytes:
+        """The raw public key bytes."""
         return self._raw
 
     @property
     def algorithm(self) -> str:
+        """Algorithm identifier, e.g. ``"ML-KEM-768"`` or ``"X25519+ML-KEM-768"``."""
         return self._algorithm
 
     @property
     def key_type(self) -> KeyType:
+        """Always ``KeyType.PUBLIC``."""
         return KeyType.PUBLIC
 
     @property
     def migration_state(self) -> MigrationState:
+        """The PQC migration state recorded with this key."""
         return self._migration_state
 
     @property
     def backend_tag(self) -> str:
+        """Name of the backend that created this key (``"unknown"`` if not given)."""
         return self._backend_tag
 
     def __repr__(self) -> str:
@@ -490,6 +552,7 @@ class PublicKey(BaseKey):
         return hash((self._algorithm, self._raw))
 
     def _to_jwk_payload(self) -> dict[str, Any]:
+        """Return the JWK dict: ``kty`` "AKP", ``alg``, unpadded base64url ``pub`` and metadata."""
         # Follows draft-ietf-jose-pqc-kem §3 for KEM keys.
         # The "kty" value "AKP" (Asymmetric Key Pair) is proposed in the draft.
         # For hybrid keys we encode both components.
@@ -504,7 +567,23 @@ class PublicKey(BaseKey):
 
     @classmethod
     def from_pem(cls, pem: str) -> PublicKey:
-        """Parse a public key from PEM format."""
+        """Parse a public key from PEM format.
+
+        Args:
+            pem: PEM text as produced by :meth:`to_pem`. The key is read from the CBOR body;
+                the ``qs-*`` header lines are not used.
+
+        Returns:
+            The parsed ``PublicKey``. An unknown or missing migration state becomes
+            ``HYBRID_TRANSITION``.
+
+        Raises:
+            KeyParseError: If the PEM is malformed, carries the secret key label, or its CBOR
+                payload is invalid.
+            IncompatibleKeyVersion: If the payload's format version is newer than supported.
+            ValueError: If the key bytes do not match the known public key size of the
+                algorithm.
+        """
         headers, raw_cbor = cls._parse_pem_body(pem)
 
         # Sanity-check the label told us it's a public key
@@ -539,6 +618,20 @@ class PublicKey(BaseKey):
         The CBOR decoder accepts non-minimal integer and length encodings, so
         two different byte strings can decode to the same key. Compare keys
         by value or fingerprint, never by their serialized bytes.
+
+        Args:
+            data: CBOR bytes as produced by :meth:`to_cbor`.
+
+        Returns:
+            The parsed ``PublicKey``. An unknown or missing migration state becomes
+            ``HYBRID_TRANSITION``.
+
+        Raises:
+            KeyParseError: If the data is not valid CBOR or lacks the required typed fields,
+                including a ``ktype`` of ``"pub"``.
+            IncompatibleKeyVersion: If the format version is newer than supported.
+            ValueError: If the key bytes do not match the known public key size of the
+                algorithm.
         """
         try:
             cbor_dict = _ser.loads(data)
@@ -563,6 +656,20 @@ class PublicKey(BaseKey):
         """Parse a public key from a JWK dict.
 
         ``kty`` must be ``"AKP"`` (the key type this library writes, RFC 9964).
+
+        Args:
+            jwk: A dict with ``kty``, ``alg`` and ``pub`` (unpadded base64url) as produced by
+                :meth:`to_jwk`. ``qs-migration`` is optional.
+
+        Returns:
+            The parsed ``PublicKey``. An unknown or missing ``qs-migration`` becomes
+            ``HYBRID_TRANSITION``.
+
+        Raises:
+            KeyParseError: If ``jwk`` is not a dict, ``kty`` is not ``"AKP"``, ``pub`` or
+                ``alg`` is missing or not a string, or ``pub`` is not valid base64url.
+            ValueError: If the key bytes do not match the known public key size of the
+                algorithm.
         """
         if not isinstance(jwk, dict):
             raise KeyParseError("jwk", f"expected a JSON object, got {type(jwk).__name__}")
@@ -600,6 +707,9 @@ class SecretKey(BaseKey):
     - Never appear in log messages
     - Never be serialized to JWK (which is designed for public sharing)
     - Be stored encrypted at rest (see quantum_safe.protocols.envelope)
+
+    The constructor does not check the length of ``raw``: backends encode secret keys in
+    different ways.
     """
 
     __slots__ = ("_raw", "_algorithm", "_migration_state", "_backend_tag")
@@ -614,6 +724,19 @@ class SecretKey(BaseKey):
         migration_state: MigrationState = MigrationState.HYBRID_TRANSITION,
         backend_tag: str = "unknown",
     ) -> None:
+        """Create a secret key from its raw encoding.
+
+        Args:
+            raw: The key bytes as produced by the backend (``bytes`` or ``bytearray``); they
+                are copied into a buffer that is zeroed when the key is deleted.
+            algorithm: Algorithm identifier, e.g. ``"ML-KEM-768"`` or ``"X25519+ML-KEM-768"``.
+            migration_state: Migration state recorded with the key.
+            backend_tag: Name of the backend that created the key.
+
+        Raises:
+            TypeError: If ``raw`` is not ``bytes`` or ``bytearray``.
+            ValueError: If ``raw`` is empty.
+        """
         if not isinstance(raw, (bytes, bytearray)):
             raise TypeError(f"raw must be bytes, got {type(raw).__name__}")
         if not raw:
@@ -632,6 +755,7 @@ class SecretKey(BaseKey):
 
     @property
     def raw_bytes(self) -> bytes:
+        """The raw secret key bytes, as a new immutable ``bytes`` copy on each access."""
         # Returns an immutable copy. For security-sensitive callers that need
         # to zero the copy after use, call _raw_bytearray() instead and zero
         # with ctypes.memset() in a try/finally block.
@@ -652,18 +776,22 @@ class SecretKey(BaseKey):
 
     @property
     def algorithm(self) -> str:
+        """Algorithm identifier, e.g. ``"ML-KEM-768"`` or ``"X25519+ML-KEM-768"``."""
         return self._algorithm
 
     @property
     def key_type(self) -> KeyType:
+        """Always ``KeyType.SECRET``."""
         return KeyType.SECRET
 
     @property
     def migration_state(self) -> MigrationState:
+        """The PQC migration state recorded with this key."""
         return self._migration_state
 
     @property
     def backend_tag(self) -> str:
+        """Name of the backend that created this key (``"unknown"`` if not given)."""
         return self._backend_tag
 
     def __repr__(self) -> str:
@@ -693,6 +821,19 @@ class SecretKey(BaseKey):
 
         Warning: the PEM string itself contains secret material — ensure
         it's handled appropriately (not logged, not stored in plaintext).
+
+        Args:
+            pem: PEM text as produced by :meth:`to_pem`. The key is read from the CBOR body;
+                the ``qs-*`` header lines are not used.
+
+        Returns:
+            The parsed ``SecretKey``. An unknown or missing migration state becomes
+            ``HYBRID_TRANSITION``.
+
+        Raises:
+            KeyParseError: If the PEM is malformed, carries the public key label, or its CBOR
+                payload is invalid.
+            IncompatibleKeyVersion: If the payload's format version is newer than supported.
         """
         # Parse (and validate the input type and markers) before reading the label.
         _headers, raw_cbor = cls._parse_pem_body(pem)
@@ -727,6 +868,18 @@ class SecretKey(BaseKey):
 
         Non-minimal CBOR encodings are accepted (see PublicKey.from_cbor);
         do not use serialized bytes as a key identifier.
+
+        Args:
+            data: CBOR bytes as produced by :meth:`to_cbor`.
+
+        Returns:
+            The parsed ``SecretKey``. An unknown or missing migration state becomes
+            ``HYBRID_TRANSITION``.
+
+        Raises:
+            KeyParseError: If the data is not valid CBOR or lacks the required typed fields,
+                including a ``ktype`` of ``"sec"``.
+            IncompatibleKeyVersion: If the format version is newer than supported.
         """
         try:
             cbor_dict = _ser.loads(data)
@@ -752,11 +905,24 @@ class KeyPair:
 
     This is what keygen functions return. It deliberately does NOT inherit
     from BaseKey — it's a container, not a key.
+
+    Attributes:
+        public: The public key.
+        secret: The secret key.
     """
 
     __slots__ = ("public", "secret", "_algorithm")
 
     def __init__(self, public: PublicKey, secret: SecretKey) -> None:
+        """Pair a public key with its secret key.
+
+        Args:
+            public: The public key.
+            secret: The secret key; its algorithm must equal that of ``public``.
+
+        Raises:
+            ValueError: If the two keys have different algorithms.
+        """
         if public.algorithm != secret.algorithm:
             raise ValueError(
                 f"Public key algorithm '{public.algorithm}' does not match "
@@ -768,6 +934,7 @@ class KeyPair:
 
     @property
     def algorithm(self) -> str:
+        """Algorithm identifier shared by both keys."""
         return self._algorithm
 
     def __repr__(self) -> str:
@@ -779,6 +946,10 @@ class KeyPair:
 
         The bundle contains both public and secret key material. Treat it
         with the same care as the secret key.
+
+        Returns:
+            CBOR bytes of a map with the format version, a ``bundle`` marker of ``"keypair"``
+            and the CBOR maps of the public (``pub``) and secret (``sec``) key.
         """
         return _ser.dumps(
             {
@@ -791,7 +962,18 @@ class KeyPair:
 
     @classmethod
     def from_cbor_bundle(cls, data: bytes) -> KeyPair:
-        """Deserialize a key pair from a CBOR bundle."""
+        """Deserialize a key pair from a CBOR bundle.
+
+        Args:
+            data: CBOR bytes as produced by :meth:`to_cbor_bundle`.
+
+        Returns:
+            The reconstructed ``KeyPair``.
+
+        Raises:
+            KeyParseError: If the data is not a keypair bundle or either key map is invalid.
+            ValueError: If the two keys have different algorithms.
+        """
         try:
             bundle = _ser.loads(data)
         except Exception as exc:
@@ -817,6 +999,17 @@ def generate_nonce(length: int = 32) -> bytes:
 
     Thin wrapper around os.urandom that documents our intent clearly.
     Don't use random.randbytes() — it's not cryptographically secure.
+
+    Args:
+        length: Number of bytes to return. Defaults to 32.
+
+    Returns:
+        ``length`` random bytes from ``os.urandom``.
+
+    Raises:
+        ValueError: If ``length`` is zero or negative.
+
+    A warning is issued, and the bytes are still returned, when ``length`` is below 12.
     """
     if length <= 0:
         raise ValueError(f"nonce length must be positive, got {length}")

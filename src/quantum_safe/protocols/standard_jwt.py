@@ -56,10 +56,12 @@ _ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 
 def _b64url_encode(data: bytes) -> str:
+    """Base64url encode without padding."""
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
 def _b64url_decode(s: str) -> bytes:
+    """Base64url decode, restoring the padding. Does not require the canonical spelling."""
     return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
 
 
@@ -74,10 +76,12 @@ def _b64url_decode_strict(s: str) -> bytes:
 
 
 def _json_b64(obj: Any) -> str:  # noqa: ANN401
+    """Encode an object as compact JSON, then as unpadded base64url."""
     return _b64url_encode(json.dumps(obj, separators=(",", ":")).encode("utf-8"))
 
 
 def _decode_json(part: str, what: str) -> dict[str, Any]:
+    """Decode a base64url JWT part to a JSON object; ``ValueError`` if it is not one."""
     try:
         value = json.loads(_b64url_decode(part).decode("utf-8"))
     except Exception as exc:
@@ -88,12 +92,14 @@ def _decode_json(part: str, what: str) -> dict[str, Any]:
 
 
 def _check_alg(alg: object) -> str:
+    """Return ``alg`` if it is in ``ML_DSA_JOSE_ALGS``; otherwise raise ``UnsupportedAlgorithm``."""
     if not isinstance(alg, str) or alg not in ML_DSA_JOSE_ALGS:
         raise UnsupportedAlgorithm(str(alg), available=list(ML_DSA_JOSE_ALGS))
     return alg
 
 
 def _backend() -> Any:  # noqa: ANN401
+    """The signature backend (``"auto"``) used for the raw FIPS 204 sign and verify calls."""
     from quantum_safe.backends import get_signature_backend
 
     return get_signature_backend("auto")
@@ -229,7 +235,18 @@ class StandardJwt:
                         private ``AKP`` JWK dict (needs the ``cryptography`` backend).
             issuer:     Added as the ``iss`` claim.
             expires_in: Lifetime in seconds (default 3600); ``0`` omits ``exp``.
-            kid:        Added to the header when given.
+            kid:        Added to the header when given. For a private JWK it defaults to the
+                        JWK's own ``kid``.
+
+        Returns:
+            The compact JWS ``header.payload.signature``. The header is ``{"alg": <level>,
+            "typ": "JWT"}`` (plus ``kid``) and the signature is a raw ML-DSA signature over
+            ``header.payload`` with an empty context.
+
+        Raises:
+            UnsupportedAlgorithm: If the key is not an ML-DSA-44, -65 or -87 key.
+            KeyParseError: If a private JWK is malformed.
+            ValueError: If ``expires_in`` is negative or a bool.
         """
         if isinstance(secret_key, dict):
             if kid is None:
@@ -284,6 +301,10 @@ class StandardJwt:
                           recommended for anything that should expire).
             now:          Unix time to check against (default: the clock).
 
+        Returns:
+            The verified claims dict. ``exp`` and ``nbf`` are checked with a tolerance of 30
+            seconds.
+
         Raises:
             ValueError:           the token is structurally malformed.
             UnsupportedAlgorithm: ``alg`` differs from the key's, or a ``crit``
@@ -329,9 +350,15 @@ class StandardJwt:
         now: float | None,
         alg: str,
     ) -> None:
+        """Check ``exp``, ``nbf``, ``iss`` and ``aud``; raise ``VerificationError`` on a failure.
+
+        ``exp`` and ``nbf`` must be numbers (not bools) and are compared with a 30 second
+        tolerance. The error does not say which check failed.
+        """
         current = time.time() if now is None else now
 
         def number(value: object) -> bool:
+            """True for an int or float that is not a bool."""
             return isinstance(value, (int, float)) and not isinstance(value, bool)
 
         # No detail on which check failed: callers can read the claims themselves.

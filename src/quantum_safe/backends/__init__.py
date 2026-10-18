@@ -107,7 +107,9 @@ def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
 
     Args:
         name: "auto", "liboqs", or "rustcrypto".
-              Falls back through the priority list if "auto".
+              Falls back through the priority list if "auto". "pyca" is accepted too.
+              When ``name`` is "auto", a non-empty ``QUANTUM_SAFE_BACKEND`` environment
+              variable (case-insensitive) replaces it.
 
     Raises:
         BackendNotAvailable: if the requested backend is not installed.
@@ -148,7 +150,18 @@ def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
 
 
 def get_signature_backend(name: str = "auto") -> AbstractSignatureBackend:
-    """Return the signature backend for the given name."""
+    """Return the signature backend for the given name.
+
+    Selection follows :func:`get_kem_backend`: the ``QUANTUM_SAFE_BACKEND`` environment variable
+    replaces ``"auto"``, and ``"auto"`` tries rustcrypto, liboqs, then pyca.
+
+    Args:
+        name: "auto", "liboqs", "rustcrypto" or "pyca".
+
+    Raises:
+        BackendNotAvailable: if the requested backend is not installed, or for "noble".
+        ValueError: if the backend name is unknown.
+    """
     env_override = os.environ.get("QUANTUM_SAFE_BACKEND", "").strip().lower()
     if env_override and name == "auto":
         name = env_override

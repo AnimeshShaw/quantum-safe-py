@@ -99,6 +99,7 @@ class PolicyViolation:
     finding: Finding | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        """The violation as a JSON-serialisable dict; ``finding`` is present only if one is set."""
         d: dict[str, Any] = {
             "rule": self.rule,
             "detail": self.detail,
@@ -202,6 +203,7 @@ class AuditPolicy:
 
     @property
     def fail_severity_levels(self) -> set[Severity]:
+        """The ``fail_on`` names as a set of :class:`~quantum_safe.migrate.scanner.Severity`."""
         return {Severity[s] for s in self.fail_on}
 
     def is_exempt(self, filepath: str) -> bool:
@@ -251,6 +253,19 @@ class AuditPolicy:
         Without an ``inventory`` the key controls are not evaluated; see
         :meth:`unevaluated_controls`. Passing an empty list means "there are no
         keys" and is evaluated as such.
+
+        Args:
+            findings: scanner findings. Findings in an exempt path are skipped. A finding whose
+                severity is in ``fail_on`` is a ``classical_crypto_detected`` violation when
+                ``allow_classical_only`` is false and the severity is HIGH or above, or a
+                ``critical_vulnerability`` violation when it is CRITICAL.
+            inventory: the key inventory for the key controls, or ``None`` to skip them. With
+                ``require_inventory`` set, ``None`` adds an ``inventory_required`` violation
+                whenever a key control is active.
+
+        Returns:
+            The violations, in finding order followed by inventory order; empty when the policy
+            is satisfied.
         """
         violations: list[PolicyViolation] = []
         fail_severities = self.fail_severity_levels
@@ -299,6 +314,12 @@ class AuditPolicy:
         return violations
 
     def _evaluate_inventory(self, inventory: list[InventoryEntry]) -> list[PolicyViolation]:
+        """Apply the key controls to every inventory entry and return the violations.
+
+        An entry whose algorithm cannot be classified is an ``unknown_algorithm`` violation and
+        is not checked further. ``max_classical_only_keys`` yields one violation for the whole
+        inventory, after the per-entry checks.
+        """
         violations: list[PolicyViolation] = []
         floor = MIGRATION_STATE_ORDER.index(MigrationState(self.require_migration_state))
         classical_only: list[str] = []
@@ -396,6 +417,7 @@ class AuditPolicy:
         return violations
 
     def to_dict(self) -> dict[str, Any]:
+        """The policy as a dict with one entry per field; :meth:`from_dict` accepts it back."""
         return {
             "min_security_level": self.min_security_level,
             "allow_classical_only": self.allow_classical_only,
@@ -457,6 +479,12 @@ class AuditPolicy:
 
         YAML support requires PyYAML (pip install pyyaml). Falls back to
         JSON if PyYAML is not installed.
+
+        Files ending in ``.yaml`` or ``.yml`` are parsed as YAML, all others as JSON.
+
+        Raises:
+            OSError: the file cannot be read.
+            ValueError: the content is not valid JSON (or YAML), or :meth:`from_dict` rejects it.
         """
         path = Path(path)
         text = path.read_text(encoding="utf-8")

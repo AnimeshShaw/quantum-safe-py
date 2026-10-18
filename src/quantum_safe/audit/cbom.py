@@ -156,6 +156,10 @@ PROVIDED_ASSETS: tuple[CryptoAssetSpec, ...] = (
 
 
 def _bom_ref(prefix: str, name: str, suffix: str = "") -> str:
+    """A CycloneDX ``bom-ref`` of the form ``<prefix>/<slug><suffix>``.
+
+    The slug is ``name`` lowercased with spaces and ``+`` replaced by ``-``.
+    """
     slug = name.lower().replace(" ", "-").replace("+", "-")
     return f"{prefix}/{slug}{suffix}"
 
@@ -224,6 +228,12 @@ def build_cbom(
         application_name: name recorded for the scanned application.
         serial_number: CycloneDX serial number. Generated if omitted.
         timestamp: ISO-8601 timestamp. Current UTC time if omitted.
+
+    Returns:
+        The CBOM as a JSON-serialisable dict. Each scan finding whose rule has a known algorithm
+        becomes one ``detected/...`` component carrying its file and line; findings from other
+        rules are not listed. The provided post-quantum algorithms follow as ``provided/...``
+        components. The detected count is recorded in the metadata properties.
     """
     components: list[dict[str, Any]] = []
     detected_count = 0
@@ -311,4 +321,5 @@ def build_cbom(
 
 
 def to_json(cbom: dict[str, Any], indent: int = 2) -> str:
+    """Serialise a CBOM dict to a JSON string indented by ``indent`` spaces, keeping key order."""
     return json.dumps(cbom, indent=indent, sort_keys=False)

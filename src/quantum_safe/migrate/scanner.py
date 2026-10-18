@@ -85,6 +85,7 @@ class Finding:
     fix_hint: str = ""
 
     def to_dict(self) -> dict[str, Any]:
+        """The finding as a JSON-serialisable dict; ``severity`` is the level's name."""
         return {
             "file": self.file,
             "line": self.line,
@@ -123,18 +124,22 @@ class ScanReport:
 
     @property
     def critical(self) -> list[Finding]:
+        """The findings with CRITICAL severity."""
         return [f for f in self.findings if f.severity == Severity.CRITICAL]
 
     @property
     def high(self) -> list[Finding]:
+        """The findings with HIGH severity."""
         return [f for f in self.findings if f.severity == Severity.HIGH]
 
     @property
     def medium(self) -> list[Finding]:
+        """The findings with MEDIUM severity."""
         return [f for f in self.findings if f.severity == Severity.MEDIUM]
 
     @property
     def info(self) -> list[Finding]:
+        """The findings with INFO severity."""
         return [f for f in self.findings if f.severity == Severity.INFO]
 
     @property
@@ -247,6 +252,7 @@ class ScanReport:
 
 
 def _sarif_level(severity: Severity) -> str:
+    """The SARIF level for ``severity``: error (CRITICAL, HIGH), warning (MEDIUM), note (INFO)."""
     return {
         Severity.CRITICAL: "error",
         Severity.HIGH: "error",
@@ -455,6 +461,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         self._active_rules: list[dict[str, Any]] = []
 
     def _snippet(self, lineno: int) -> str:
+        """The stripped source line at the 1-based ``lineno``, or ``""`` when out of range."""
         if 1 <= lineno <= len(self._lines):
             return self._lines[lineno - 1].strip()
         return ""
@@ -465,6 +472,11 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         rule: dict[str, Any],
         detail: str = "",
     ) -> None:
+        """Append a :class:`Finding` for ``rule`` at ``node``.
+
+        The line comes from ``node.lineno`` (0 if absent) and the column is 1-based. A non-empty
+        ``detail`` replaces ``{detail}`` in the rule's message.
+        """
         lineno = getattr(node, "lineno", 0)
         col = getattr(node, "col_offset", 0) + 1  # 1-based
         message = rule["message"].replace("{detail}", detail) if detail else rule["message"]
@@ -486,6 +498,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
     # ------------------------------------------------------------------
 
     def visit_Import(self, node: ast.Import) -> None:
+        """Record each imported name's alias and activate the rules triggered by that module."""
         for alias in node.names:
             name = alias.asname or alias.name.split(".")[0]
             self._module_aliases[name] = alias.name
@@ -496,6 +509,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """Record each ``from`` import as an alias of ``module.name``; activate matching rules."""
         module = node.module or ""
         for alias in node.names:
             local_name = alias.asname or alias.name
@@ -614,6 +628,9 @@ class Scanner:
 
         Returns:
             ScanReport with aggregated findings.
+
+        Raises:
+            FileNotFoundError: if ``directory`` does not exist.
         """
         directory = pathlib.Path(directory)
         if not directory.exists():
@@ -643,7 +660,16 @@ class Scanner:
 
     @classmethod
     def scan_source(cls, source: str, filename: str = "<string>") -> ScanReport:
-        """Scan a source string directly (useful for testing or inline analysis)."""
+        """Scan a source string directly (useful for testing or inline analysis).
+
+        Args:
+            source: Python source text.
+            filename: Name used as the report root and as ``Finding.file``.
+
+        Returns:
+            ScanReport with the findings in visit order. Source that does not parse is recorded
+            in ``errors`` and ``files_scanned`` stays 0.
+        """
         report = ScanReport(root=filename)
         cls._scan_source_text(source, filename, report)
         return report

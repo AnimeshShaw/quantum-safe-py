@@ -54,6 +54,7 @@ def _expand(seed: bytes) -> tuple[bytes, bytes]:
 
 
 def _x25519_public(secret: bytes) -> bytes:
+    """Return the 32-byte X25519 public key for a 32-byte secret key."""
     return (
         X25519PrivateKey.from_private_bytes(secret)
         .public_key()
@@ -76,6 +77,7 @@ def _x25519_exchange(secret: bytes, peer_public: bytes) -> bytes:
 
 
 def _combine(ss_m: bytes, ss_x: bytes, ct_x: bytes, pk_x: bytes) -> bytes:
+    """The X-Wing combiner: SHA3-256 over ``ss_M || ss_X || ct_X || pk_X || label``."""
     return hashlib.sha3_256(ss_m + ss_x + ct_x + pk_x + _LABEL).digest()
 
 
@@ -96,16 +98,35 @@ class XWing:
     """
 
     def __init__(self, backend: str = "auto") -> None:
+        """Create an X-Wing KEM on the given backend.
+
+        Args:
+            backend: Backend name: "auto", "liboqs", "rustcrypto" or "pyca". The backend must
+                support seeded ML-KEM-768 key generation (``keygen_from_seed``) for key
+                generation and decapsulation.
+
+        Raises:
+            BackendNotAvailable: if the requested backend is not installed.
+        """
         self._backend = get_kem_backend(backend)
 
     @property
     def algorithm(self) -> str:
+        """The algorithm name, ``"X-Wing"``."""
         return XWING_NAME
 
     # ------------------------------------------------------------------
 
     def keypair_from_seed(self, seed: bytes) -> KeyPair:
-        """Derive the key pair for a 32-byte seed (deterministic)."""
+        """Derive the key pair for a 32-byte seed (deterministic).
+
+        The public key is 1216 bytes (ML-KEM-768 public key || X25519 public key) and the secret
+        key is the seed itself.
+
+        Raises:
+            ValueError: if ``seed`` is not exactly 32 bytes.
+            UnsupportedAlgorithm: if the backend has no seeded ML-KEM key generation.
+        """
         if not isinstance(seed, (bytes, bytearray)) or len(seed) != SECRET_KEY_BYTES:
             raise ValueError(f"an X-Wing seed is exactly {SECRET_KEY_BYTES} bytes")
         d_z, sk_x = _expand(bytes(seed))
@@ -125,11 +146,18 @@ class XWing:
         return KeyPair(public=pub, secret=sec)
 
     def generate_keypair(self) -> KeyPair:
-        """Generate a fresh key pair from 32 random bytes."""
+        """Generate a fresh key pair from 32 random bytes (``os.urandom``)."""
         return self.keypair_from_seed(os.urandom(SECRET_KEY_BYTES))
 
     def encapsulate(self, public_key: PublicKey) -> tuple[CipherText, SharedSecret]:
-        """Produce a ciphertext and the 32-byte shared secret for ``public_key``."""
+        """Produce a ciphertext and the 32-byte shared secret for ``public_key``.
+
+        The ciphertext is 1120 bytes (ML-KEM-768 ciphertext || X25519 ephemeral public key).
+
+        Raises:
+            UnsupportedAlgorithm: if the key is not an X-Wing key.
+            ValueError: if the public key is not 1216 bytes.
+        """
         if public_key.algorithm != XWING_NAME:
             raise UnsupportedAlgorithm(public_key.algorithm, available=[XWING_NAME])
         raw = public_key.raw_bytes
@@ -150,6 +178,10 @@ class XWing:
         """Recover the shared secret.
 
         A modified ciphertext yields a different secret, not an error (implicit rejection).
+
+        Raises:
+            UnsupportedAlgorithm: if the key is not an X-Wing key.
+            ValueError: if the secret key is not 32 bytes or the ciphertext is not 1120 bytes.
         """
         if secret_key.algorithm != XWING_NAME:
             raise UnsupportedAlgorithm(secret_key.algorithm, available=[XWING_NAME])

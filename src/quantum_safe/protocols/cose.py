@@ -47,11 +47,21 @@ _PUBLIC_KEY_BYTES = {"ML-DSA-44": 1312, "ML-DSA-65": 1952, "ML-DSA-87": 2592}
 
 
 def sig_structure(protected: bytes, payload: bytes, external_aad: bytes = b"") -> bytes:
-    """The bytes COSE_Sign1 signs: ``["Signature1", protected, external_aad, payload]`` as CBOR."""
+    """The bytes COSE_Sign1 signs: ``["Signature1", protected, external_aad, payload]`` as CBOR.
+
+    Args:
+        protected: The serialized protected header, exactly as carried in the message.
+        payload: The payload bytes (the detached payload when the message carries none).
+        external_aad: Application data that is signed but not carried. Empty by default.
+
+    Returns:
+        The CBOR encoding of the ``Sig_structure`` array.
+    """
     return bytes(cbor2.dumps(["Signature1", bytes(protected), bytes(external_aad), bytes(payload)]))
 
 
 def _check_algorithm(algorithm: str) -> int:
+    """The COSE algorithm id of a plain ML-DSA name; ``ValueError`` for any other algorithm."""
     if algorithm not in COSE_ALGORITHMS:
         raise ValueError(
             f"COSE ML-DSA supports {', '.join(COSE_ALGORITHMS)} (plain ML-DSA, not '{algorithm}')"
@@ -78,6 +88,20 @@ def sign1(
         tagged:        Wrap in CBOR tag 18 (default). Untagged is accepted by most consumers.
         detached:      Leave the payload out of the message (it is still signed); the verifier
                        must supply it.
+
+    Returns:
+        The CBOR encoding of ``[protected, {}, payload or nil, signature]``, wrapped in tag 18 when
+        ``tagged``. The protected header holds the algorithm (label 1) and the ``kid`` (label 4);
+        the signature is plain ML-DSA over the ``Sig_structure`` with an empty context.
+
+    Raises:
+        ValueError: If the key is not a plain ML-DSA-44, -65 or -87 key.
+
+    Example::
+
+        keypair = StandardJwt.generate_keypair("ML-DSA-65")
+        message = sign1(b"payload", keypair.secret, kid=b"key-1")
+        payload = verify_sign1(message, keypair.public)
     """
     cose_alg = _check_algorithm(secret_key.algorithm)
     header: dict[int, Any] = {1: cose_alg}
@@ -92,6 +116,12 @@ def sign1(
 
 
 def _parse_sign1(data: bytes) -> tuple[list[Any], bool]:
+    """Strictly decode a COSE_Sign1 to ``([protected, unprotected, payload, signature], tagged)``.
+
+    Raises ``ValueError`` unless the input is one tag-18 or untagged four-element array of the
+    right types whose re-encoding equals the input byte for byte (definite lengths, minimal
+    integers, unique labels, no trailing bytes).
+    """
     data = bytes(data)
     if not data or len(data) > _MAX_BYTES:
         raise ValueError("not a COSE_Sign1: empty or too large")
@@ -135,6 +165,7 @@ def _parse_sign1(data: bytes) -> tuple[list[Any], bool]:
 
 
 def _protected_header(protected: bytes) -> dict[Any, Any]:
+    """Decode the serialized protected header to a map, requiring a unique minimal encoding."""
     if not protected:
         raise ValueError("the protected header is empty: the algorithm must be protected")
     try:
@@ -151,6 +182,12 @@ def _protected_header(protected: bytes) -> dict[Any, Any]:
 
 
 def _read(data: bytes) -> tuple[bytes, dict[Any, Any], dict[Any, Any], bytes | None, bytes, bool]:
+    """Parse a COSE_Sign1 into its parts and apply the structural rules shared by all readers.
+
+    Returns ``(protected bytes, protected map, unprotected map, payload or None, signature,
+    tagged)``. Raises ``ValueError`` if a label is in both headers or a ``crit`` header (label 2)
+    is present.
+    """
     (protected, unprotected, payload, signature), tagged = _parse_sign1(data)
     header = _protected_header(protected)
     if set(header) & set(unprotected):
@@ -161,6 +198,7 @@ def _read(data: bytes) -> tuple[bytes, dict[Any, Any], dict[Any, Any], bytes | N
 
 
 def _algorithm_of(header: dict[Any, Any]) -> str:
+    """The ML-DSA name for the algorithm id (label 1) of a protected header."""
     if 1 not in header:
         raise ValueError("the protected header carries no algorithm")
     name = _BY_ID.get(header[1])
@@ -196,6 +234,17 @@ def verify_sign1(
     detached_payload: bytes | None = None,
 ) -> bytes:
     """Verify a COSE_Sign1 and return its payload.
+
+    Args:
+        data: The COSE_Sign1 message, tagged or untagged.
+        public_key: The signer's ML-DSA public key; its algorithm must equal the one in the
+            protected header.
+        external_aad: The application data the signer used. Empty by default.
+        detached_payload: The payload, for a message that carries none. When the message does
+            carry a payload, this must equal it if given.
+
+    Returns:
+        The payload: the one in the message, or ``detached_payload`` for a detached message.
 
     Raises:
         ValueError:         the message is malformed, uses an unknown algorithm, or its algorithm
@@ -272,6 +321,7 @@ def keypair_from_cose_key(data: bytes) -> KeyPair:
 
 
 def _read_key_map(data: bytes) -> dict[Any, Any]:
+    """Decode a COSE_Key map that has a unique minimal encoding and kty ``AKP`` (7)."""
     try:
         key = cbor2.loads(data)
     except Exception as exc:
@@ -288,6 +338,7 @@ def _read_key_map(data: bytes) -> dict[Any, Any]:
 
 
 def _key_algorithm(key: dict[Any, Any]) -> str:
+    """The ML-DSA name for the ``alg`` (label 3) of an AKP COSE_Key; ``ValueError`` if absent."""
     if 3 not in key:
         raise ValueError("an AKP key must carry its algorithm (alg)")
     algorithm = _BY_ID.get(key[3])

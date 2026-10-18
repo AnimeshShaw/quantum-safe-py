@@ -74,6 +74,10 @@ class RustCryptoKEMBackend(AbstractKEMBackend):
     name: ClassVar[str] = "rustcrypto"
 
     def supported_algorithms(self) -> list[AlgorithmInfo]:
+        """Return the static list: ML-KEM-512, ML-KEM-768 and ML-KEM-1024 (FIPS 203).
+
+        The list does not depend on the extension being installed.
+        """
         # When quantum-safe-py is available, this will delegate to it.
         # For now return the static list — these are stable FIPS algorithms.
         return [
@@ -111,18 +115,55 @@ class RustCryptoKEMBackend(AbstractKEMBackend):
         ]
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
+        """Generate a KEM key pair with the native extension's ``kem_keygen``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-KEM-768".
+
+        Returns:
+            (public_key_bytes, secret_key_bytes), as returned by the extension.
+
+        Raises:
+            BackendNotAvailable: if the ``quantum_safe_py`` extension cannot be imported.
+        """
         qs = _import_qs_py()
         return cast(tuple[bytes, bytes], qs.kem_keygen(algorithm))
 
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
+        """Encapsulate a shared secret with the native extension's ``kem_encapsulate``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-KEM-768".
+            public_key: The recipient's public key bytes.
+
+        Returns:
+            (ciphertext_bytes, shared_secret_bytes), as returned by the extension.
+
+        Raises:
+            BackendNotAvailable: if the ``quantum_safe_py`` extension cannot be imported.
+        """
         qs = _import_qs_py()
         return cast(tuple[bytes, bytes], qs.kem_encapsulate(algorithm, public_key))
 
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
+        """Decapsulate a shared secret with the native extension's ``kem_decapsulate``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-KEM-768".
+            secret_key: The recipient's secret key bytes.
+            ciphertext: The ciphertext produced by encapsulation.
+
+        Returns:
+            The shared secret bytes, as returned by the extension.
+
+        Raises:
+            BackendNotAvailable: if the ``quantum_safe_py`` extension cannot be imported.
+        """
         qs = _import_qs_py()
         return cast(bytes, qs.kem_decapsulate(algorithm, secret_key, ciphertext))
 
     def is_available(self) -> bool:
+        """Return True if the ``quantum_safe_py`` extension can be imported."""
         try:
             _import_qs_py()
             return True
@@ -136,6 +177,10 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
     name: ClassVar[str] = "rustcrypto"
 
     def supported_algorithms(self) -> list[AlgorithmInfo]:
+        """Return the static list: ML-DSA-44, ML-DSA-65 and ML-DSA-87 (FIPS 204).
+
+        The list does not depend on the extension being installed.
+        """
         return [
             AlgorithmInfo(
                 name="ML-DSA-44",
@@ -171,6 +216,17 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
         ]
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
+        """Generate a signing key pair with the native extension's ``sig_keygen``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+
+        Returns:
+            (public_key_bytes, secret_key_bytes), as returned by the extension.
+
+        Raises:
+            BackendNotAvailable: if the ``quantum_safe_py`` extension cannot be imported.
+        """
         qs = _import_qs_py()
         return cast(tuple[bytes, bytes], qs.sig_keygen(algorithm))
 
@@ -181,6 +237,20 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
         message: bytes,
         context: bytes = b"",
     ) -> bytes:
+        """Sign a message with the native extension's ``sig_sign``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+            secret_key: The signer's secret key bytes.
+            message: The message to sign.
+            context: Domain-separation context, passed to the extension unchanged.
+
+        Returns:
+            The signature bytes, as returned by the extension.
+
+        Raises:
+            BackendNotAvailable: if the ``quantum_safe_py`` extension cannot be imported.
+        """
         qs = _import_qs_py()
         return cast(bytes, qs.sig_sign(algorithm, secret_key, message, context))
 
@@ -192,6 +262,19 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
         signature: bytes,
         context: bytes = b"",
     ) -> bool:
+        """Verify a signature with the native extension's ``sig_verify``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+            public_key: The signer's public key bytes.
+            message: The signed message.
+            signature: The signature bytes.
+            context: Must match the context used when signing.
+
+        Returns:
+            True if the extension reports the signature valid. False for an invalid signature
+            and for any exception, including the extension being unavailable.
+        """
         try:
             qs = _import_qs_py()
             return bool(qs.sig_verify(algorithm, public_key, message, signature, context))
@@ -199,6 +282,7 @@ class RustCryptoSignatureBackend(AbstractSignatureBackend):
             return False
 
     def is_available(self) -> bool:
+        """Return True if the ``quantum_safe_py`` extension can be imported."""
         try:
             _import_qs_py()
             return True

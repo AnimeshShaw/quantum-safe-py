@@ -61,6 +61,17 @@ class SharedSecret:
     __slots__ = ("_data", "_algorithm", "_is_hybrid")
 
     def __init__(self, data: bytes, algorithm: str, is_hybrid: bool = False) -> None:
+        """Wrap raw shared-secret bytes.
+
+        Args:
+            data: The shared secret. Must be exactly 32 bytes; it is copied into a mutable
+                buffer that is zeroed when the object is deleted.
+            algorithm: Name of the KEM algorithm that produced the secret.
+            is_hybrid: ``True`` if the secret came from a hybrid KEM combiner.
+
+        Raises:
+            ValueError: If ``data`` is not exactly 32 bytes long.
+        """
         if len(data) != _SHARED_SECRET_LEN:
             raise ValueError(
                 f"SharedSecret must be exactly {_SHARED_SECRET_LEN} bytes, got {len(data)}"
@@ -72,6 +83,7 @@ class SharedSecret:
 
     @property
     def algorithm(self) -> str:
+        """Name of the KEM algorithm that produced this secret."""
         return self._algorithm
 
     @property
@@ -176,6 +188,18 @@ class CipherText:
     }
 
     def __init__(self, data: bytes, algorithm: str) -> None:
+        """Wrap ciphertext bytes produced by an encapsulation.
+
+        Args:
+            data: The raw ciphertext. Must not be empty.
+            algorithm: Name of the KEM algorithm that produced the ciphertext.
+
+        Raises:
+            ValueError: If ``data`` is empty.
+
+        A ``UserWarning`` is issued, and the object is still created, when ``algorithm`` is one
+        of the ML-KEM parameter sets and ``len(data)`` differs from its FIPS 203 ciphertext size.
+        """
         if not data:
             raise ValueError("ciphertext cannot be empty")
         self._data = data
@@ -196,10 +220,12 @@ class CipherText:
 
     @property
     def algorithm(self) -> str:
+        """Name of the KEM algorithm that produced this ciphertext."""
         return self._algorithm
 
     @property
     def data(self) -> bytes:
+        """The raw ciphertext bytes."""
         return self._data
 
     def __bytes__(self) -> bytes:
@@ -241,6 +267,17 @@ class HybridCipherText:
         pqc_ct: bytes,
         algorithm: str,
     ) -> None:
+        """Hold the two component ciphertexts of a hybrid encapsulation.
+
+        Args:
+            classical_ct: Ciphertext of the classical component (the X25519 ephemeral public
+                key for the X25519 hybrids). Must not be empty.
+            pqc_ct: Ciphertext of the post-quantum component. Must not be empty.
+            algorithm: Name of the hybrid KEM algorithm that produced them.
+
+        Raises:
+            ValueError: If ``classical_ct`` or ``pqc_ct`` is empty.
+        """
         if not classical_ct:
             raise ValueError("classical_ct cannot be empty")
         if not pqc_ct:
@@ -251,14 +288,17 @@ class HybridCipherText:
 
     @property
     def algorithm(self) -> str:
+        """Name of the hybrid KEM algorithm that produced this ciphertext."""
         return self._algorithm
 
     @property
     def classical_ct(self) -> bytes:
+        """The ciphertext of the classical component."""
         return self._classical_ct
 
     @property
     def pqc_ct(self) -> bytes:
+        """The ciphertext of the post-quantum component."""
         return self._pqc_ct
 
     def to_bytes(self) -> bytes:
@@ -268,7 +308,20 @@ class HybridCipherText:
 
     @classmethod
     def from_bytes(cls, data: bytes, algorithm: str) -> HybridCipherText:
-        """Decode from length-prefixed wire format."""
+        """Decode from length-prefixed wire format.
+
+        Args:
+            data: Wire bytes as produced by :meth:`to_bytes`.
+            algorithm: Name of the hybrid KEM algorithm the ciphertext belongs to.
+
+        Returns:
+            The decoded ``HybridCipherText``.
+
+        Raises:
+            DecapsulationError: If ``data`` is shorter than its 2-byte length prefix, shorter
+                than the prefix plus the declared classical length, or has no PQC bytes after
+                the classical ciphertext.
+        """
         if len(data) < cls._LEN_PREFIX_SIZE:
             raise DecapsulationError(algo=algorithm)
 

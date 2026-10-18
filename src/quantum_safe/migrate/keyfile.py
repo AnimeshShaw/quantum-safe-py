@@ -49,7 +49,17 @@ class KeyUpgradeError(Exception):
 
 @dataclass(frozen=True)
 class UpgradedFiles:
-    """What ``upgrade_key_file`` wrote."""
+    """What ``upgrade_key_file`` wrote.
+
+    Attributes:
+        secret_path: where the hybrid secret key was written.
+        public_path: where the hybrid public key was written.
+        old_algorithm: the classical algorithm of the input key (for example ``"X25519"``).
+        new_algorithm: the hybrid algorithm of the written keys.
+        key_type: ``"kem"`` or ``"sign"``.
+        notes: the human-readable note from the :class:`~quantum_safe.migrate.upgrader.Upgrader`
+            result.
+    """
 
     secret_path: Path
     public_path: Path
@@ -86,6 +96,11 @@ def load_classical_secret(path: str | Path) -> tuple[str, bytes, bytes]:
     """Read ``path`` and return ``(algorithm, secret_raw, public_raw)``.
 
     Raises :class:`KeyUpgradeError` for anything that cannot be upgraded, saying why.
+
+    The file must be at most 64 KiB of UTF-8 text. ``algorithm`` is ``"X25519"``,
+    ``"Ed25519"``, ``"P-256"`` or ``"P-384"``. For X25519 and Ed25519 ``secret_raw`` and
+    ``public_raw`` are the 32-byte raw keys. For the elliptic-curve keys ``secret_raw`` is the
+    PKCS#8 PEM text as bytes and ``public_raw`` is the uncompressed SEC1 point.
     """
     p = Path(path)
     try:
@@ -138,6 +153,11 @@ def load_classical_secret(path: str | Path) -> tuple[str, bytes, bytes]:
 
 
 def _from_pkcs8(text: str) -> tuple[str, bytes]:
+    """Parse an unencrypted PKCS#8 PEM and return ``(algorithm, secret)``.
+
+    X25519 and Ed25519 give the 32 raw bytes; P-256 and P-384 give the key re-encoded as PKCS#8
+    PEM bytes. Any other key type or curve raises :class:`KeyUpgradeError`.
+    """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
     from cryptography.hazmat.primitives.serialization import (
@@ -186,6 +206,23 @@ def resolve_target(
     """Check ``--key-type`` and ``--target`` against the input.
 
     Returns ``(key_type, classical, pqc)``.
+
+    Args:
+        algorithm: the classical algorithm of the input key, as returned by
+            :func:`load_classical_secret`.
+        key_type: ``"kem"`` or ``"sign"``, or ``None`` to use the input's own type. Required for
+            the elliptic-curve inputs (P-256, P-384), which can serve either purpose.
+        target: the hybrid algorithm to produce, for example ``"X25519+ML-KEM-768"``, or ``None``
+            for the default of the input and key type. A signing target may end in ``-v2``.
+
+    Returns:
+        ``(key_type, classical, pqc)``: the key type, the classical component (equal to
+        ``algorithm``) and the post-quantum component of the target (``-v2`` suffix kept).
+
+    Raises:
+        KeyUpgradeError: ``key_type`` is missing for an elliptic-curve key or does not match the
+            input; ``target`` is malformed, keeps a different classical component, or is not an
+            approved combination.
     """
     if algorithm in EC_INPUTS:
         if key_type not in ("kem", "sign"):
@@ -254,6 +291,11 @@ def _check_result(
 
 
 def _write_temp(directory: Path, name: str, text: str) -> Path:
+    """Write ASCII ``text`` to a new hidden ``.<name>.<random>.tmp`` file in ``directory``.
+
+    The file is created exclusively with mode 0600, flushed and fsynced; its path is returned. It
+    is removed again if writing fails. The caller renames it into place.
+    """
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
     tmp = directory / f".{name}.{secrets.token_hex(6)}.tmp"
     # Private to the owner. The public key is not secret, but it need not be world-readable
@@ -290,6 +332,28 @@ def upgrade_key_file(
     exists afterwards.
 
     Raises :class:`KeyUpgradeError` with a user-facing message on every failure.
+
+    Args:
+        input_path: the classical secret key file (see :func:`load_classical_secret`).
+        output_path: where to write the hybrid secret key.
+        public_output_path: where to write the hybrid public key; ``None`` or an empty value gives
+            ``output_path`` + ``.pub``.
+        target: the hybrid algorithm to produce; ``None`` selects the default for the input
+            (see :func:`resolve_target`).
+        key_type: ``"kem"`` or ``"sign"``. Optional for X25519 and Ed25519 (when given it must
+            match), required for P-256 and P-384.
+        force: replace ``output_path`` and ``public_output_path`` if they already exist.
+        backend: the post-quantum backend name passed to the
+            :class:`~quantum_safe.migrate.upgrader.Upgrader` (``"auto"`` by default).
+
+    Returns:
+        An :class:`UpgradedFiles` with the paths written, the old and new algorithm, the key
+        type and the upgrade notes.
+
+    Raises:
+        KeyUpgradeError: the three paths are not distinct files, an output exists and ``force``
+            is not set, an output directory is missing, the input cannot be read or upgraded, the
+            upgraded key fails its round-trip self-check, or an output cannot be written.
     """
     from quantum_safe.migrate.upgrader import Upgrader
 

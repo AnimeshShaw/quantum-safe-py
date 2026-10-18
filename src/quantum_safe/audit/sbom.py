@@ -50,7 +50,17 @@ class PQCReadiness(str, Enum):
 
 @dataclass
 class ComponentAssessment:
-    """PQC readiness assessment for a single SBOM component."""
+    """PQC readiness assessment for a single SBOM component.
+
+    Attributes:
+        name: the component or package name.
+        version: the version taken from the SBOM or requirement, or ``None`` if there is none.
+        readiness: the assessed :class:`PQCReadiness`.
+        reason: why that status was assigned.
+        since_version: the version at which PQC support was added, when the knowledge base
+            records one.
+        action: the recommended action.
+    """
 
     name: str
     version: str | None
@@ -335,11 +345,16 @@ class SBOMEnricher:
             pycryptodome>=3.20.0
             quantum-safe==0.1.0
 
+        Blank lines and ``#`` comment lines are skipped, and extras (``[crypto]``) and environment
+        markers (after ``;``) are removed. The version is the text after the first comparison
+        operator found, up to the first comma, so for ``pkg>=1.0`` it is ``1.0``. A line without
+        an operator has no version.
+
         Args:
             requirements_txt:   Contents of a requirements.txt file.
 
         Returns:
-            List of ComponentAssessment objects.
+            List of ComponentAssessment objects, one per package line, in file order.
         """
         assessments = []
         for line in requirements_txt.splitlines():

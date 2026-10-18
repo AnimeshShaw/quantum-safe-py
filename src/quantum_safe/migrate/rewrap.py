@@ -49,7 +49,20 @@ ExpectedAad = bytes | Callable[[str], bytes] | None
 
 @dataclass
 class RewrapItem:
-    """What happened to one file."""
+    """What happened to one file.
+
+    Attributes:
+        name: the file's path relative to the source directory, with ``/`` separators.
+        status: one of ``rewrapped``, ``skipped``, ``already_migrated``, ``would_rewrap`` or
+            ``failed``.
+        from_algorithm: the algorithm of the envelope as found, or ``None`` when the file is not an
+            envelope.
+        to_algorithm: the algorithm of the envelope after re-wrapping (or of the existing migrated
+            copy), when known.
+        verified: ``True`` or ``False`` after the result was opened under ``new_secret`` and
+            compared; ``None`` when no check was made.
+        error: a reason without secrets for ``skipped`` and ``failed`` items, otherwise ``None``.
+    """
 
     name: str
     status: str
@@ -72,6 +85,11 @@ class RewrapReport:
 
     @property
     def counts(self) -> dict[str, int]:
+        """Item counts by outcome: ``rewrapped``, ``skipped`` and ``failed``, plus ``would_rewrap``.
+
+        ``skipped`` includes ``already_migrated`` items. ``would_rewrap`` is present only when a
+        dry run produced at least one such item.
+        """
         out = {"rewrapped": 0, "skipped": 0, "failed": 0}
         for item in self.items:
             if item.status == "rewrapped":
@@ -92,6 +110,7 @@ class RewrapReport:
         )
 
     def to_dict(self) -> dict[str, Any]:
+        """The report as a JSON-serialisable dict: run settings, ``counts`` and every item."""
         return {
             "started_at": self.started_at,
             "new_algorithm": self.new_algorithm,
@@ -192,10 +211,16 @@ def _parse(raw: bytes) -> tuple[SealedMessage, str] | None:
 
 
 def _encode(sealed: SealedMessage, encoding: str) -> bytes:
+    """Serialise ``sealed`` in the encoding it was read in: ASCII hex for ``"hex"``, else CBOR."""
     return sealed.to_hex().encode("ascii") if encoding == "hex" else sealed.to_bytes()
 
 
 def _write_atomic(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path`` through a flushed, fsynced temporary file and ``os.replace``.
+
+    Creates missing parent directories. The temporary file is a hidden ``.<name>.<pid>.tmp``
+    sibling that is removed if the write fails.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
@@ -242,6 +267,11 @@ def rewrap_directory(
     Returns:
         A :class:`RewrapReport`. The function never raises for a bad file; it raises ``ValueError``
         for an unusable argument combination.
+
+    Raises:
+        ValueError: ``source`` is not a directory; ``in_place`` is true and ``destination`` names
+            a different directory; ``in_place`` is false and ``destination`` is missing or is the
+            source directory.
     """
     src = Path(source)
     if not src.is_dir():

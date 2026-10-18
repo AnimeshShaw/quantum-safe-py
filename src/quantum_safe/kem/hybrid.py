@@ -171,6 +171,17 @@ class HybridKEM:
         backend: str = "auto",
         validate: bool = True,
     ) -> None:
+        """Create a hybrid KEM for a classical and a PQC algorithm.
+
+        The arguments are described in the class docstring. The algorithm string is
+        ``"<classical>+<pqc>"`` (see ``canonical_hybrid_name``).
+
+        Raises:
+            ValueError: if ``validate`` is True and the combination is not an approved hybrid.
+            BackendNotAvailable: if the requested backend is not installed.
+            UnsupportedAlgorithm: if the backend is available but does not support the PQC
+                algorithm.
+        """
         if validate:
             validate_hybrid_combination(classical, pqc)
 
@@ -191,14 +202,17 @@ class HybridKEM:
 
     @property
     def classical_algorithm(self) -> str:
+        """The classical component algorithm name, e.g. 'X25519'."""
         return self._classical
 
     @property
     def pqc_algorithm(self) -> str:
+        """The post-quantum component algorithm name, e.g. 'ML-KEM-768'."""
         return self._pqc
 
     @property
     def backend_name(self) -> str:
+        """Name of the backend used for the PQC component."""
         return self._backend.name
 
     # ------------------------------------------------------------------
@@ -217,6 +231,9 @@ class HybridKEM:
 
         Returns:
             KeyPair where both .public and .secret contain hybrid key material.
+
+        Raises:
+            UnsupportedAlgorithm: if the classical algorithm is not X25519, P-256 or P-384.
         """
         # Generate classical component
         classical_priv, classical_pub = self._gen_classical_keypair()
@@ -260,6 +277,11 @@ class HybridKEM:
             The HybridCipherText.to_bytes() gives you the wire-format bytes
             to transmit. The SharedSecret is 32 bytes of combined key material
             derived from both the classical and PQC exchanges.
+
+        Raises:
+            UnsupportedAlgorithm: if the key's algorithm doesn't match this KEM instance.
+            DecapsulationError: if the packed public key is too short, or a P-256/P-384
+                classical component is not an uncompressed point of the right length.
         """
         if public_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(
@@ -313,6 +335,7 @@ class HybridKEM:
             DecapsulationError: on structural failures. Note that ML-KEM
                 uses implicit rejection, so a bad ML-KEM ciphertext returns
                 a pseudorandom value rather than failing — this is by design.
+            UnsupportedAlgorithm: if the key's algorithm doesn't match this KEM instance.
         """
         if secret_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(
@@ -347,7 +370,8 @@ class HybridKEM:
     def _gen_classical_keypair(self) -> tuple[bytes, bytes]:
         """Generate classical ephemeral key material.
 
-        Returns (private_bytes, public_bytes).
+        Returns (private_bytes, public_bytes): raw 32-byte keys for X25519, a PKCS8 PEM private
+        key and an uncompressed-point public key for P-256 and P-384.
 
         We generate a fresh ephemeral key for every key pair. In the context
         of hybrid KEM, the classical component functions as a long-term key
@@ -382,7 +406,8 @@ class HybridKEM:
         For X25519, encapsulation = generate ephemeral keypair, compute DH.
         The 'ciphertext' is the ephemeral public key.
 
-        Returns (classical_ct_bytes, shared_secret_bytes).
+        Returns (classical_ct_bytes, shared_secret_bytes). For P-256 and P-384 the ciphertext is
+        the ephemeral uncompressed point and the secret is the ECDH x-coordinate (32 or 48 bytes).
         """
         if self._classical == "X25519":
             # Generate an ephemeral X25519 keypair
@@ -437,7 +462,7 @@ class HybridKEM:
         For X25519, the ciphertext is the sender's ephemeral public key.
         We compute DH(our_secret_key, sender_ephemeral_pub).
 
-        Returns shared_secret_bytes.
+        Returns shared_secret_bytes. Any parse or exchange failure is a ``DecapsulationError``.
         """
         if self._classical == "X25519":
             try:

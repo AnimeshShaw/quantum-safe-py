@@ -31,6 +31,8 @@ from enum import IntEnum
 
 
 class NISTLevel(IntEnum):
+    """NIST security level, 1 (L1) to 5 (L5); compares as the integer."""
+
     L1 = 1
     L2 = 2
     L3 = 3
@@ -123,6 +125,7 @@ _SLH_DSA_SETS: dict[str, tuple[int, int, int, NISTLevel]] = {
 
 
 def _register_slh_dsa() -> None:
+    """Add the twelve SLH-DSA parameter sets (SHAKE and SHA2) to ``SIGNATURE_ALGORITHMS``."""
     for family in ("SHAKE", "SHA2"):
         for variant, (pk, sk, sig, level) in _SLH_DSA_SETS.items():
             name = f"SLH-DSA-{family}-{variant}"
@@ -193,10 +196,16 @@ HEDGED_RANDOMNESS_BYTES = 32
 
 
 def canonical_hybrid_name(classical: str, pqc: str) -> str:
+    """Return the canonical hybrid name ``"<classical>+<pqc>"``, e.g. ``"Ed25519+ML-DSA-65"``."""
     return f"{classical}+{pqc}"
 
 
 def parse_hybrid_name(name: str) -> tuple[str, str]:
+    """Split a hybrid name at its first ``+`` into ``(classical, pqc)``.
+
+    Raises:
+        ValueError: if the name contains no ``+``.
+    """
     if "+" not in name:
         raise ValueError(
             f"'{name}' is not a hybrid signature algorithm name (expected 'Classical+PQC')"
@@ -206,6 +215,13 @@ def parse_hybrid_name(name: str) -> tuple[str, str]:
 
 
 def validate_hybrid_combination(classical: str, pqc: str) -> None:
+    """Check that a classical and a PQC algorithm form an approved hybrid.
+
+    Raises:
+        ValueError: if the classical algorithm is not in ``CLASSICAL_SIGNATURE_ALGORITHMS``, the
+            PQC algorithm is not in ``SIGNATURE_ALGORITHMS``, or the pair is not listed in
+            ``HYBRID_SIGNATURE_COMBINATIONS``.
+    """
     if classical not in CLASSICAL_SIGNATURE_ALGORITHMS:
         raise ValueError(
             f"Classical signature algorithm '{classical}' is not supported. "
@@ -226,6 +242,11 @@ def validate_hybrid_combination(classical: str, pqc: str) -> None:
 
 
 def get_algorithm_spec(name: str) -> SignatureAlgorithmSpec:
+    """Return the registry spec for a PQC signature algorithm.
+
+    Raises:
+        UnsupportedAlgorithm: if the name is not in ``SIGNATURE_ALGORITHMS``.
+    """
     spec = SIGNATURE_ALGORITHMS.get(name)
     if spec is None:
         from quantum_safe.exceptions import UnsupportedAlgorithm

@@ -96,6 +96,7 @@ class HybridTLSConfig:
     oqs_provider_path: str | None = None
 
     def __post_init__(self) -> None:
+        """Check that ``kem_algorithm`` has a known TLS group; ``ValueError`` otherwise."""
         if self.kem_algorithm not in _HYBRID_GROUPS:
             raise ValueError(
                 f"Unknown KEM algorithm '{self.kem_algorithm}'. "
@@ -108,6 +109,10 @@ class HybridTLSConfig:
 
         Hybrid groups are listed first. Classical groups follow as fallbacks
         if fallback_classical is True.
+
+        For a hybrid ``kem_algorithm`` the OQS provider name (for example ``x25519_mlkem768``)
+        comes first, then the IANA name (``X25519MLKEM768``), then ``X25519`` and ``P-256`` when
+        the classical fallback is on.
         """
         groups = []
 
@@ -136,6 +141,10 @@ def check_hybrid_support() -> dict[str, Any]:
         recommendation:   Human-readable recommendation
 
     This is safe to call at import time and in health checks.
+
+    The probe does not load the OQS provider: ``oqs_provider`` stays ``False`` and
+    ``hybrid_groups`` stays empty. With OpenSSL older than 3 the recommendation asks for an
+    upgrade; otherwise it points to oqs-provider.
     """
     info: dict[str, Any] = {
         "openssl_version": ssl.OPENSSL_VERSION,
@@ -190,8 +199,13 @@ def configure_hybrid_context(
         The modified ssl.SSLContext.
 
     Raises:
-        ssl.SSLError: if the requested groups aren't supported by the
-                      installed OpenSSL.
+        ssl.SSLError: if ``config.require_hybrid`` is True and the groups could not be set
+                      (the context has no ``set_groups``, or OpenSSL rejected the groups).
+
+    The minimum TLS version of the context is set to ``config.min_tls_version``. When the groups
+    cannot be set and ``require_hybrid`` is False, the context keeps classical key exchange
+    (the ECDH curve is set to ``prime256v1`` where supported) and a warning is issued. A
+    warning is also issued when ``set_groups`` raises ``ssl.SSLError``.
 
     Example::
 

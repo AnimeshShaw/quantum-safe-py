@@ -119,6 +119,7 @@ class InventoryEntry:
     migration_state: MigrationState | None = None
 
     def to_dict(self) -> dict[str, Any]:
+        """The entry as a dict; ``migration_state`` is the state's string value or ``None``."""
         return {
             "key_id": self.key_id,
             "algorithm": self.algorithm,
@@ -127,7 +128,12 @@ class InventoryEntry:
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> InventoryEntry:
-        """Build an entry from a mapping. Raises ``ValueError`` on anything malformed."""
+        """Build an entry from a mapping. Raises ``ValueError`` on anything malformed.
+
+        The mapping needs a non-empty string ``key_id`` and ``algorithm``; ``migration_state`` is
+        optional and must be a :class:`~quantum_safe.types.keys.MigrationState` value. Any other
+        field is rejected.
+        """
         if not isinstance(d, dict):
             raise ValueError(f"inventory entry must be an object, got {type(d).__name__}")
         unknown = set(d) - {"key_id", "algorithm", "migration_state"}
@@ -160,6 +166,8 @@ def load_inventory(path: str | Path) -> list[InventoryEntry]:
     ``key_id``, ``algorithm`` and, optionally, ``migration_state``. Raises
     ``ValueError`` if the file is not valid, so a CI gate cannot pass on an
     inventory it could not read.
+
+    An unreadable file raises ``OSError``.
     """
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))

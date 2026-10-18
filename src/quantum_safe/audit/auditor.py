@@ -69,18 +69,22 @@ class AuditReport:
 
     @property
     def critical_count(self) -> int:
+        """The number of CRITICAL findings in the scan report."""
         return len(self.scan_report.critical)
 
     @property
     def high_count(self) -> int:
+        """The number of HIGH findings in the scan report."""
         return len(self.scan_report.high)
 
     @property
     def medium_count(self) -> int:
+        """The number of MEDIUM findings in the scan report."""
         return len(self.scan_report.medium)
 
     @property
     def files_scanned(self) -> int:
+        """The number of Python files the scanner analysed."""
         return self.scan_report.files_scanned
 
     def summary_line(self) -> str:
@@ -101,6 +105,13 @@ class AuditReport:
     # ------------------------------------------------------------------
 
     def to_dict(self) -> dict[str, Any]:
+        """The report as a JSON-serialisable dict.
+
+        It holds the audit ID, timestamp, target and pass/fail result, per-severity finding
+        counts, the policy violations, the unevaluated controls, the number of inventory keys
+        (``None`` without an inventory), the policy, every finding, the scan errors and the
+        metadata.
+        """
         return {
             "audit_id": self.audit_id,
             "timestamp": self.timestamp,
@@ -123,10 +134,15 @@ class AuditReport:
         }
 
     def to_json(self, indent: int = 2) -> str:
+        """Serialise :meth:`to_dict` to a JSON string indented by ``indent`` spaces."""
         return json.dumps(self.to_dict(), indent=indent)
 
     def to_sarif(self) -> dict[str, Any]:
-        """Produce SARIF 2.1.0 output (for GitHub Code Scanning)."""
+        """Produce SARIF 2.1.0 output (for GitHub Code Scanning).
+
+        The document is built from the scan report's findings only; policy violations are not
+        part of it.
+        """
         return self.scan_report.to_sarif()
 
     def to_github_summary(self) -> str:
@@ -208,6 +224,9 @@ class Auditor:
 
         Returns:
             AuditReport with all findings and policy evaluation.
+
+        Raises:
+            FileNotFoundError: if ``target`` does not exist.
         """
         if policy is None:
             policy = AuditPolicy()
@@ -254,6 +273,7 @@ class Auditor:
             source:     Python source code as a string.
             filename:   Virtual filename for error messages.
             policy:     Compliance policy. Defaults to AuditPolicy().
+            metadata:   Arbitrary metadata for the report.
             inventory:  Key inventory for the policy's key controls (see ``audit``).
 
         Returns:
@@ -307,6 +327,10 @@ class Auditor:
 
         Returns:
             0 if all policies pass, 1 if any violations found.
+
+        Raises:
+            FileNotFoundError: if ``target`` does not exist.
+            OSError: if an output file cannot be written.
         """
         report = cls.audit(target, policy=policy, metadata=metadata, inventory=inventory)
 

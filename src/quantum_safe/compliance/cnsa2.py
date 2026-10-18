@@ -128,6 +128,16 @@ class Finding(str, Enum):
 
 @dataclass(frozen=True)
 class CheckResult:
+    """The verdict on one CNSA 2.0 requirement.
+
+    Attributes:
+        requirement: Name of the requirement that was checked, e.g. ``"Key establishment"``.
+        finding: The outcome, as a :class:`Finding`.
+        detail: Human-readable explanation of the outcome.
+        expected: The value the requirement calls for, when there is one.
+        actual: The value found in the configuration, when there is one.
+    """
+
     requirement: str
     finding: Finding
     detail: str
@@ -136,12 +146,17 @@ class CheckResult:
 
     @property
     def ok(self) -> bool:
+        """``True`` only when the finding is ``Finding.COMPLIANT``."""
         return self.finding is Finding.COMPLIANT
 
 
 @dataclass
 class ComplianceReport:
-    """Result of evaluating a configuration against CNSA 2.0."""
+    """Result of evaluating a configuration against CNSA 2.0.
+
+    Attributes:
+        checks: The individual :class:`CheckResult` entries, in the order they were evaluated.
+    """
 
     checks: list[CheckResult] = field(default_factory=list)
 
@@ -157,9 +172,11 @@ class ComplianceReport:
 
     @property
     def failures(self) -> list[CheckResult]:
+        """The checks whose finding is anything other than ``Finding.COMPLIANT``."""
         return [c for c in self.checks if not c.ok]
 
     def render(self) -> str:
+        """Format the report as plain text, one PASS, FAIL, GAP or PART line per check."""
         lines = [
             "CNSA 2.0 parameter-set report",
             "=" * 60,
@@ -196,6 +213,14 @@ def _check_pqc_selection(
     The whole name is validated: the PQC half must be the required parameter
     set; a hybrid with a recognised classical half is PARTIAL (see
     HYBRID_POLICY_NOTE), and anything else is NON_COMPLIANT.
+
+    Args:
+        requirement: Requirement name stored in the result.
+        algorithm: Algorithm name, with an optional ``-v2`` suffix, either ``pqc`` or
+            ``classical+pqc``.
+        required: The post-quantum parameter set the requirement calls for.
+        lower_note: Text appended to the detail when the post-quantum half is a different
+            parameter set.
     """
     # The -v2 signature format uses the same parameter sets as its base suite.
     name = algorithm.removesuffix("-v2")
@@ -300,6 +325,11 @@ def check_key_derivation(kem: str) -> CheckResult:
 
 
 def check_hash(algorithm: str) -> CheckResult:
+    """Check a hash algorithm name against the SHA-384 / SHA-512 requirement.
+
+    The name is upper-cased and given a hyphen after ``SHA`` before comparison, so ``sha384``
+    and ``SHA-384`` are treated alike.
+    """
     normalised = algorithm.upper().replace("SHA", "SHA-").replace("SHA--", "SHA-")
     if normalised in CNSA2_HASHES:
         return CheckResult(
@@ -338,6 +368,12 @@ def report(
         include_key_derivation: whether to evaluate this library's own key
             derivation hash for the ``kem`` selection (default True when
             ``kem`` is given); see :func:`check_key_derivation`.
+
+    Returns:
+        A :class:`ComplianceReport` with one check per selection supplied, the key-derivation
+        check when requested, and the software/firmware signing check when requested. Passing
+        no selections and ``include_code_signing=False`` yields an empty report, which is not
+        ``compliant``.
     """
     rep = ComplianceReport()
     if kem is not None:
@@ -393,6 +429,11 @@ def enforce(
     Code signing and key-derivation hashes are not evaluated here; this is not
     a compliance certificate (see :func:`report`).
 
+    Args:
+        kem: KEM or hybrid KEM algorithm name to check, or ``None`` to skip.
+        signature: Signature or hybrid signature algorithm name to check, or ``None`` to skip.
+        strict: Also refuse selections that :func:`report` rates PARTIAL.
+
     Raises:
         ValueError: if a selection does not meet the requirement.
     """
@@ -422,6 +463,9 @@ def pqc_kem(backend: str = "auto") -> KEM:
     CNSA 2.0 accepts standalone ML-KEM-1024 and does not require hybrid
     operation. Pair it with envelope v2 (``Envelope.seal``) for a SHA-384 key
     derivation.
+
+    Args:
+        backend: Backend selector, forwarded unchanged to ``KEM``.
     """
     from quantum_safe.kem.core import KEM
 
@@ -429,7 +473,13 @@ def pqc_kem(backend: str = "auto") -> KEM:
 
 
 def pqc_sign(backend: str = "auto", hedged: bool = True) -> Sign:
-    """Return a standalone ML-DSA-87 signer: the compliant signature choice."""
+    """Return a standalone ML-DSA-87 signer: the compliant signature choice.
+
+    Args:
+        backend: Backend selector, forwarded unchanged to ``Sign``.
+        hedged: Whether to sign with hedged (randomized) signing, forwarded unchanged to
+            ``Sign``.
+    """
     from quantum_safe.signatures.core import Sign
 
     return Sign(CNSA2_SIGNATURE, backend=backend, hedged=hedged)
@@ -449,6 +499,9 @@ def hybrid_kem(classical: str = "X25519", backend: str = "auto") -> HybridKEM:
     Args:
         classical: classical partner; a value from :data:`CNSA2_HYBRID_CLASSICAL`.
         backend: backend selector, forwarded unchanged.
+
+    Raises:
+        ValueError: If ``classical`` is not in :data:`CNSA2_HYBRID_CLASSICAL`.
     """
     from quantum_safe.kem.hybrid import HybridKEM
 
@@ -470,6 +523,11 @@ def hybrid_sign(
     what CNSA 2.0 prescribes (see :data:`HYBRID_POLICY_NOTE`). Use
     :func:`pqc_sign` for a compliant configuration. Hedged signing is left
     enabled by default.
+
+    Args:
+        classical: Classical partner algorithm, forwarded unchanged to ``HybridSign``.
+        backend: Backend selector, forwarded unchanged.
+        hedged: Whether to sign with hedged (randomized) signing, forwarded unchanged.
     """
     from quantum_safe.signatures.hybrid import HybridSign
 

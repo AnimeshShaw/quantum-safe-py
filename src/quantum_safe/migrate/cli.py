@@ -33,7 +33,11 @@ except ImportError:
 
 
 def main() -> None:
-    """Entry point for qs-migrate CLI."""
+    """Entry point for qs-migrate CLI.
+
+    Runs the click command group. When click is not installed, prints an install hint to stderr
+    and exits with status 1.
+    """
     if not _HAS_CLICK:
         print(  # noqa: T201
             "Error: click is required for the CLI. Install with: pip install click",
@@ -72,7 +76,15 @@ if _HAS_CLICK:
         help="Exit with code 1 if findings at this severity or above exist",
     )
     def scan_cmd(path: str, fmt: str, output: str | None, min_severity: str, fail_on: str) -> None:
-        """Scan PATH for classical cryptography usage."""
+        """Scan PATH for classical cryptography usage.
+
+        PATH is a file or a directory (default: the current directory). Findings below
+        --min-severity are dropped, the rest are written to stdout or to --output in the chosen
+        --format (text, json or SARIF).
+
+        Exit codes: 0 when no remaining finding reaches the --fail-on severity (or --fail-on is
+        "never"); 1 when at least one does.
+        """
         import pathlib
 
         from quantum_safe.migrate.scanner import Scanner, Severity
@@ -164,6 +176,9 @@ if _HAS_CLICK:
         The input file is never modified or deleted; keep it for classical-only clients
         until the migration is finished. Exits non-zero, having written nothing, if the
         key cannot be upgraded.
+
+        Exit codes: 0 on success; 1 when the key cannot be upgraded (the reason is printed to
+        stderr).
         """
         from quantum_safe.migrate.keyfile import KeyUpgradeError, upgrade_key_file
 
@@ -241,6 +256,11 @@ if _HAS_CLICK:
         Writes to DESTINATION (the source is not touched), or replaces files with --in-place.
         Safe to run again: files already migrated are recognised and left alone. Exits 1 if any
         file failed or did not verify.
+
+        Exit codes: 0 when every file was re-wrapped or already migrated; 1 when any file failed
+        or did not verify; 2 for a usage error (--aad together with --aad-from-path, or no
+        DESTINATION without --in-place), an unreadable or invalid key file, or any other
+        ValueError or OSError raised before the run produced a report.
         """
         import json
         from pathlib import Path
@@ -294,7 +314,11 @@ if _HAS_CLICK:
     @_cli.command("status")
     @click.argument("store-path", default=".", type=click.Path())
     def status_cmd(store_path: str) -> None:
-        """Show migration progress summary."""
+        """Show migration progress summary.
+
+        Prints a placeholder report with example Python usage of MigrationStateManager; the
+        command does not read STORE-PATH. Always exits with status 0.
+        """
         click.echo("Migration status report")
         click.echo("-" * 40)
         click.echo("(Connect to your key store via MigrationStateManager for live data)")

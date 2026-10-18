@@ -105,6 +105,7 @@ def _encapsulate(public_key: PublicKey) -> tuple[bytes, Any]:
 
 
 def _decapsulate(secret_key: SecretKey, algorithm: str, kem_ct: bytes) -> Any:  # noqa: ANN401
+    """KEM decapsulation for the suite named in the stream header. Returns the SharedSecret."""
     if algorithm == _ML_KEM_1024:
         from quantum_safe.kem.core import KEM
         from quantum_safe.types import CipherText
@@ -131,6 +132,7 @@ def _decapsulate(secret_key: SecretKey, algorithm: str, kem_ct: bytes) -> Any:  
 
 
 def _encode_header(algorithm: str, kem_ct: bytes, nonce_prefix: bytes, chunk_size: int) -> bytes:
+    """CBOR-encode the five-entry stream header (``v``, ``algo``, ``kct``, ``np``, ``cs``)."""
     return _ser.dumps(
         {
             "v": STREAM_VERSION,
@@ -187,6 +189,11 @@ def inspect_stream_header(header: bytes) -> dict[str, Any]:
 
 
 def _derive_key(shared_secret: Any, header: bytes, sha384: bool) -> bytes:  # noqa: ANN401
+    """Derive the 32-byte AES-256-GCM key from the shared secret, bound to the header's hash.
+
+    The HKDF info is ``"qs-envelope-stream-v3" || 0x00 || H(header)``; ``sha384`` selects SHA-384
+    for both H and HKDF, otherwise SHA-256 is used for both.
+    """
     digest = (hashlib.sha384 if sha384 else hashlib.sha256)(header).digest()
     return bytes(
         shared_secret.derive_key(
@@ -198,11 +205,19 @@ def _derive_key(shared_secret: Any, header: bytes, sha384: bool) -> bytes:  # no
 
 
 def _build_aad(header: bytes, caller_aad: bytes) -> bytes:
+    """Per-chunk AAD: ``u32(len(header)) || header || u32(len(aad)) || aad``, big endian."""
     return struct.pack(">I", len(header)) + header + struct.pack(">I", len(caller_aad)) + caller_aad
 
 
 class _Cipher:
+    """State shared by the sealer and the opener: AES-GCM key, nonce prefix, AAD and counter.
+
+    The chunk counter only moves forward and ``_finished`` is never cleared, so a nonce is used
+    for at most one chunk.
+    """
+
     def __init__(self, key: bytes, prefix: bytes, aad: bytes, chunk_size: int) -> None:
+        """Store the AES-256-GCM key, the 7-byte nonce prefix, the chunk AAD and the chunk size."""
         self._aes = AESGCM(key)
         self._prefix = prefix
         self._aad = aad
@@ -211,9 +226,15 @@ class _Cipher:
         self._finished = False
 
     def _nonce(self, last: bool) -> bytes:
+        """The 12-byte nonce for the current chunk: prefix, u32 counter, then 1 if ``last``."""
         return self._prefix + struct.pack(">I", self._counter) + (b"\x01" if last else b"\x00")
 
     def _advance(self, last: bool) -> None:
+        """Move to the next chunk, or mark the stream finished after the last one.
+
+        Raises ``ValueError`` (and finishes the stream) if a non-final chunk would need a counter
+        beyond ``0xFFFFFFFF``.
+        """
         if last:
             self._finished = True
         else:
@@ -237,6 +258,20 @@ class StreamSealer(_Cipher):
         aad: bytes = b"",
         chunk_size: int = DEFAULT_CHUNK_SIZE,
     ) -> None:
+        """Encapsulate to ``public_key``, derive the stream key and build the header.
+
+        Args:
+            public_key: Recipient's KEM public key: a hybrid suite (``X25519+ML-KEM-768`` and
+                similar), X-Wing or ML-KEM-1024.
+            aad: Associated data bound to every chunk. It is not stored in the stream; the
+                opener must pass the same value.
+            chunk_size: Plaintext bytes per chunk, from ``MIN_CHUNK_SIZE`` (1024) to
+                ``MAX_CHUNK_SIZE`` (16 MiB). Defaults to ``DEFAULT_CHUNK_SIZE`` (64 KiB).
+
+        Raises:
+            ValueError: If ``chunk_size`` is out of range.
+            UnsupportedAlgorithm: If the key's algorithm is not a supported stream suite.
+        """
         if not MIN_CHUNK_SIZE <= chunk_size <= MAX_CHUNK_SIZE:
             raise ValueError(
                 f"chunk size must be between {MIN_CHUNK_SIZE} and {MAX_CHUNK_SIZE} bytes"
@@ -254,14 +289,31 @@ class StreamSealer(_Cipher):
         self.header = header
 
     def seal_chunk(self, plaintext: bytes, last: bool = False) -> bytes:
-        """Seal the next chunk. Pass ``last=True`` for the final one (exactly once)."""
+        """Seal the next chunk. Pass ``last=True`` for the final one (exactly once).
+
+        Args:
+            plaintext: The chunk. Exactly ``chunk_size`` bytes unless ``last`` is true, when any
+                length up to ``chunk_size`` (including empty) is accepted.
+            last: True for the final chunk of the stream.
+
+        Returns:
+            The ciphertext of the chunk: the plaintext length plus a 16-byte tag. The caller
+            frames it for transport.
+
+        Raises:
+            ValueError: If the stream is already finished, the chunk has the wrong length, or the
+                stream has too many chunks.
+        """
         return self._seal(plaintext, last, copy=True)
 
     def _seal(self, plaintext: Any, last: bool, copy: bool) -> bytes:  # noqa: ANN401
         """Seal one chunk. ``copy=False`` lets ``seal_stream`` pass a view of its own bytes.
 
-        The checks and the nonce handling are the same for both; only the defensive ``bytes()``
-        copy of the caller's buffer is skipped, because the caller here owns the buffer.
+        With ``copy=True`` the plaintext is copied with ``bytes()`` first, so a buffer the caller
+        may change is never read by AES-GCM directly. With ``copy=False`` the buffer (or
+        ``memoryview``) is handed to AES-GCM as it is, with no copy; the caller must own it and
+        keep it unchanged during the call. The length checks, the nonce and the counter handling
+        are identical for both.
         """
         if self._finished:
             raise ValueError("stream is finished; no further chunks are accepted")
@@ -281,6 +333,17 @@ class StreamOpener(_Cipher):
     """Opens the chunks of one stream, in order. A failure ends the stream (it stays failed)."""
 
     def __init__(self, secret_key: SecretKey, header: bytes, expected_aad: bytes = b"") -> None:
+        """Parse the header, decapsulate the KEM ciphertext in it and derive the stream key.
+
+        Args:
+            secret_key: Recipient's KEM secret key; its algorithm must equal the header's.
+            header: The CBOR stream header, without the magic and the length prefix.
+            expected_aad: The associated data the sealer used. It is not stored in the stream.
+
+        Raises:
+            ValueError: If the header is malformed or too large, names an unsupported suite or
+                chunk size, or its algorithm differs from ``secret_key.algorithm``.
+        """
         header = bytes(header)
         h = _parse_header(header)
         if h["algorithm"] != secret_key.algorithm:
@@ -300,11 +363,24 @@ class StreamOpener(_Cipher):
         Raises ``cryptography.exceptions.InvalidTag`` if the chunk was modified, reordered, dropped
         or truncated, or the key or AAD is wrong; ``ValueError`` for a wrong length or a finished
         stream.
+
+        Args:
+            ciphertext: One chunk's ciphertext with its tag, without the length prefix. Exactly
+                ``chunk_size + 16`` bytes, or from 16 up to that for the last chunk.
+            last: True when no data follows this chunk in the transport.
+
+        Returns:
+            The plaintext of the chunk.
         """
         return self._open(ciphertext, last, copy=True)
 
     def _open(self, ciphertext: Any, last: bool, copy: bool) -> bytes:  # noqa: ANN401
-        """Open one chunk. ``copy=False`` lets ``open_stream`` pass a view of its own bytes."""
+        """Open one chunk. ``copy=False`` lets ``open_stream`` pass a view of its own bytes.
+
+        With ``copy=True`` the ciphertext is copied with ``bytes()`` first; with ``copy=False`` the
+        buffer or ``memoryview`` goes to AES-GCM as it is. Any failure (wrong length or a bad tag)
+        marks the stream finished, so every later call raises ``ValueError``.
+        """
         if self._finished:
             raise ValueError("stream is finished or has failed; no further chunks are accepted")
         n = len(ciphertext)
@@ -329,6 +405,12 @@ class StreamOpener(_Cipher):
 
 
 def _pieces(source: Iterable[bytes] | BinaryIO) -> Iterator[bytes]:
+    """Yield the source as immutable ``bytes`` pieces.
+
+    A file-like object (anything with ``read``) is read 64 KiB at a time until it returns nothing;
+    any other source is iterated, and each item is converted with ``bytes()``. Because every piece
+    is immutable ``bytes``, callers may keep ``memoryview`` slices of it without copying.
+    """
     if hasattr(source, "read"):
         while True:
             piece = source.read(64 * 1024)
@@ -351,6 +433,36 @@ def seal_stream(
     ``source`` is a binary file-like object or any iterable of ``bytes``. Yields the encrypted
     stream as byte pieces: the prelude (magic and header), then one frame per chunk. Concatenate
     the pieces to store or send them. Input of any length, including none, is accepted.
+
+    Chunks are sliced out of the input pieces in place. A full chunk is sealed only when more
+    input exists beyond it, so the last chunk is always known and is sealed with ``last = 1``;
+    it holds the remainder, which may be shorter than ``chunk_size`` or empty. At most
+    ``chunk_size`` bytes are carried over between pieces.
+
+    This is a generator: nothing is validated or encrypted until the first piece is requested.
+
+    Args:
+        public_key: Recipient's KEM public key (a hybrid suite, X-Wing or ML-KEM-1024).
+        source: A binary file-like object or an iterable of ``bytes`` pieces of any sizes.
+        aad: Associated data bound to every chunk. It is not stored in the stream; pass the same
+            value to :func:`open_stream`.
+        chunk_size: Plaintext bytes per chunk, from 1024 to 16 MiB. Defaults to 64 KiB.
+
+    Yields:
+        First the prelude (``"QSS3"``, the u32 header length and the header), then one frame per
+        chunk: a u32 ciphertext length followed by the ciphertext.
+
+    Raises:
+        ValueError: If ``chunk_size`` is out of range (raised on the first iteration), or if the
+            stream would have too many chunks.
+        UnsupportedAlgorithm: On the first iteration, if the key's algorithm is not a supported
+            stream suite.
+
+    Example::
+
+        with open("backup.tar", "rb") as src, open("backup.tar.qss", "wb") as dst:
+            for piece in seal_stream(recipient_public_key, src, aad=b"backup-2026"):
+                dst.write(piece)
     """
     sealer = StreamSealer(public_key, aad=aad, chunk_size=chunk_size)
     yield MAGIC + struct.pack(">I", len(sealer.header)) + sealer.header
@@ -389,6 +501,7 @@ class _Reader:
         self._ended = False
 
     def fill(self, n: int) -> None:
+        """Read pieces until at least ``n`` bytes are buffered or the source is exhausted."""
         while not self._ended and self._size < n:
             try:
                 piece = next(self._it)
@@ -403,10 +516,16 @@ class _Reader:
         return self._size
 
     def take(self, n: int) -> bytes:
+        """Remove and return the first ``n`` buffered bytes as a ``bytes`` copy."""
         return bytes(self.take_view(n))
 
     def take_view(self, n: int) -> memoryview | bytes:
-        """Remove and return the first ``n`` bytes (fewer if fewer are buffered)."""
+        """Remove and return the first ``n`` bytes (fewer if fewer are buffered).
+
+        When the first buffered piece holds all ``n`` bytes, the result is a ``memoryview`` slice
+        of that piece and nothing is copied. When the bytes span pieces, they are joined into a
+        new ``bytes`` object.
+        """
         views = self._views
         if views and len(views[0]) >= n:
             head = views[0]
@@ -431,6 +550,10 @@ class _Reader:
         return bytes(parts)
 
     def peek_u32(self) -> int:
+        """The next four buffered bytes as a big-endian u32, without consuming them.
+
+        The caller must have at least four bytes buffered (see ``fill``).
+        """
         head = bytearray()
         for view in self._views:
             head += view[: 4 - len(head)]
@@ -449,6 +572,31 @@ def open_stream(
     The source may deliver the bytes in pieces of any size. Yields the plaintext chunk by chunk and
     raises on the first chunk that fails: a truncated, extended, reordered or modified stream never
     completes silently.
+
+    A frame is the last one when no byte follows it in the source, so each frame is read together
+    with one byte of lookahead. Frames inside one input piece are passed to AES-GCM without being
+    copied. This is a generator: nothing is read until the first plaintext chunk is requested.
+
+    Args:
+        secret_key: Recipient's KEM secret key; its algorithm must equal the stream's.
+        source: A binary file-like object or an iterable of ``bytes`` pieces of any sizes.
+        expected_aad: The associated data the sealer used. It is not stored in the stream.
+
+    Yields:
+        The plaintext of each chunk, in order. The last one may be empty.
+
+    Raises:
+        ValueError: If the stream is too short, has the wrong magic, a header length or frame
+            length out of range, ends inside the header or a frame, ends without a final chunk,
+            or has a malformed header or a key algorithm mismatch.
+        cryptography.exceptions.InvalidTag: If a chunk was modified, reordered, dropped or
+            truncated, or the key or ``expected_aad`` is wrong.
+
+    Example::
+
+        with open("backup.tar.qss", "rb") as src, open("backup.tar", "wb") as dst:
+            for chunk in open_stream(recipient_secret_key, src, expected_aad=b"backup-2026"):
+                dst.write(chunk)
     """
     r = _Reader(source)
     r.fill(8)
@@ -492,10 +640,38 @@ def seal_bytes(
     aad: bytes = b"",
     chunk_size: int = DEFAULT_CHUNK_SIZE,
 ) -> bytes:
-    """Encrypt a whole buffer. Returns the complete encrypted stream."""
+    """Encrypt a whole buffer. Returns the complete encrypted stream.
+
+    Args:
+        public_key: Recipient's KEM public key (a hybrid suite, X-Wing or ML-KEM-1024).
+        data: The plaintext. Any length, including empty.
+        aad: Associated data bound to every chunk; pass the same value to :func:`open_bytes`.
+        chunk_size: Plaintext bytes per chunk, from 1024 to 16 MiB. Defaults to 64 KiB.
+
+    Returns:
+        The encrypted stream: magic, header and all chunk frames, concatenated.
+
+    Raises:
+        ValueError: If ``chunk_size`` is out of range.
+        UnsupportedAlgorithm: If the key's algorithm is not a supported stream suite.
+    """
     return b"".join(seal_stream(public_key, [bytes(data)], aad=aad, chunk_size=chunk_size))
 
 
 def open_bytes(secret_key: SecretKey, data: bytes, expected_aad: bytes = b"") -> bytes:
-    """Decrypt a whole buffer produced by :func:`seal_bytes` (or quantum-safe-ts ``sealBytes``)."""
+    """Decrypt a whole buffer produced by :func:`seal_bytes` (or quantum-safe-ts ``sealBytes``).
+
+    Args:
+        secret_key: Recipient's KEM secret key; its algorithm must equal the stream's.
+        data: The complete encrypted stream.
+        expected_aad: The associated data used when sealing.
+
+    Returns:
+        The plaintext.
+
+    Raises:
+        ValueError: If the stream is malformed or truncated (see :func:`open_stream`).
+        cryptography.exceptions.InvalidTag: If a chunk fails authentication, or the key or
+            ``expected_aad`` is wrong.
+    """
     return b"".join(open_stream(secret_key, [bytes(data)], expected_aad=expected_aad))

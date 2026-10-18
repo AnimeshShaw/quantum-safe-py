@@ -115,6 +115,7 @@ class SealedMessage:
     aad: bytes = field(default=b"")
 
     def __post_init__(self) -> None:
+        """Check that the nonce is 12 bytes; ``ValueError`` otherwise."""
         if len(self.nonce) != _NONCE_LEN:
             raise ValueError(f"nonce must be exactly {_NONCE_LEN} bytes, got {len(self.nonce)}")
 
@@ -258,6 +259,11 @@ class Envelope:
         Raises:
             UnsupportedAlgorithm: if the key's algorithm isn't a known
                                   hybrid KEM combination.
+            ValueError:           if ``kem`` is given for an ``ML-KEM-1024`` key
+                                  (a version 2 envelope derives its own KEM).
+
+        An ``ML-KEM-1024`` key produces a version 2 envelope (key derived with
+        HKDF-SHA-384); a hybrid key produces a version 1 envelope.
         """
         version = cls._version_for(recipient_public_key.algorithm)
 
@@ -350,7 +356,12 @@ class Envelope:
             Original plaintext bytes.
 
         Raises:
-            DecapsulationError:  if KEM decapsulation fails.
+            DecapsulationError:  if KEM decapsulation fails, or the KEM
+                                  ciphertext is malformed for the algorithm.
+            UnsupportedAlgorithm: if the algorithm is not an envelope suite,
+                                  or the version field does not match it.
+            ValueError:          if ``kem`` is given for a version 2
+                                  (``ML-KEM-1024``) envelope.
             cryptography.exceptions.InvalidTag: if the ciphertext is tampered,
                                   the wrong key is used, or the message's AAD
                                   differs from ``expected_aad`` (the same
@@ -463,6 +474,8 @@ class Envelope:
         Raises:
             cryptography.exceptions.InvalidTag: wrong key, tampered message or AAD mismatch.
             DecapsulationError: KEM decapsulation failed.
+            UnsupportedAlgorithm: the old envelope or ``new_public_key`` uses an algorithm that is
+                not an envelope suite.
         """
         if expected_aad is None and sealed.aad:
             warnings.warn(

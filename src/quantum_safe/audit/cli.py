@@ -40,7 +40,11 @@ except ImportError:
 
 
 def main() -> None:
-    """Entry point for qs-audit CLI."""
+    """Entry point for qs-audit CLI.
+
+    Runs the click command group. When click is not installed, prints an install hint to stderr
+    and exits with status 2.
+    """
     if not _HAS_CLICK:
         print(
             "Error: click is required for the CLI. Install with: pip install 'quantum-safe[dev]'",
@@ -126,7 +130,18 @@ if _HAS_CLICK:
         exclude: tuple[str, ...],
         metadata: tuple[str, ...],
     ) -> None:
-        """Scan PATH for classical cryptography usage."""
+        """Scan PATH for classical cryptography usage.
+
+        Scans PATH (a file or directory, default: the current directory), evaluates the result
+        against a policy (--policy file, or the --preset-policy preset) and writes a report in the
+        chosen --format to stdout or --output. Findings below --min-severity are left out of the
+        report. Key controls in the policy are only enforced when --inventory is given.
+
+        Exit codes: 0 when the audit passed and no reported finding reaches --fail-on; 1 when a
+        finding does, when the policy evaluation failed, or when the policy or inventory file
+        cannot be read (message on stderr). With --fail-on never, only an unreadable policy or
+        inventory file still exits 1.
+        """
         from quantum_safe.audit.auditor import Auditor
         from quantum_safe.audit.inventory import load_inventory
         from quantum_safe.audit.policy import AuditPolicy
@@ -241,7 +256,13 @@ if _HAS_CLICK:
         help="Output format.",
     )
     def sbom_cmd(sbom_file: str, output: str | None, fmt: str) -> None:
-        """Enrich a CycloneDX SBOM with PQC-readiness annotations."""
+        """Enrich a CycloneDX SBOM with PQC-readiness annotations.
+
+        Reads SBOM_FILE (CycloneDX JSON). With --format json (the default) the enriched SBOM is
+        written to --output, or to <input name>-pqc.json in the current directory. With --format
+        summary a readiness list is printed instead, one line per component, and --output is not
+        used. Always exits with status 0 when the SBOM could be read.
+        """
         from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
         with open(sbom_file, encoding="utf-8") as fh:
@@ -280,7 +301,11 @@ if _HAS_CLICK:
     @_cli.command("requirements")
     @click.argument("req_file", type=click.Path(exists=True))
     def requirements_cmd(req_file: str) -> None:
-        """Check PQC readiness of packages in a requirements.txt file."""
+        """Check PQC readiness of packages in a requirements.txt file.
+
+        Prints one line per package with its readiness. Exit codes: 0 when no package is NOT_READY;
+        1 when at least one is, after listing the suggested replacements.
+        """
         from quantum_safe.audit.sbom import PQCReadiness, SBOMEnricher
 
         text = Path(req_file).read_text(encoding="utf-8")
@@ -319,7 +344,13 @@ if _HAS_CLICK:
     )
     @click.option("--output", "-o", default=None, help="Output file. Default: stdout.")
     def compliance_cmd(path: str, fmt: str, output: str | None) -> None:
-        """Generate a NIST SP 800-208 compliance report for PATH."""
+        """Generate a NIST SP 800-208 compliance report for PATH.
+
+        Scans PATH (a file or directory, default: the current directory) and prints the report as
+        text or JSON, or writes it to --output.
+
+        Exit codes: 0 unless the overall compliance level is NON_COMPLIANT, which exits 1.
+        """
         from quantum_safe.audit.compliance import ComplianceLevel, NISTComplianceChecker
         from quantum_safe.migrate.scanner import Scanner
 
@@ -394,6 +425,8 @@ if _HAS_CLICK:
 
         This reports parameter selection. For National Security Systems,
         CNSA 2.0 is met through FIPS 140-3 validated modules.
+
+        Exit codes: 0 when the selection is compliant; 1 when it is not.
         """
         from quantum_safe.compliance import cnsa2
 
@@ -446,6 +479,9 @@ if _HAS_CLICK:
 
         This is an inventory, not a compliance verdict. For CNSA 2.0 parameter
         requirements use `qs-audit cnsa2`.
+
+        PATH is a file or directory (default: the current directory). The CBOM goes to stdout or
+        to --output. --exclude applies to directory scans only. Exits 0 once the CBOM is written.
         """
         from quantum_safe.audit.cbom import build_cbom, to_json
         from quantum_safe.migrate.scanner import Scanner

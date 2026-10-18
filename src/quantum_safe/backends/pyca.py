@@ -39,6 +39,11 @@ _KEM_EXPANDED = {"ML-KEM-768": 2400, "ML-KEM-1024": 3168}
 
 
 def _dsa_classes(algorithm: str) -> tuple[Any, Any]:
+    """Return the pyca ``(private_key_class, public_key_class)`` pair for an ML-DSA name.
+
+    Raises ``UnsupportedAlgorithm`` for a name outside ML-DSA-44/65/87 and
+    ``BackendNotAvailable`` when the installed ``cryptography`` has no ``mldsa`` module.
+    """
     if algorithm not in _DSA_NAMES:
         raise UnsupportedAlgorithm(algorithm, available=list(_DSA_NAMES))
     try:
@@ -50,6 +55,11 @@ def _dsa_classes(algorithm: str) -> tuple[Any, Any]:
 
 
 def _kem_classes(algorithm: str) -> tuple[Any, Any]:
+    """Return the pyca ``(private_key_class, public_key_class)`` pair for an ML-KEM name.
+
+    Raises ``UnsupportedAlgorithm`` for a name outside ML-KEM-768/1024 and
+    ``BackendNotAvailable`` when the installed ``cryptography`` has no ``mlkem`` module.
+    """
     if algorithm not in _KEM_NAMES:
         raise UnsupportedAlgorithm(algorithm, available=list(_KEM_NAMES))
     try:
@@ -78,6 +88,7 @@ class PycaSignatureBackend(AbstractSignatureBackend):
     name: ClassVar[str] = "pyca"
 
     def supported_algorithms(self) -> list[AlgorithmInfo]:
+        """Return ML-DSA-44, ML-DSA-65 and ML-DSA-87, or an empty list without ``mldsa``."""
         from quantum_safe.backends.liboqs import _SIGNATURE_ALGORITHM_INFO
 
         try:
@@ -87,7 +98,16 @@ class PycaSignatureBackend(AbstractSignatureBackend):
         return [_SIGNATURE_ALGORITHM_INFO[n] for n in _DSA_NAMES]
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
-        """Returns ``(public_key, seed)``; the 32-byte seed is the secret key."""
+        """Returns ``(public_key, seed)``; the 32-byte seed is the secret key.
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not an ML-DSA parameter set.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-DSA support.
+            KeyGenerationError: if pyca fails to generate the key.
+        """
         private_cls, _ = _dsa_classes(algorithm)
         try:
             key = private_cls.generate()
@@ -98,7 +118,20 @@ class PycaSignatureBackend(AbstractSignatureBackend):
             ) from exc
 
     def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
-        """Deterministic key generation from the 32-byte FIPS 204 seed (``xi``)."""
+        """Deterministic key generation from the 32-byte FIPS 204 seed (``xi``).
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+            seed: The 32-byte seed.
+
+        Returns:
+            ``(public_key, seed)``: the seed itself is the secret key.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not an ML-DSA parameter set.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-DSA support.
+            ValueError: if ``seed`` is not exactly 32 bytes.
+        """
         private_cls, _ = _dsa_classes(algorithm)
         if len(seed) != _DSA_SEED_BYTES:
             raise ValueError(f"an ML-DSA seed is exactly {_DSA_SEED_BYTES} bytes, got {len(seed)}")
@@ -106,6 +139,7 @@ class PycaSignatureBackend(AbstractSignatureBackend):
         return bytes(key.public_key().public_bytes_raw()), bytes(seed)
 
     def _private(self, algorithm: str, secret_key: bytes) -> Any:  # noqa: ANN401
+        """Build the pyca private key from a 32-byte seed key; any other length is a ValueError."""
         private_cls, _ = _dsa_classes(algorithm)
         if len(secret_key) != _DSA_SEED_BYTES:
             raise ValueError(
@@ -115,13 +149,31 @@ class PycaSignatureBackend(AbstractSignatureBackend):
         return private_cls.from_seed_bytes(bytes(secret_key))
 
     def _is_expanded(self, algorithm: str, secret_key: bytes) -> bool:
+        """True when ``secret_key`` has the length of an expanded (liboqs-made) key."""
         return len(secret_key) == _DSA_EXPANDED.get(algorithm, -1)
 
     def sign(
         self, algorithm: str, secret_key: bytes, message: bytes, context: bytes = b""
     ) -> bytes:
         """The library's prefix construction: ML-DSA (empty FIPS 204 context) over
-        ``len(context) || context || message``, identical to the liboqs backend."""
+        ``len(context) || context || message``, identical to the liboqs backend.
+
+        An expanded key (made by liboqs) is signed through the liboqs backend.
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+            secret_key: The 32-byte seed key, or an expanded key.
+            message: The message to sign.
+            context: Domain-separation context, at most 255 bytes.
+
+        Returns:
+            The signature bytes.
+
+        Raises:
+            ValueError: if ``context`` is longer than 255 bytes, or ``secret_key`` is neither a
+                32-byte seed nor an expanded key.
+            CryptoError: if pyca fails to sign.
+        """
         if len(context) > 255:
             raise ValueError(f"context must be <=255 bytes, got {len(context)}")
         if self._is_expanded(algorithm, secret_key):
@@ -145,6 +197,24 @@ class PycaSignatureBackend(AbstractSignatureBackend):
         signature: bytes,
         context: bytes = b"",
     ) -> bool:
+        """Verify a signature made by :meth:`sign` (or by the liboqs backend's ``sign``).
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+            public_key: The signer's public key bytes.
+            message: The signed message.
+            signature: The signature bytes.
+            context: Must match the context used when signing. A context longer than 255 bytes
+                returns False.
+
+        Returns:
+            True if the signature is valid. False for an invalid signature or a malformed key
+            or signature.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not an ML-DSA parameter set.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-DSA support.
+        """
         if len(context) > 255:
             return False
         return self._verify(
@@ -154,6 +224,7 @@ class PycaSignatureBackend(AbstractSignatureBackend):
     def _verify(
         self, algorithm: str, public_key: bytes, data: bytes, signature: bytes, ctx: bytes
     ) -> bool:
+        """Verify ``signature`` over ``data`` with FIPS 204 context ``ctx`` (empty means none)."""
         _, public_cls = _dsa_classes(algorithm)
         try:
             public_cls.from_public_bytes(bytes(public_key)).verify(
@@ -166,7 +237,24 @@ class PycaSignatureBackend(AbstractSignatureBackend):
     def sign_native_context(
         self, algorithm: str, secret_key: bytes, message: bytes, context: bytes
     ) -> bytes:
-        """``ML-DSA.Sign`` with FIPS 204's native context string."""
+        """``ML-DSA.Sign`` with FIPS 204's native context string.
+
+        An expanded key (made by liboqs) is signed through the liboqs backend.
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+            secret_key: The 32-byte seed key, or an expanded key.
+            message: The message to sign, passed to ML-DSA.Sign unchanged.
+            context: The FIPS 204 context string, at most 255 bytes.
+
+        Returns:
+            The signature bytes.
+
+        Raises:
+            ValueError: if ``context`` is longer than 255 bytes, or ``secret_key`` is neither a
+                32-byte seed nor an expanded key.
+            CryptoError: if pyca fails to sign.
+        """
         if len(context) > 255:
             raise ValueError(f"context must be <=255 bytes, got {len(context)}")
         if self._is_expanded(algorithm, secret_key):
@@ -190,6 +278,24 @@ class PycaSignatureBackend(AbstractSignatureBackend):
         signature: bytes,
         context: bytes,
     ) -> bool:
+        """Verify a signature made with :meth:`sign_native_context`.
+
+        Args:
+            algorithm: "ML-DSA-44", "ML-DSA-65" or "ML-DSA-87".
+            public_key: The signer's public key bytes.
+            message: The signed message.
+            signature: The signature bytes.
+            context: The FIPS 204 context string used when signing. A context longer than
+                255 bytes returns False.
+
+        Returns:
+            True if the signature is valid. False for an invalid signature or a malformed key
+            or signature.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not an ML-DSA parameter set.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-DSA support.
+        """
         if len(context) > 255:
             return False
         return self._verify(algorithm, public_key, message, signature, context)
@@ -201,6 +307,7 @@ class PycaKEMBackend(AbstractKEMBackend):
     name: ClassVar[str] = "pyca"
 
     def supported_algorithms(self) -> list[AlgorithmInfo]:
+        """Return ML-KEM-768 and ML-KEM-1024, or an empty list without ``mlkem``."""
         from quantum_safe.backends.liboqs import _KEM_ALGORITHM_INFO
 
         try:
@@ -210,7 +317,16 @@ class PycaKEMBackend(AbstractKEMBackend):
         return [_KEM_ALGORITHM_INFO[n] for n in _KEM_NAMES]
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
-        """Returns ``(public_key, seed)``; the 64-byte seed ``d || z`` is the secret key."""
+        """Returns ``(public_key, seed)``; the 64-byte seed ``d || z`` is the secret key.
+
+        Args:
+            algorithm: "ML-KEM-768" or "ML-KEM-1024".
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not ML-KEM-768 or ML-KEM-1024.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-KEM support.
+            KeyGenerationError: if pyca fails to generate the key.
+        """
         private_cls, _ = _kem_classes(algorithm)
         try:
             key = private_cls.generate()
@@ -221,6 +337,20 @@ class PycaKEMBackend(AbstractKEMBackend):
             ) from exc
 
     def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Deterministic key generation from the 64-byte FIPS 203 seed ``d || z``.
+
+        Args:
+            algorithm: "ML-KEM-768" or "ML-KEM-1024".
+            seed: The 64-byte seed.
+
+        Returns:
+            ``(public_key, seed)``: the seed itself is the secret key.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not ML-KEM-768 or ML-KEM-1024.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-KEM support.
+            ValueError: if ``seed`` is not exactly 64 bytes.
+        """
         private_cls, _ = _kem_classes(algorithm)
         if len(seed) != _KEM_SEED_BYTES:
             raise ValueError(f"an ML-KEM seed is exactly {_KEM_SEED_BYTES} bytes, got {len(seed)}")
@@ -228,6 +358,20 @@ class PycaKEMBackend(AbstractKEMBackend):
         return bytes(key.public_key().public_bytes_raw()), bytes(seed)
 
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
+        """Encapsulate a shared secret under the given public key.
+
+        Args:
+            algorithm: "ML-KEM-768" or "ML-KEM-1024".
+            public_key: The recipient's public key bytes.
+
+        Returns:
+            (ciphertext_bytes, shared_secret_bytes).
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not ML-KEM-768 or ML-KEM-1024.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-KEM support.
+            CryptoError: if pyca rejects the public key or fails to encapsulate.
+        """
         _, public_cls = _kem_classes(algorithm)
         try:
             shared_secret, ciphertext = public_cls.from_public_bytes(
@@ -240,6 +384,24 @@ class PycaKEMBackend(AbstractKEMBackend):
         return bytes(ciphertext), bytes(shared_secret)
 
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
+        """Decapsulate a shared secret from a ciphertext.
+
+        An expanded key (made by liboqs) is decapsulated through the liboqs backend.
+
+        Args:
+            algorithm: "ML-KEM-768" or "ML-KEM-1024".
+            secret_key: The 64-byte seed key, or an expanded key.
+            ciphertext: The ciphertext produced by encapsulation.
+
+        Returns:
+            The shared secret bytes.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not ML-KEM-768 or ML-KEM-1024.
+            BackendNotAvailable: if the installed ``cryptography`` has no ML-KEM support.
+            ValueError: if ``secret_key`` is neither a 64-byte seed nor an expanded key.
+            DecapsulationError: if pyca fails to decapsulate.
+        """
         private_cls, _ = _kem_classes(algorithm)
         if len(secret_key) == _KEM_EXPANDED.get(algorithm, -1):
             return bytes(_liboqs_kem().decapsulate(algorithm, secret_key, ciphertext))
