@@ -33,14 +33,34 @@ from typing import Any, ClassVar, cast
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
 from quantum_safe.exceptions import BackendNotAvailable
 
+# The ImportError from the one failed attempt to import the extension, remembered so that later
+# probes do not search ``sys.path`` again: Python does not cache failed imports, and every
+# ``HybridKEM()`` / ``Sign()`` construction asks this backend first (see ``backends/__init__.py``).
+# ``reset_import_probe()`` forgets it, for a process that installs the extension while running.
+_import_failure: ImportError | None = None
+
+
+def reset_import_probe() -> None:
+    """Forget a remembered failed import so the next probe looks for the extension again."""
+    global _import_failure
+    _import_failure = None
+
 
 def _import_qs_py() -> Any:  # noqa: ANN401
-    """Import the quantum_safe_py native extension or raise BackendNotAvailable."""
+    """Import the quantum_safe_py native extension or raise BackendNotAvailable.
+
+    A failed import is remembered for the life of the process (see ``reset_import_probe``); a
+    successful one is cached by Python itself.
+    """
+    global _import_failure
+    if _import_failure is not None:
+        raise BackendNotAvailable("rustcrypto") from _import_failure
     try:
         import quantum_safe_py as _qs_py  # type: ignore[import-not-found]
 
         return _qs_py
     except ImportError as exc:
+        _import_failure = exc
         raise BackendNotAvailable("rustcrypto") from exc
 
 

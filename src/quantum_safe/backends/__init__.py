@@ -80,6 +80,28 @@ def _load_rustcrypto_sig() -> AbstractSignatureBackend:
     return RustCryptoSignatureBackend()
 
 
+def clear_backend_cache() -> None:
+    """Forget what the backends have learned about the environment, so it is probed again.
+
+    The result of looking for an optional backend (for example the RustCrypto extension) is
+    remembered for the life of the process, because every ``HybridKEM()`` / ``KEM()`` /
+    ``HybridSign()`` / ``Sign()`` construction consults it. Call this after installing a backend
+    package into a process that is already running.
+    """
+    from quantum_safe.backends.rustcrypto import reset_import_probe
+
+    reset_import_probe()
+    for loader in (
+        _load_liboqs_kem,
+        _load_rustcrypto_kem,
+        _load_pyca_kem,
+        _load_pyca_sig,
+        _load_liboqs_sig,
+        _load_rustcrypto_sig,
+    ):
+        loader.cache_clear()
+
+
 def get_kem_backend(name: str = "auto") -> AbstractKEMBackend:
     """Return the KEM backend for the given name.
 
