@@ -1,0 +1,118 @@
+{
+  "files": [
+    "/out/sigs_run10.json",
+    "/out/sigs_run11.json",
+    "/out/sigs_run12.json",
+    "/out/sigs_run13.json",
+    "/out/sigs_run14.json",
+    "/out/sigs_run15.json",
+    "/out/sigs_run16.json",
+    "/out/sigs_run2.json",
+    "/out/sigs_run3.json",
+    "/out/sigs_run4.json",
+    "/out/sigs_run5.json",
+    "/out/sigs_run6.json",
+    "/out/sigs_run7.json",
+    "/out/sigs_run8.json",
+    "/out/sigs_run9.json"
+  ],
+  "discarded_first": true,
+  "metadata_of_first_file": {
+    "recorded_at": "2026-10-19T16:31:45.474184+00:00",
+    "python": "3.12.14",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "machine": "x86_64",
+    "cpu_model": "Intel(R) Core(TM) i9-14900HX",
+    "logical_cpus": 32,
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "liboqs": "0.16.0",
+    "git_commit": "49edb0969b29bad5048007e78137d9bcfdc7cc65",
+    "in_container": true,
+    "with_pqc": true
+  },
+  "rows": [
+    {
+      "name": "Ed25519 sign (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 26.61,
+      "fastest_run_us": 18.97,
+      "slowest_run_us": 28.71,
+      "run_to_run_cov_pct": 14.71
+    },
+    {
+      "name": "Ed25519 verify (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 81.99,
+      "fastest_run_us": 59.82,
+      "slowest_run_us": 89.17,
+      "run_to_run_cov_pct": 15.99
+    },
+    {
+      "name": "HybridSign keygen (Ed25519+ML-DSA-65)",
+      "runs": 15,
+      "median_of_run_medians_us": 74.96,
+      "fastest_run_us": 56.37,
+      "slowest_run_us": 83.16,
+      "run_to_run_cov_pct": 14.54
+    },
+    {
+      "name": "HybridSign sign (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 143.84,
+      "fastest_run_us": 134.91,
+      "slowest_run_us": 162.41,
+      "run_to_run_cov_pct": 5.43
+    },
+    {
+      "name": "HybridSign verify (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 103.85,
+      "fastest_run_us": 95.92,
+      "slowest_run_us": 139.16,
+      "run_to_run_cov_pct": 13.72
+    },
+    {
+      "name": "ML-DSA-65 keygen",
+      "runs": 15,
+      "median_of_run_medians_us": 28.14,
+      "fastest_run_us": 27.23,
+      "slowest_run_us": 39.28,
+      "run_to_run_cov_pct": 15.7
+    },
+    {
+      "name": "ML-DSA-65 sign (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 65.82,
+      "fastest_run_us": 62.13,
+      "slowest_run_us": 89.61,
+      "run_to_run_cov_pct": 11.17
+    },
+    {
+      "name": "ML-DSA-65 verify (32B)",
+      "runs": 15,
+      "median_of_run_medians_us": 28.12,
+      "fastest_run_us": 26.67,
+      "slowest_run_us": 38.48,
+      "run_to_run_cov_pct": 13.49
+    },
+    {
+      "name": "X.509 HybridCert build (Ed25519+ML-DSA-65)",
+      "runs": 15,
+      "median_of_run_medians_us": 214.91,
+      "fastest_run_us": 199.37,
+      "slowest_run_us": 285.6,
+      "run_to_run_cov_pct": 10.13
+    },
+    {
+      "name": "X.509 HybridCert verify_cosig",
+      "runs": 15,
+      "median_of_run_medians_us": 128.92,
+      "fastest_run_us": 125.37,
+      "slowest_run_us": 182.33,
+      "run_to_run_cov_pct": 13.02
+    }
+  ]
+}
