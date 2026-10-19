@@ -34,6 +34,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import os
+import stat
 import uuid
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
@@ -128,13 +129,18 @@ class RewrapReport:
             CryptoAssetSpec,
             _crypto_component,
         )
+        from quantum_safe.audit.inventory import AlgorithmKind, classify_algorithm
 
-        def spec(name: str, vulnerable: bool) -> CryptoAssetSpec:
+        def spec(name: str, vulnerable: bool | None = None) -> CryptoAssetSpec:
+            # A hybrid or ML-KEM suite is post-quantum and carries its own security level; a name
+            # the library does not know is reported as quantum-vulnerable.
+            info = classify_algorithm(name)
+            known = info.kind in (AlgorithmKind.HYBRID, AlgorithmKind.PQC)
             return CryptoAssetSpec(
                 name=name,
                 primitive="kem",
-                quantum_level=0 if vulnerable else 3,
-                quantum_vulnerable=vulnerable,
+                quantum_level=(info.nist_level or 0) if known else 0,
+                quantum_vulnerable=not known if vulnerable is None else vulnerable,
             )
 
         from_counts: dict[str, int] = {}
@@ -145,7 +151,7 @@ class RewrapReport:
         for name, n in sorted(from_counts.items()):
             components.append(
                 _crypto_component(
-                    spec(name, name != self.new_algorithm),
+                    spec(name),
                     f"migrated-from/{name.lower().replace('+', '-')}",
                     properties=[
                         {"name": "quantum-safe:migration-status", "value": "migrated-from"},
@@ -228,6 +234,8 @@ def _write_atomic(path: Path, data: bytes) -> None:
             fh.write(data)
             fh.flush()
             os.fsync(fh.fileno())
+        if path.exists():  # a file that is replaced keeps its permissions
+            os.chmod(tmp, stat.S_IMODE(path.stat().st_mode))
         os.replace(tmp, path)
     finally:
         if tmp.exists():
@@ -270,8 +278,8 @@ def rewrap_directory(
 
     Raises:
         ValueError: ``source`` is not a directory; ``in_place`` is true and ``destination`` names
-            a different directory; ``in_place`` is false and ``destination`` is missing or is the
-            source directory.
+            a different directory; ``in_place`` is false and ``destination`` is missing, is the
+            source directory or lies inside it.
     """
     src = Path(source)
     if not src.is_dir():
@@ -290,6 +298,8 @@ def rewrap_directory(
             raise ValueError(
                 "destination is the source directory; pass in_place=True to replace files there"
             )
+        if src.resolve() in dst.resolve().parents:
+            raise ValueError("destination is inside the source directory; choose one outside it")
 
     report = RewrapReport(
         new_algorithm=new_public.algorithm,

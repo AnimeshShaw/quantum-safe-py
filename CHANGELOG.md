@@ -45,6 +45,7 @@ All notable changes to quantum-safe are documented here.
 - **CBOM: SLH-DSA OIDs corrected.** `SLH-DSA-SHAKE-128s` and `-256s` were listed with the SHA2 variants' OIDs (...3.20 and ...3.24); the SHAKE sets are ...3.26 and ...3.30 (FIPS 205 / RFC 9909), which is what quantum-safe-ts already had. All twelve sets are now listed with their own OID.
 - **`MigrationStateManager` no longer overwrites a history it cannot read**: the transition raises `ValueError` and leaves the stored bytes alone (it used to start a new history and lose the audit trail).
 - **`qs-migrate upgrade-key --force` puts the previous files back** if it fails after replacing one of them, instead of leaving a new secret key beside an old public key.
+- **Re-wrap:** `rewrap_directory` refuses a destination inside the source, an in-place rewrite keeps each file's permissions, and the CycloneDX report treats a hybrid or ML-KEM source as post-quantum with its real security level (it called every source other than the new suite vulnerable, at level 3).
 - `HybridCertificateBuilder.verify_cosig` raises `KeyParseError` for a bundle that is not a map; the pyca backend lets `UnsupportedAlgorithm` / `BackendNotAvailable` through from `sign`; `__version_info__` is `(0, 4, 0)`; install hints name `quantum-safe-py`.
 
 ### Documentation
