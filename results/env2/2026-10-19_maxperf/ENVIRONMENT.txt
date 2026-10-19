@@ -137,8 +137,7 @@ Server:
  Firewall Backend: iptables
 
 --- running containers
-CONTAINER ID   IMAGE                COMMAND                  CREATED       STATUS                        PORTS                                         NAMES
-083ac487bc8e   postgres:17-alpine   "docker-entrypoint.s…"   2 weeks ago   Up About a minute (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   tattva_postgres_db
+other containers running at the start: 1 (not the benchmark; names not recorded)
 --- power plan
 Power Scheme GUID: 4c899d45-023c-4f47-bd5f-dfc724e132b6  (QS Benchmark Max Performance)--- battery/AC
 
