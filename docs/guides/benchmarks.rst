@@ -93,13 +93,15 @@ Running the benchmarks
 Docker (recommended — ENV-2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Docker image compiles liboqs 0.15.0 from source with AVX2/AVX-512 support.
+The Docker image compiles liboqs from source with AVX2/AVX-512 support (0.16.0 by default; the
+paper numbers were measured with ``--build-arg LIBOQS_TAG=0.15.0``).
 This is the reproducible, ENV-2 path used for all primary paper numbers.
 
 .. code-block:: bash
 
-   # Build once — compiles liboqs 0.15.0 from source (~3 min on a modern laptop)
+   # Build once — compiles liboqs 0.16.0 from source (~3 min on a modern laptop)
    docker build -t quantum-safe-bench .
+   # For the liboqs 0.15.0 numbers of the papers: docker build --build-arg LIBOQS_TAG=0.15.0 ...
 
    # KEM suite: classical + hybrid decomposition + concurrent load curve
    docker run --rm -v ${PWD}/results:/app/results quantum-safe-bench \
@@ -417,6 +419,88 @@ ENV-2 headline latencies (Docker/WSL2, 2026-03-28):
 All values are sub-millisecond, confirming production viability at TLS handshake
 rates. See ``results/BENCHMARKS.md`` for complete tables, ENV-1 comparison, and
 the cross-environment speedup analysis.
+
+----
+
+Re-measurement on liboqs 0.16.0
+-------------------------------
+
+The submitted papers report the liboqs 0.15.0 measurements above, and those numbers are unchanged.
+The release builds against liboqs 0.16.0, so the same protocol was run again on that pair: one
+discarded warm-up run plus 15 timed runs of 3,000 iterations each, in the Docker image built from
+commit ``49edb09``, with the Windows "Ultimate Performance" power plan on AC power
+(``results/env2/2026-10-19_maxperf/``). The table gives the median across runs of each run's
+median, the fastest and slowest run, and the run-to-run coefficient of variation.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 46 14 22 18
+
+   * - Operation
+     - Median (µs)
+     - Fastest–slowest run (µs)
+     - Run-to-run CoV
+   * - X25519 key generation
+     - 21.5
+     - 18.7–30.7
+     - 19.8%
+   * - X25519 key agreement
+     - 24.4
+     - 19.3–30.2
+     - 18.0%
+   * - ML-KEM-768 key generation
+     - 9.8
+     - 8.6–12.8
+     - 15.9%
+   * - ML-KEM-768 encapsulate
+     - 9.7
+     - 9.3–13.5
+     - 14.2%
+   * - ML-KEM-768 decapsulate
+     - 10.9
+     - 10.5–16.7
+     - 17.7%
+   * - HybridKEM X25519+ML-KEM-768 key generation
+     - 39.3
+     - 37.9–55.7
+     - 14.4%
+   * - HybridKEM encapsulate
+     - 68.2
+     - 62.1–86.4
+     - 13.5%
+   * - HybridKEM decapsulate
+     - 68.7
+     - 63.7–89.4
+     - 14.1%
+   * - ML-DSA-65 key generation
+     - 28.1
+     - 27.2–39.3
+     - 15.7%
+   * - ML-DSA-65 sign (32 B)
+     - 65.8
+     - 62.1–89.6
+     - 11.2%
+   * - ML-DSA-65 verify (32 B)
+     - 28.1
+     - 26.7–38.5
+     - 13.5%
+   * - HybridSign Ed25519+ML-DSA-65 sign (32 B)
+     - 143.8
+     - 134.9–162.4
+     - 5.4%
+   * - HybridSign verify (32 B)
+     - 103.8
+     - 95.9–139.2
+     - 13.7%
+
+Two things changed against the 0.15.0 run in the same environment. The hybrid wrappers no longer
+pay a per-call cost for locating the optional RustCrypto backend (a failed import repeated on every
+object construction), so the combined ``HybridKEM`` rows are 16–25% faster than the 0.15.0 run.
+Operations that run entirely inside liboqs or Ed25519 are within the usual session-to-session
+spread of this machine (about ±10%). The leakage screen was repeated in three further sessions
+(``results/env2/2026-10-19_leakage_repeats/``) with an added calibration that compares two
+different fixed keys; the fixed-versus-random difference for ML-KEM-768 decapsulation did not
+reproduce consistently in those sessions.
 
 ----
 
