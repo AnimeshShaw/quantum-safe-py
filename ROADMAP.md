@@ -5,11 +5,12 @@ there are no dates, the order can change, and anything here can be dropped. Ship
 are in [CHANGELOG.md](CHANGELOG.md). Progress is tracked in the
 [milestones](https://github.com/AnimeshShaw/quantum-safe-py/milestones).
 
-While the version starts with `0.`, a **minor** release (0.3 to 0.4) is where behaviour changes
-happen, each with a changelog entry and an [upgrade guide](docs/guides/upgrading-0.4.rst). A patch
-release (0.3.1 to 0.3.2) does not break correct code.
+From 1.0 the API and the wire formats follow semantic versioning: behaviour changes happen only in a
+**major** release, each with a changelog entry and an upgrade guide (the move from 0.x is in the
+[1.0 upgrade guide](docs/guides/upgrading-1.0.rst)). A minor release adds capability and a patch release
+fixes defects; neither breaks correct code.
 
-## Now: 0.4.0 (paired with quantum-safe-ts 0.2.0)
+## Now: 1.0.0 (paired with quantum-safe-ts 1.0.0)
 
 The theme is "make the safe thing the only thing", and the two libraries change defaults together.
 
@@ -38,15 +39,6 @@ The theme is "make the safe thing the only thing", and the two libraries change 
 ## Later (no release assigned)
 
 - XMSS, if a maintained library provides it. CNSA 2.0 asks for LMS or XMSS, and LMS is covered.
-
-## What would make it 1.0
-
-1.0 means the API and formats are stable and we will not break them without a major version.
-We will not call it 1.0 before:
-
-1. the 0.4.0 changes have shipped and settled for at least one release cycle;
-2. the benchmarks and leakage figures are re-measured and reproducible from published data;
-3. the documentation and the TypeScript library are in step.
 
 ## What this library will not become
 

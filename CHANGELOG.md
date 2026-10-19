@@ -2,7 +2,7 @@
 
 All notable changes to quantum-safe are documented here.
 
-## [0.4.0] - 2026-10-18
+## [1.0.0] - 2026-10-20
 
 ### Security
 
@@ -48,9 +48,17 @@ All notable changes to quantum-safe are documented here.
 - **Re-wrap:** `rewrap_directory` refuses a destination inside the source, an in-place rewrite keeps each file's permissions, and the CycloneDX report treats a hybrid or ML-KEM source as post-quantum with its real security level (it called every source other than the new suite vulnerable, at level 3).
 - `HybridCertificateBuilder.verify_cosig` raises `KeyParseError` for a bundle that is not a map; the pyca backend lets `UnsupportedAlgorithm` / `BackendNotAvailable` through from `sign`; `__version_info__` is `(0, 4, 0)`; install hints name `quantum-safe-py`.
 
+### Performance
+
+- **Constructing a `HybridKEM`, `KEM`, `HybridSign` or `Sign` is about ten times faster** (162 to 11 us for `HybridKEM()`): a failed import of the optional RustCrypto backend is remembered instead of searching `sys.path` again on every construction. `Envelope.seal` and `open` of a small message take about half the time (417 to 218 us and 313 to 134 us), and `rewrap_directory` about a quarter less. `quantum_safe.backends.clear_backend_cache()` makes the library look again after a backend is installed into a running process.
+- **Stream encryption and decryption copy each chunk far less** (`seal_stream`, `open_stream`, `seal_bytes`, `open_bytes`): 1.1 to 1.8 times the throughput, with identical output (checked byte for byte against the previous implementation).
+- The bundled liboqs directory is located once per process instead of on every call.
+
 ### Documentation
 
-- New guide `docs/guides/context-and-aad.rst` and `docs/guides/upgrading-0.4.rst`.
+- Every public module, class, function and method has a docstring, with Args, Returns and Raises on the functions that take parameters.
+- The benchmarks guide has the liboqs 0.16.0 re-measurement (the papers' liboqs 0.15.0 numbers are unchanged); the raw samples are published as a GitHub release.
+- New guide `docs/guides/context-and-aad.rst` and `docs/guides/upgrading-1.0.rst`.
 - README, ROADMAP, SECURITY, NOTICE and the guides no longer carry status badges, validation disclaimers or the review-request section; `REVIEW_WANTED.md` is removed.
 - `docs/guides/audit.rst` described `AuditPolicy.from_preset(...)` and a `block_on_severity` option that do not exist; it now documents the real presets and what every field enforces.
 

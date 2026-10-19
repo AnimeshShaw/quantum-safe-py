@@ -21,7 +21,7 @@ pytestmark = pytest.mark.requires_liboqs
 GUIDES = pathlib.Path(__file__).resolve().parents[2] / "docs" / "guides"
 EXECUTABLE = [
     "upgrading.rst",
-    "upgrading-0.4.rst",
+    "upgrading-1.0.rst",
     "context-and-aad.rst",
     "choosing.rst",
     "cookbook.rst",

@@ -1,4 +1,4 @@
-"""Upgraded signing keys follow the default suite (0.4.0).
+"""Upgraded signing keys follow the default suite (1.0.0).
 
 ``HybridSign()`` is ``Ed25519+ML-DSA-65-v2`` and a signer refuses a key tagged with another
 format, so ``Upgrader`` and ``qs-migrate upgrade-key`` must produce ``-v2``-tagged signing keys by

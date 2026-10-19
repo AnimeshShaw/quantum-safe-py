@@ -24,14 +24,14 @@ def _load():
 def test_record_lists_every_file_with_its_sha256_and_the_pins(tmp_path) -> None:
     dist = tmp_path / "dist"
     dist.mkdir()
-    (dist / "quantum_safe_py-0.4.0-py3-none-any.whl").write_bytes(b"wheel bytes")
-    (dist / "quantum_safe_py-0.4.0.tar.gz").write_bytes(b"sdist bytes")
+    (dist / "quantum_safe_py-1.0.0-py3-none-any.whl").write_bytes(b"wheel bytes")
+    (dist / "quantum_safe_py-1.0.0.tar.gz").write_bytes(b"sdist bytes")
     (dist / "README.txt").write_bytes(b"ignored: not an artifact")
 
     record = _load().build_record(dist, ROOT)
 
     names = {a["file"] for a in record["artifacts"]}
-    assert names == {"quantum_safe_py-0.4.0-py3-none-any.whl", "quantum_safe_py-0.4.0.tar.gz"}
+    assert names == {"quantum_safe_py-1.0.0-py3-none-any.whl", "quantum_safe_py-1.0.0.tar.gz"}
     wheel = next(a for a in record["artifacts"] if a["file"].endswith(".whl"))
     assert wheel["sha256"] == hashlib.sha256(b"wheel bytes").hexdigest()
     assert wheel["bytes"] == len(b"wheel bytes")

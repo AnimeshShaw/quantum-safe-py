@@ -1,17 +1,17 @@
-Upgrading to 0.4.0
+Upgrading to 1.0.0
 ==================
 
 .. contents:: On this page
    :local:
    :depth: 2
 
-0.4.0 is the release that settles the behaviours announced in 0.3.1. Each section below says what
+1.0.0 is the release that settles the behaviours announced in 0.3.1. Each section below says what
 changed, what you need to do, and how to keep the old behaviour where that is possible.
 
 Omitted ``context=`` now means "expect an empty context"
 ---------------------------------------------------------
 
-Before 0.4.0, ``verify()`` without ``context=`` accepted whatever context the message carried and
+Before 1.0.0, ``verify()`` without ``context=`` accepted whatever context the message carried and
 emitted a ``DeprecationWarning``. Now it expects an empty context:
 
 .. code-block:: python
@@ -24,7 +24,7 @@ emitted a ``DeprecationWarning``. Now it expects an empty context:
    kp = signer.generate_keypair()
    sm = signer.sign(b"pay alice", kp.secret, context=b"payments-v1")
 
-   # 0.3.x: accepted, with a DeprecationWarning.  0.4.0: rejected, with a ContextOmittedWarning.
+   # 0.3.x: accepted, with a DeprecationWarning.  1.0.0: rejected, with a ContextOmittedWarning.
    with warnings.catch_warnings(record=True) as caught:
        warnings.simplefilter("always")
        try:

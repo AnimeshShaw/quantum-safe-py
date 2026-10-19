@@ -43,7 +43,7 @@ distribution its SHA-256 and size, the package version, the git commit and tag, 
 .. code-block:: bash
 
    python -m build                                   # or the release workflow's wheels
-   python scripts/artifact_record.py dist/ --out artifact-record-0.4.0.json
+   python scripts/artifact_record.py dist/ --out artifact-record-1.0.0.json
    sha256sum dist/*                                  # compare with the record
 
 Attach ``artifact-record-<version>.json`` to the GitHub release. The release is archived by Zenodo,
@@ -58,7 +58,7 @@ From a clean checkout of the release tag:
 
 .. code-block:: bash
 
-   git checkout v0.4.0
+   git checkout v1.0.0
    QUANTUM_SAFE_VENDOR_LIBOQS=1 python -m build --wheel
 
 The build hook runs the ``liboqs-python`` installer at the pinned release into a staging directory and

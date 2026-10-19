@@ -9,7 +9,7 @@ Post-quantum cryptography for Python: hybrid key exchange, hybrid signatures, en
 [![Documentation](https://img.shields.io/readthedocs/quantum-safe-py.svg)](https://quantum-safe-py.readthedocs.io/en/latest/)
 [![PyPI](https://img.shields.io/pypi/v/quantum-safe-py.svg)](https://pypi.org/project/quantum-safe-py/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/quantum-safe-py?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLUE&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/quantum-safe-py)
-[![Roadmap](https://img.shields.io/badge/roadmap-0.4.0-blue.svg)](ROADMAP.md)
+[![Roadmap](https://img.shields.io/badge/roadmap-1.0.0-blue.svg)](ROADMAP.md)
 [![arXiv](https://img.shields.io/badge/arXiv-preprint-b31b1b.svg)](https://arxiv.org/abs/2605.17061)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23008259.svg)](https://doi.org/10.5281/zenodo.23008259)
 
@@ -80,7 +80,7 @@ Everything else is on the documentation site: [quantum-safe-py.readthedocs.io](h
 | Migrate keys and track progress                             | [Migration](docs/guides/migration.rst)                                                                       |
 | Audit a codebase, produce a CBOM, check CNSA 2.0            | [Audit](docs/guides/audit.rst), [CNSA 2.0 and standards](docs/guides/compliance.rst)                         |
 | Exchange data with Node.js and browsers                     | [Interoperability](docs/guides/interop.rst)                                                                  |
-| Upgrade from an earlier release                             | [Upgrading to 0.4](docs/guides/upgrading-0.4.rst)                                                            |
+| Upgrade from an earlier release                             | [Upgrading to 1.0](docs/guides/upgrading-1.0.rst)                                                            |
 | Threat model, design notes, report a vulnerability          | [Security](docs/guides/security.rst)                                                                         |
 | Benchmarks and methodology                                  | [Benchmarks](docs/guides/benchmarks.rst)                                                                     |
 | What changed in each release / what is planned              | [CHANGELOG](CHANGELOG.md), [Roadmap](ROADMAP.md)                                                             |

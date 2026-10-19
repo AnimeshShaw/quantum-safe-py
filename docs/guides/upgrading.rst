@@ -20,8 +20,8 @@ The short version
 -----------------
 
 1. Pass ``context=`` to every ``verify()`` and ``expected_aad=`` to every
-   ``Envelope.open()``. What omitting them does in 0.4.0 is described in
-   :doc:`upgrading-0.4` and :doc:`context-and-aad`.
+   ``Envelope.open()``. What omitting them does in 1.0.0 is described in
+   :doc:`upgrading-1.0` and :doc:`context-and-aad`.
 2. If you ever signed with ``hedged=False``, build the verifier with
    ``hedged=False`` too. This applies to ``Sign``, ``HybridSign``, ``JWTVerifier``
    and ``HybridCertificateBuilder.verify_cosig``.
@@ -77,7 +77,7 @@ If you signed with ``hedged=False``, build the verifier the same way:
 
    from quantum_safe import VerificationError
    try:
-       # the same original format, but in hedged mode (in 0.4.0 plain HybridSign() is -v2)
+       # the same original format, but in hedged mode (in 1.0.0 plain HybridSign() is -v2)
        HybridSign("Ed25519", "ML-DSA-65").verify(sm, kp.public, context=b"releases-v1")
    except VerificationError:
        print("an unhedged signature does not verify on a hedged verifier")
@@ -112,8 +112,8 @@ it (constant-time comparison) or ``VerificationError`` is raised:
    except VerificationError:
        print("a signature made for 'login' is refused for 'payments'")
 
-**What you need to do.** Add ``context=`` to every ``verify()``. In 0.4.0 omitting it
-means "expect an empty context" (see :doc:`upgrading-0.4`). ``JWTVerifier`` and
+**What you need to do.** Add ``context=`` to every ``verify()``. In 1.0.0 omitting it
+means "expect an empty context" (see :doc:`upgrading-1.0`). ``JWTVerifier`` and
 ``HybridCertificateBuilder.verify_cosig`` now pass their own context, so nothing to
 change there.
 

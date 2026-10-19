@@ -7,7 +7,7 @@ carries its own context. The documented domain separation was not enforced.
 
 Now verify(..., context=...) compares the message's context with the
 expected one (constant time) and raises VerificationError on mismatch.
-Omitting context means "expect an empty context" (0.4.0): a message that
+Omitting context means "expect an empty context" (1.0.0): a message that
 carries a context is rejected, with a ContextOmittedWarning saying why.
 """
 

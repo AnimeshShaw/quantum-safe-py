@@ -51,7 +51,7 @@ What is compatible
      - Yes
 
 X-Wing, streaming encryption (format v3), all twelve SLH-DSA parameter sets, COSE_Sign1 and
-private RFC 9964 JWKs / COSE keys (a 32-byte seed) are shared with quantum-safe-ts 0.2.0. Private
+private RFC 9964 JWKs / COSE keys (a 32-byte seed) are shared with quantum-safe-ts 1.0.0. Private
 keys need the optional ``cryptography`` backend (``pip install 'quantum-safe-py[pyca]'``): a seed
 made in either library signs in the other. An *expanded* liboqs ML-DSA secret key has no
 recoverable seed, so TypeScript can verify what it signs but cannot sign with it.

@@ -232,7 +232,7 @@ Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``,
 - Keys carry the ``-v2`` tag, but the tag is advisory: v1 and v2 keys have
   identical bytes.  **Never use the same key in both formats.**
 
-``-v2`` is the default hybrid format from 0.4.0: ``HybridSign()`` is
+``-v2`` is the default hybrid format from 1.0.0: ``HybridSign()`` is
 ``Ed25519+ML-DSA-65-v2``.  Versions of quantum-safe before 0.3.1 cannot read
 ``-v2`` signatures; to sign for them, name the original format explicitly
 (``HybridSign("Ed25519", "ML-DSA-65")``).  ``HybridSign(hedged=False)`` without a

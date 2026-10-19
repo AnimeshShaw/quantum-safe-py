@@ -1,5 +1,5 @@
 """
-The default hybrid signature suite is ``Ed25519+ML-DSA-65-v2`` (roadmap 0.4.0, decision D5).
+The default hybrid signature suite is ``Ed25519+ML-DSA-65-v2`` (1.0.0, decision D5).
 
 The ``-v2`` format has no hedging prefix, signs a domain-separated wrapped message with FIPS 204's
 native context, and is byte-compatible with quantum-safe-ts. The previous default format is not

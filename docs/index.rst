@@ -77,7 +77,7 @@ and a CI-ready audit scanner — all in one library.
    :maxdepth: 1
    :caption: Project
 
-   guides/upgrading-0.4
+   guides/upgrading-1.0
    guides/upgrading
    changelog
    Roadmap <https://github.com/AnimeshShaw/quantum-safe-py/blob/master/ROADMAP.md>

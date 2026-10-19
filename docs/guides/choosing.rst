@@ -165,7 +165,7 @@ Original format or ``-v2``?
      - Every ML-DSA suite, hybrids, SLH-DSA
      - ML-DSA-44/65/87, Ed25519 and P-256 hybrids (no SLH-DSA)
 
-**Recommendation.** ``-v2`` is the default hybrid format from 0.4.0, so ``HybridSign()``
+**Recommendation.** ``-v2`` is the default hybrid format from 1.0.0, so ``HybridSign()``
 is right for new signatures wherever every verifier you control runs 0.3.1 or later. Name
 the original format (``HybridSign("Ed25519", "ML-DSA-65")``) while an older verifier is in
 the loop.

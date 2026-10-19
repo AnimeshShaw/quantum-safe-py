@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the artifact record of a release: what was built, from which commit and pins.
 
-    python scripts/artifact_record.py dist/ --out artifact-record-0.4.0.json
+    python scripts/artifact_record.py dist/ --out artifact-record-1.0.0.json
 
 For every wheel and source distribution in the directory it records the SHA-256 and size, plus
 the package version, the git commit, and the pins that decide what is inside a wheel (the liboqs

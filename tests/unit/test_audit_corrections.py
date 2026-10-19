@@ -200,7 +200,7 @@ class TestSbomKnowledgeBase:
         "name", ["quantum-safe-py", "quantum_safe_py", "Quantum-Safe-Py", "quantum-safe"]
     )
     def test_this_library_is_recognised_by_its_names(self, name: str) -> None:
-        assert _assess_component(name, "0.4.0").readiness.value == "READY"
+        assert _assess_component(name, "1.0.0").readiness.value == "READY"
 
     @pytest.mark.parametrize("name", ["pyjwt", "PyJWT", "PYJWT"])
     def test_names_are_matched_the_way_pip_matches_them(self, name: str) -> None:
