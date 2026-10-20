@@ -83,6 +83,7 @@ Everything else is on the documentation site: [quantum-safe-py.readthedocs.io](h
 | Upgrade from an earlier release                             | [Upgrading to 1.0](docs/guides/upgrading-1.0.rst)                                                            |
 | Threat model, design notes, report a vulnerability          | [Security](docs/guides/security.rst)                                                                         |
 | Benchmarks and methodology                                  | [Benchmarks](docs/guides/benchmarks.rst)                                                                     |
+| Check the benchmark figures yourself                        | Raw samples, checksums and steps: attached to the [1.0.0 release](https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0)                                 |
 | What changed in each release / what is planned              | [CHANGELOG](CHANGELOG.md), [Roadmap](ROADMAP.md)                                                             |
 
 ## Cite this work

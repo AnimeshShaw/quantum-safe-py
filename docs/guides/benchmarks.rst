@@ -493,6 +493,10 @@ median, the fastest and slowest run, and the run-to-run coefficient of variation
      - 95.9–139.2
      - 13.7%
 
+The raw samples of this run are attached to the `1.0.0 release <https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0>`_ as
+``quantum-safe-py-benchmarks-liboqs-0.16.0-2026-10-19.tar.gz``, with checksums and the steps to recompute the
+published figures.
+
 Two things changed against the 0.15.0 run in the same environment. The hybrid wrappers no longer
 pay a per-call cost for locating the optional RustCrypto backend (a failed import repeated on every
 object construction), so the combined ``HybridKEM`` rows are 16–25% faster than the 0.15.0 run.

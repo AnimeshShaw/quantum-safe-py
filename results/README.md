@@ -10,6 +10,10 @@ in `tests/bench/`; nothing is edited by hand.
 | `env2/2026-10-19_leakage_repeats/` | Three further leakage-screen sessions, run alone, with the added calibration of two different fixed keys against each other |
 | `env1/2026-10-06/` | ENV-1 (Windows 11, native Python): the same protocol, plus `leakage.json` |
 
+The per-run sample files and the leakage sessions behind `env2/2026-10-19_maxperf/` and `env2/2026-10-19_leakage_repeats/` are attached to the
+[1.0.0 release](https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0) as `quantum-safe-py-benchmarks-liboqs-0.16.0-2026-10-19.tar.gz`, with checksums and the steps to recompute the published figures.
+Anyone can download it, check the checksums and rerun `tests/bench/aggregate_runs.py` on it.
+
 Reproduce: `bash tests/bench/run_env2.sh`, `bash tests/bench/run_env1.sh`, then
 `python tests/bench/paper_numbers.py results/env2/<dir> --env1 results/env1/<dir> --out paper_numbers.json`.
 
