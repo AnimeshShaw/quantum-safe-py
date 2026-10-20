@@ -8,10 +8,6 @@ written by one opens in the other, in both directions. This is checked against t
 Python library (liboqs backend) in the TypeScript CI, and against data written by the
 TypeScript package in this repository's ``tests/interop``, not against a re-implementation.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 What is compatible
 ------------------
 

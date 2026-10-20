@@ -12,10 +12,6 @@ how to configure a deployment that selects the CNSA 2.0 parameter sets.
    Security Systems runs through FIPS 140-3 validated cryptographic modules, which is an
    outcome of testing by an accredited laboratory; the reports here are inputs to that work.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 What CNSA 2.0 requires
 ----------------------
 

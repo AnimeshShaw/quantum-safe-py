@@ -98,9 +98,9 @@ qs-audit = "quantum_safe.audit.cli:main"
 qs-migrate = "quantum_safe.migrate.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/AnimeshShaw/quantum-safe"
+Homepage = "https://github.com/AnimeshShaw/quantum-safe-py"
 Documentation = "https://quantum-safe-py.readthedocs.io/en/latest/"
-"Bug Tracker" = "https://github.com/AnimeshShaw/quantum-safe/issues"
+"Bug Tracker" = "https://github.com/AnimeshShaw/quantum-safe-py/issues"
 
 # ---------------------------------------------------------------------------
 # Hatch build config

@@ -12,10 +12,6 @@ changes is what the library *refuses* (input it should never have accepted) and 
 you must now *state* when verifying. This page lists every change, why it was made,
 and what to do about it.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 The short version
 -----------------
 
