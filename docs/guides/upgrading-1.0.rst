@@ -1,10 +1,6 @@
 Upgrading to 1.0.0
 ==================
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 1.0.0 is the release that settles the behaviours announced in 0.3.1. Each section below says what
 changed, what you need to do, and how to keep the old behaviour where that is possible.
 

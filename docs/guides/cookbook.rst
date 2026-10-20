@@ -5,10 +5,6 @@ Worked examples for the jobs people actually have. Every Python block on this pa
 executed by the test suite, so it runs as written. Where a recipe needs something you
 supply (a database, a web framework) it uses a small stand-in and says so.
 
-.. contents:: On this page
-   :local:
-   :depth: 1
-
 1. Encrypt a file for a recipient
 ---------------------------------
 

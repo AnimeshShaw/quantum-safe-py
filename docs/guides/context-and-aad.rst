@@ -1,10 +1,6 @@
 Context and AAD: binding a message to its purpose
 ==================================================
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 A signature or an encrypted message is only as useful as what it is bound to. The same key may sign a
 login challenge, a payment instruction and a software release; one recipient key may receive messages
 about many users. **Context** (for signatures) and **AAD** (for envelopes) are how a message says what it

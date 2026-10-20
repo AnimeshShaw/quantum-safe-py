@@ -5,10 +5,6 @@ quantum-safe offers several ways to do each job. This page tells you which to pi
 for a given situation, and, just as important, when **not** to use something. Every
 recommendation here is the one the maintainers would give you in person.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 Start here: the decision in one table
 -------------------------------------
 

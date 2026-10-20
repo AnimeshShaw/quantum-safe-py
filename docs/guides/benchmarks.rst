@@ -8,10 +8,6 @@ to run the benchmarks, what each harness covers, and how to interpret the output
 Authoritative results are stored in ``results/BENCHMARKS.md``. That file is the
 canonical record; this guide explains how to reproduce and extend them.
 
-.. contents::
-   :local:
-   :depth: 2
-
 ----
 
 Test environments

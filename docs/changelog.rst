@@ -1,3 +1,49 @@
+Changelog
+=========
+
+1.0.0
+-----
+
+*Released 2026-10-20.* The first stable release: from here the API and the wire formats follow
+semantic versioning. The full list, with every change, is in ``CHANGELOG.md`` in the repository;
+the move from 0.x is in :doc:`guides/upgrading-1.0`.
+
+Changed behaviour
+~~~~~~~~~~~~~~~~~
+
+- The default hybrid signature is ``Ed25519+ML-DSA-65-v2`` (``HybridSign()``); the original format
+  stays available by naming it.
+- An omitted ``context=`` in ``verify()`` means "expect an empty context", and an omitted
+  ``expected_aad=`` accepts any AAD with a once-per-call-site warning.
+- ``AuditPolicy`` enforces every key control it declares and rejects unknown fields; a MEDIUM
+  finding in ``fail_on`` is a violation.
+
+Added
+~~~~~
+
+- X-Wing, streaming envelopes (format v3), COSE_Sign1 and private JWKs for ML-DSA (RFC 9964), all
+  twelve SLH-DSA parameter sets, ``FileMigrationStore``, ``Sign.sign_standard()``.
+- P-384 hybrids (``P-384+ML-KEM-1024``, ``P-384+ML-DSA-87``) and ``qs-migrate upgrade-key`` for
+  P-256 and P-384 keys.
+- ``Envelope.rewrap``, ``rewrap_directory`` and ``qs-migrate rewrap``.
+- An optional ``cryptography`` backend (``[pyca]``) with seed keys.
+- 638 NIST ACVP known-answer cases run (225 before).
+
+Performance
+~~~~~~~~~~~
+
+- Constructing a KEM or signer is about ten times faster; small envelopes take about half the time;
+  stream encryption copies each chunk far less.
+
+Fixed
+~~~~~
+
+- liboqs 0.16.0 and a matching liboqs-python; real HQC and BIKE sizes; ``qs-migrate upgrade-key``
+  writes the upgraded key; stricter COSE parsing; corrected CBOM identifiers; a migration history
+  that cannot be read is never overwritten; ``upgrade-key --force`` restores the previous files on
+  failure; the scanner's exclude patterns match paths; pycryptodome rules report usage.
+
+
 0.3.2
 -----
 
@@ -181,51 +227,6 @@ Changed
 
 - Benchmark run selection: best-of-3 to median-of-3 (best-of-3 ran 8.0%
   optimistic on average across 33 operations).
-
-Changelog
-=========
-
-1.0.0
------
-
-*Released 2026-10-20.* The first stable release: from here the API and the wire formats follow
-semantic versioning. The full list, with every change, is in ``CHANGELOG.md`` in the repository;
-the move from 0.x is in :doc:`guides/upgrading-1.0`.
-
-Changed behaviour
-~~~~~~~~~~~~~~~~~
-
-- The default hybrid signature is ``Ed25519+ML-DSA-65-v2`` (``HybridSign()``); the original format
-  stays available by naming it.
-- An omitted ``context=`` in ``verify()`` means "expect an empty context", and an omitted
-  ``expected_aad=`` accepts any AAD with a once-per-call-site warning.
-- ``AuditPolicy`` enforces every key control it declares and rejects unknown fields; a MEDIUM
-  finding in ``fail_on`` is a violation.
-
-Added
-~~~~~
-
-- X-Wing, streaming envelopes (format v3), COSE_Sign1 and private JWKs for ML-DSA (RFC 9964), all
-  twelve SLH-DSA parameter sets, ``FileMigrationStore``, ``Sign.sign_standard()``.
-- P-384 hybrids (``P-384+ML-KEM-1024``, ``P-384+ML-DSA-87``) and ``qs-migrate upgrade-key`` for
-  P-256 and P-384 keys.
-- ``Envelope.rewrap``, ``rewrap_directory`` and ``qs-migrate rewrap``.
-- An optional ``cryptography`` backend (``[pyca]``) with seed keys.
-- 638 NIST ACVP known-answer cases run (225 before).
-
-Performance
-~~~~~~~~~~~
-
-- Constructing a KEM or signer is about ten times faster; small envelopes take about half the time;
-  stream encryption copies each chunk far less.
-
-Fixed
-~~~~~
-
-- liboqs 0.16.0 and a matching liboqs-python; real HQC and BIKE sizes; ``qs-migrate upgrade-key``
-  writes the upgraded key; stricter COSE parsing; corrected CBOM identifiers; a migration history
-  that cannot be read is never overwritten; ``upgrade-key --force`` restores the previous files on
-  failure; the scanner's exclude patterns match paths; pycryptodome rules report usage.
 
 
 0.2.0

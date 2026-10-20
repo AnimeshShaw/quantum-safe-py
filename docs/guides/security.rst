@@ -4,10 +4,6 @@ Security model and reporting
 What quantum-safe protects, what it assumes, where its limits are, and how to report a
 problem. Read this before relying on the library for anything sensitive.
 
-.. contents:: On this page
-   :local:
-   :depth: 2
-
 What the library does
 ---------------------
 
