@@ -66,6 +66,21 @@ qs-audit cnsa2                                           # CNSA 2.0 parameter-se
 qs-migrate status                                        # migration progress per key
 ```
 
+## Performance
+
+Measured on liboqs 0.16.0 (15 timed runs of 3,000 iterations each; median per operation):
+
+| Operation | Median |
+|---|---|
+| ML-KEM-768 encapsulate | 9.7 µs |
+| Hybrid X25519 + ML-KEM-768 key generation | 39.3 µs |
+| Hybrid X25519 + ML-KEM-768 encapsulate | 68.2 µs |
+| Hybrid X25519 + ML-KEM-768 decapsulate | 68.7 µs |
+
+Constructing a KEM or signer is about ten times faster than in 0.3, and small envelopes take about half the time.
+The full tables, the method and the timing-leakage screens are in the [benchmarks guide](https://quantum-safe-py.readthedocs.io/en/latest/guides/benchmarks.html) and in [results/](results/README.md);
+every timed sample is attached to the [1.0.0 release](https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0) as `quantum-safe-py-benchmarks-liboqs-0.16.0-2026-10-19.tar.gz`, with checksums.
+
 ## Documentation
 
 Everything else is on the documentation site: [quantum-safe-py.readthedocs.io](https://quantum-safe-py.readthedocs.io/en/latest/).
