@@ -766,6 +766,46 @@ def encap_public_key_calibration(iterations: int, pool_size: int = 256) -> list[
 LEAK_MAGNITUDES_US = (0.0, 0.25, 0.5, 1.0, 2.0, 5.0)
 
 
+def decap_two_fixed_keys_calibration(iterations: int, pool_size: int = 256) -> list[LeakageResult]:
+    """Calibration: two *different* fixed keys, each repeated byte for byte, against each other.
+
+    The fixed-versus-random test separates a class that repeats identical key and ciphertext
+    bytes from a class that does not. If two different fixed keys differ from each other by as
+    much as a fixed key differs from random keys, the gap comes from repetition (the same bytes
+    staying in cache), not from what the key is. If they do not differ, repetition alone does
+    not explain a fixed-versus-random gap and the result needs a closer look.
+    """
+    sk_a, ct_a = _kem_material()
+    sk_b, ct_b = _kem_material()
+    pool_a = [_kem_from_material(sk_a, ct_a) for _ in range(pool_size)]
+    pool_b = [_kem_from_material(sk_b, ct_b) for _ in range(pool_size)]
+
+    def do_a(i: int) -> None:
+        kem, ct = pool_a[i % pool_size]
+        kem.decap_secret(ct)
+
+    def do_b(i: int) -> None:
+        kem, ct = pool_b[i % pool_size]
+        kem.decap_secret(ct)
+
+    notes = [
+        "Both classes cycle the same number of objects and each class repeats its own key and "
+        "ciphertext exactly; the two keys differ. Repetition is matched, the key is not.",
+    ]
+    out = measure_two_class(
+        "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B",
+        do_a,
+        do_b,
+        "fixed key A",
+        "fixed key B",
+        iterations=iterations,
+        notes=notes,
+    )
+    for kem, _ in pool_a + pool_b:
+        kem.free()
+    return out
+
+
 def _spin_us(microseconds: float) -> None:
     """Busy-wait: a delay that does not yield to the scheduler."""
     end = time.perf_counter_ns() + int(microseconds * 1000)
@@ -892,6 +932,10 @@ def run_all(iterations: int = 10_000, save_json: str | None = None) -> list[Leak
         (
             "CALIBRATION - public key only (encapsulation, no secret)",
             encap_public_key_calibration,
+        ),
+        (
+            "CALIBRATION - two different fixed keys (repetition matched, key differs)",
+            decap_two_fixed_keys_calibration,
         ),
         (
             "POSITIVE CONTROL - detection sensitivity (deliberate leak)",

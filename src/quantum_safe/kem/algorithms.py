@@ -57,7 +57,7 @@ class KEMAlgorithmSpec:
 class ClassicalKEMSpec:
     """Spec for a classical KEM used as the hybrid companion.
 
-    We only support X25519 and P-256 as classical companions. RSA-OAEP is
+    We only support X25519, P-256 and P-384 as classical companions. RSA-OAEP is
     deliberately excluded — it's larger and slower and provides no meaningful
     additional security in the hybrid context.
     """
@@ -119,18 +119,64 @@ KEM_ALGORITHMS: dict[str, KEMAlgorithmSpec] = {
         shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="NIST Round 4 candidate. Not standardized.",
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
     ),
+    "BIKE-L3": KEMAlgorithmSpec(
+        name="BIKE-L3",
+        nist_level=NISTLevel.L3,
+        public_key_bytes=3083,
+        secret_key_bytes=10105,
+        ciphertext_bytes=3115,
+        shared_secret_bytes=32,
+        is_nist_standard=False,
+        suitable_for_hybrid=False,
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
+    ),
+    "BIKE-L5": KEMAlgorithmSpec(
+        name="BIKE-L5",
+        nist_level=NISTLevel.L5,
+        public_key_bytes=5122,
+        secret_key_bytes=16494,
+        ciphertext_bytes=5154,
+        shared_secret_bytes=32,
+        is_nist_standard=False,
+        suitable_for_hybrid=False,
+        notes="Experimental. NIST Round 4 candidate; not standardized.",
+    ),
+    # HQC: sizes of the 2025-08-22 specification as built in liboqs 0.16 (where the mechanisms are
+    # named HQC-1, HQC-3 and HQC-5). Selected by NIST in March 2025; the standard is in preparation.
     "HQC-128": KEMAlgorithmSpec(
         name="HQC-128",
         nist_level=NISTLevel.L1,
-        public_key_bytes=2249,
-        secret_key_bytes=2289,
+        public_key_bytes=2241,
+        secret_key_bytes=2321,
         ciphertext_bytes=4433,
-        shared_secret_bytes=64,
+        shared_secret_bytes=32,
         is_nist_standard=False,
         suitable_for_hybrid=False,
-        notes="NIST Round 4 candidate. Not standardized.",
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-1.",
+    ),
+    "HQC-192": KEMAlgorithmSpec(
+        name="HQC-192",
+        nist_level=NISTLevel.L3,
+        public_key_bytes=4514,
+        secret_key_bytes=4602,
+        ciphertext_bytes=8978,
+        shared_secret_bytes=32,
+        is_nist_standard=False,
+        suitable_for_hybrid=False,
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-3.",
+    ),
+    "HQC-256": KEMAlgorithmSpec(
+        name="HQC-256",
+        nist_level=NISTLevel.L5,
+        public_key_bytes=7237,
+        secret_key_bytes=7333,
+        ciphertext_bytes=14421,
+        shared_secret_bytes=32,
+        is_nist_standard=False,
+        suitable_for_hybrid=False,
+        notes="Experimental. Selected by NIST (2025); standard in preparation. liboqs name: HQC-5.",
     ),
 }
 
@@ -146,6 +192,11 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
         public_key_bytes=65,  # uncompressed point
         shared_secret_bytes=32,
     ),
+    "P-384": ClassicalKEMSpec(
+        name="P-384",
+        public_key_bytes=97,  # uncompressed point
+        shared_secret_bytes=48,  # the whole ECDH x-coordinate
+    ),
 }
 
 # Valid hybrid combinations: classical_name -> [pqc_name, ...]
@@ -153,6 +204,7 @@ CLASSICAL_KEM_ALGORITHMS: dict[str, ClassicalKEMSpec] = {
 HYBRID_COMBINATIONS: dict[str, list[str]] = {
     "X25519": ["ML-KEM-768", "ML-KEM-512", "ML-KEM-1024"],
     "P-256": ["ML-KEM-512", "ML-KEM-768"],
+    "P-384": ["ML-KEM-1024"],
 }
 
 # The default hybrid: X25519 + ML-KEM-768, as recommended by
@@ -161,7 +213,8 @@ DEFAULT_HYBRID_CLASSICAL = "X25519"
 DEFAULT_HYBRID_PQC = "ML-KEM-768"
 
 # Minimum NIST level we'll use in non-strict mode.
-# Algorithms below this need explicit opt-in via allow_low_security=True.
+# An algorithm below this level would need opt-in via allow_low_security=True; the registry
+# has none today, so the flag has no effect.
 MINIMUM_NIST_LEVEL = NISTLevel.L1
 
 

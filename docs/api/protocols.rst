@@ -14,6 +14,40 @@ Envelope
    :members:
    :show-inheritance:
 
+COSE
+----
+
+.. autofunction:: quantum_safe.protocols.cose.sign1
+
+.. autofunction:: quantum_safe.protocols.cose.verify_sign1
+
+.. autofunction:: quantum_safe.protocols.cose.inspect_sign1
+
+.. autofunction:: quantum_safe.protocols.cose.sig_structure
+
+.. autofunction:: quantum_safe.protocols.cose.encode_cose_key
+
+.. autofunction:: quantum_safe.protocols.cose.decode_cose_key
+
+Streaming envelope
+------------------
+
+.. autofunction:: quantum_safe.protocols.stream.seal_stream
+
+.. autofunction:: quantum_safe.protocols.stream.open_stream
+
+.. autofunction:: quantum_safe.protocols.stream.seal_bytes
+
+.. autofunction:: quantum_safe.protocols.stream.open_bytes
+
+.. autofunction:: quantum_safe.protocols.stream.inspect_stream_header
+
+.. autoclass:: quantum_safe.protocols.stream.StreamSealer
+   :members:
+
+.. autoclass:: quantum_safe.protocols.stream.StreamOpener
+   :members:
+
 JWT
 ---
 

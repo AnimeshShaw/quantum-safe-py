@@ -27,15 +27,13 @@ Deadlines, for reporting rather than enforcement: software and firmware signing
 and networking equipment exclusively CNSA 2.0 by 2030; web, cloud and operating
 systems by 2033; the National Security Systems transition complete by 2035.
 
-Scope limit, stated plainly
----------------------------
-Selecting compliant parameter sets is necessary for CNSA 2.0 and nowhere near
-sufficient. CNSA 2.0 compliance for National Security Systems runs through
-FIPS 140-3 validated modules, which is a CMVP outcome from an accredited
-laboratory. This library is not a validated module and this profile does not make
-it one. What the profile does is stop a deployment from silently sitting below
-the mandated parameter sets. :func:`report` says so in its output rather than
-leaving a reader to infer it.
+What the profile covers
+-----------------------
+Selecting the mandated parameter sets is the first step of CNSA 2.0. For National
+Security Systems the requirement is met through FIPS 140-3 validated modules, a
+CMVP outcome from an accredited laboratory. The profile stops a deployment from
+silently sitting below the mandated parameter sets, and :func:`report` shows
+where a configuration stands.
 """
 
 from __future__ import annotations
@@ -81,10 +79,10 @@ HYBRID_POLICY_NOTE = (
     "it names is IKEv2, keeping CNSA 1.0 key establishment fortified by ML-KEM-1024)."
 )
 
-# Classical partners hybrid_kem() can build. HybridKEM implements X25519 and
-# P-256 only; P-384 is not offered until it is implemented. Note that these
-# hybrids are reported PARTIAL (see above); pqc_kem() is the compliant choice.
-CNSA2_HYBRID_CLASSICAL = ("X25519",)
+# Classical partners hybrid_kem() can build with ML-KEM-1024: X25519, and P-384 (the
+# curve of CNSA 1.0 estates). Note that these hybrids are reported PARTIAL (see above);
+# pqc_kem() is the compliant choice.
+CNSA2_HYBRID_CLASSICAL = ("X25519", "P-384")
 
 #: Why the software/firmware signing requirement is still only partly met.
 CODE_SIGNING_STATUS: dict[str, str] = {
@@ -130,6 +128,16 @@ class Finding(str, Enum):
 
 @dataclass(frozen=True)
 class CheckResult:
+    """The verdict on one CNSA 2.0 requirement.
+
+    Attributes:
+        requirement: Name of the requirement that was checked, e.g. ``"Key establishment"``.
+        finding: The outcome, as a :class:`Finding`.
+        detail: Human-readable explanation of the outcome.
+        expected: The value the requirement calls for, when there is one.
+        actual: The value found in the configuration, when there is one.
+    """
+
     requirement: str
     finding: Finding
     detail: str
@@ -138,12 +146,17 @@ class CheckResult:
 
     @property
     def ok(self) -> bool:
+        """``True`` only when the finding is ``Finding.COMPLIANT``."""
         return self.finding is Finding.COMPLIANT
 
 
 @dataclass
 class ComplianceReport:
-    """Result of evaluating a configuration against CNSA 2.0."""
+    """Result of evaluating a configuration against CNSA 2.0.
+
+    Attributes:
+        checks: The individual :class:`CheckResult` entries, in the order they were evaluated.
+    """
 
     checks: list[CheckResult] = field(default_factory=list)
 
@@ -159,9 +172,11 @@ class ComplianceReport:
 
     @property
     def failures(self) -> list[CheckResult]:
+        """The checks whose finding is anything other than ``Finding.COMPLIANT``."""
         return [c for c in self.checks if not c.ok]
 
     def render(self) -> str:
+        """Format the report as plain text, one PASS, FAIL, GAP or PART line per check."""
         lines = [
             "CNSA 2.0 parameter-set report",
             "=" * 60,
@@ -182,10 +197,10 @@ class ComplianceReport:
             else f"OVERALL: NOT compliant ({len(self.failures)} issue(s))"
         )
         lines.append(
-            "This reports parameter selection only. CNSA 2.0 compliance for "
-            "National Security Systems runs through FIPS 140-3 validated modules; "
-            "this library is not a validated module and this report is not a "
-            "validation."
+            "This report covers parameter selection: the algorithms, key sizes and "
+            "hashes in use, set against the CNSA 2.0 requirements. For National "
+            "Security Systems the requirement is met through FIPS 140-3 validated "
+            "modules."
         )
         return "\n".join(lines)
 
@@ -198,8 +213,18 @@ def _check_pqc_selection(
     The whole name is validated: the PQC half must be the required parameter
     set; a hybrid with a recognised classical half is PARTIAL (see
     HYBRID_POLICY_NOTE), and anything else is NON_COMPLIANT.
+
+    Args:
+        requirement: Requirement name stored in the result.
+        algorithm: Algorithm name, with an optional ``-v2`` suffix, either ``pqc`` or
+            ``classical+pqc``.
+        required: The post-quantum parameter set the requirement calls for.
+        lower_note: Text appended to the detail when the post-quantum half is a different
+            parameter set.
     """
-    parts = algorithm.split("+")
+    # The -v2 signature format uses the same parameter sets as its base suite.
+    name = algorithm.removesuffix("-v2")
+    parts = name.split("+")
     if len(parts) > 2 or any(not p for p in parts):
         return CheckResult(
             requirement=requirement,
@@ -300,6 +325,11 @@ def check_key_derivation(kem: str) -> CheckResult:
 
 
 def check_hash(algorithm: str) -> CheckResult:
+    """Check a hash algorithm name against the SHA-384 / SHA-512 requirement.
+
+    The name is upper-cased and given a hyphen after ``SHA`` before comparison, so ``sha384``
+    and ``SHA-384`` are treated alike.
+    """
     normalised = algorithm.upper().replace("SHA", "SHA-").replace("SHA--", "SHA-")
     if normalised in CNSA2_HASHES:
         return CheckResult(
@@ -338,6 +368,12 @@ def report(
         include_key_derivation: whether to evaluate this library's own key
             derivation hash for the ``kem`` selection (default True when
             ``kem`` is given); see :func:`check_key_derivation`.
+
+    Returns:
+        A :class:`ComplianceReport` with one check per selection supplied, the key-derivation
+        check when requested, and the software/firmware signing check when requested. Passing
+        no selections and ``include_code_signing=False`` yields an empty report, which is not
+        ``compliant``.
     """
     rep = ComplianceReport()
     if kem is not None:
@@ -393,6 +429,11 @@ def enforce(
     Code signing and key-derivation hashes are not evaluated here; this is not
     a compliance certificate (see :func:`report`).
 
+    Args:
+        kem: KEM or hybrid KEM algorithm name to check, or ``None`` to skip.
+        signature: Signature or hybrid signature algorithm name to check, or ``None`` to skip.
+        strict: Also refuse selections that :func:`report` rates PARTIAL.
+
     Raises:
         ValueError: if a selection does not meet the requirement.
     """
@@ -422,6 +463,9 @@ def pqc_kem(backend: str = "auto") -> KEM:
     CNSA 2.0 accepts standalone ML-KEM-1024 and does not require hybrid
     operation. Pair it with envelope v2 (``Envelope.seal``) for a SHA-384 key
     derivation.
+
+    Args:
+        backend: Backend selector, forwarded unchanged to ``KEM``.
     """
     from quantum_safe.kem.core import KEM
 
@@ -429,7 +473,13 @@ def pqc_kem(backend: str = "auto") -> KEM:
 
 
 def pqc_sign(backend: str = "auto", hedged: bool = True) -> Sign:
-    """Return a standalone ML-DSA-87 signer: the compliant signature choice."""
+    """Return a standalone ML-DSA-87 signer: the compliant signature choice.
+
+    Args:
+        backend: Backend selector, forwarded unchanged to ``Sign``.
+        hedged: Whether to sign with hedged (randomized) signing, forwarded unchanged to
+            ``Sign``.
+    """
     from quantum_safe.signatures.core import Sign
 
     return Sign(CNSA2_SIGNATURE, backend=backend, hedged=hedged)
@@ -449,6 +499,9 @@ def hybrid_kem(classical: str = "X25519", backend: str = "auto") -> HybridKEM:
     Args:
         classical: classical partner; a value from :data:`CNSA2_HYBRID_CLASSICAL`.
         backend: backend selector, forwarded unchanged.
+
+    Raises:
+        ValueError: If ``classical`` is not in :data:`CNSA2_HYBRID_CLASSICAL`.
     """
     from quantum_safe.kem.hybrid import HybridKEM
 
@@ -470,6 +523,11 @@ def hybrid_sign(
     what CNSA 2.0 prescribes (see :data:`HYBRID_POLICY_NOTE`). Use
     :func:`pqc_sign` for a compliant configuration. Hedged signing is left
     enabled by default.
+
+    Args:
+        classical: Classical partner algorithm, forwarded unchanged to ``HybridSign``.
+        backend: Backend selector, forwarded unchanged.
+        hedged: Whether to sign with hedged (randomized) signing, forwarded unchanged.
     """
     from quantum_safe.signatures.hybrid import HybridSign
 
@@ -500,15 +558,14 @@ def describe() -> str:
             f"Use {' or '.join(CNSA2_HASHES)} for hashing and {CNSA2_SYMMETRIC} for",
             "symmetric encryption.",
             "",
-            "Two things this does NOT give you:",
+            "Beyond parameter selection:",
             "",
-            f"  1. Software and firmware signing in full. CNSA 2.0 requires "
+            f"  1. Software and firmware signing. CNSA 2.0 requires "
             f"{' or '.join(CNSA2_CODE_SIGNING)} (SP 800-208);",
             "     LMS is available via the optional [lms] extra, XMSS is not, and",
-            "     SP 800-208 key generation must happen in a validated module.",
-            "  2. Validation. CNSA 2.0 compliance for National Security Systems runs",
-            "     through FIPS 140-3 validated modules. Selecting the right parameters",
-            "     is necessary and not sufficient, and no self-assessment produces a",
-            "     CMVP certificate.",
+            "     SP 800-208 expects key generation inside a validated module.",
+            "  2. Validation. For National Security Systems, CNSA 2.0 is met through",
+            "     FIPS 140-3 validated modules; choosing the right parameters is the",
+            "     first step.",
         ]
     )

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "quantum-safe-py",
+  "description": "Hybrid post-quantum cryptography for Python: ML-KEM, ML-DSA, SLH-DSA, hybrid envelopes and signatures, migration tooling.",
+  "folders": ["docs/guides", "docs/api"],
+  "excludeFolders": ["node_modules", "_build"],
+  "rules": [
+    "Pass a context when signing and the same expected context when verifying.",
+    "Pass aad when sealing an envelope and expected_aad when opening it.",
+    "The default hybrid signature suite is Ed25519+ML-DSA-65-v2; the default hybrid KEM is X25519+ML-KEM-768."
+  ]
+}

@@ -137,12 +137,29 @@ PROVIDED_ASSETS: tuple[CryptoAssetSpec, ...] = (
     CryptoAssetSpec("ML-DSA-44", "signature", "2.16.840.1.101.3.4.3.17", 128, 2, False),
     CryptoAssetSpec("ML-DSA-65", "signature", "2.16.840.1.101.3.4.3.18", 192, 3, False),
     CryptoAssetSpec("ML-DSA-87", "signature", "2.16.840.1.101.3.4.3.19", 256, 5, False),
-    CryptoAssetSpec("SLH-DSA-SHAKE-128s", "signature", "2.16.840.1.101.3.4.3.20", 128, 1, False),
-    CryptoAssetSpec("SLH-DSA-SHAKE-256s", "signature", "2.16.840.1.101.3.4.3.24", 256, 5, False),
+) + tuple(
+    # FIPS 205 / RFC 9909: id-slh-dsa-<family>-<level><variant> under 2.16.840.1.101.3.4.3,
+    # numbered 20..25 for SHA2 and 26..31 for SHAKE, in the order 128s, 128f, 192s, 192f, 256s,
+    # 256f.
+    CryptoAssetSpec(
+        f"SLH-DSA-{family}-{level}{variant}",
+        "signature",
+        f"2.16.840.1.101.3.4.3.{base + 2 * (level // 64 - 2) + (1 if variant == 'f' else 0)}",
+        level,
+        {128: 1, 192: 3, 256: 5}[level],
+        False,
+    )
+    for family, base in (("SHA2", 20), ("SHAKE", 26))
+    for level in (128, 192, 256)
+    for variant in ("s", "f")
 )
 
 
 def _bom_ref(prefix: str, name: str, suffix: str = "") -> str:
+    """A CycloneDX ``bom-ref`` of the form ``<prefix>/<slug><suffix>``.
+
+    The slug is ``name`` lowercased with spaces and ``+`` replaced by ``-``.
+    """
     slug = name.lower().replace(" ", "-").replace("+", "-")
     return f"{prefix}/{slug}{suffix}"
 
@@ -211,6 +228,12 @@ def build_cbom(
         application_name: name recorded for the scanned application.
         serial_number: CycloneDX serial number. Generated if omitted.
         timestamp: ISO-8601 timestamp. Current UTC time if omitted.
+
+    Returns:
+        The CBOM as a JSON-serialisable dict. Each scan finding whose rule has a known algorithm
+        becomes one ``detected/...`` component carrying its file and line; findings from other
+        rules are not listed. The provided post-quantum algorithms follow as ``provided/...``
+        components. The detected count is recorded in the metadata properties.
     """
     components: list[dict[str, Any]] = []
     detected_count = 0
@@ -298,4 +321,5 @@ def build_cbom(
 
 
 def to_json(cbom: dict[str, Any], indent: int = 2) -> str:
+    """Serialise a CBOM dict to a JSON string indented by ``indent`` spaces, keeping key order."""
     return json.dumps(cbom, indent=indent, sort_keys=False)

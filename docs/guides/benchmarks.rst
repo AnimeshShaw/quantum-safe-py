@@ -93,13 +93,15 @@ Running the benchmarks
 Docker (recommended — ENV-2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Docker image compiles liboqs 0.15.0 from source with AVX2/AVX-512 support.
+The Docker image compiles liboqs from source with AVX2/AVX-512 support (0.16.0 by default; the
+paper numbers were measured with ``--build-arg LIBOQS_TAG=0.15.0``).
 This is the reproducible, ENV-2 path used for all primary paper numbers.
 
 .. code-block:: bash
 
-   # Build once — compiles liboqs 0.15.0 from source (~3 min on a modern laptop)
+   # Build once — compiles liboqs 0.16.0 from source (~3 min on a modern laptop)
    docker build -t quantum-safe-bench .
+   # For the liboqs 0.15.0 numbers of the papers: docker build --build-arg LIBOQS_TAG=0.15.0 ...
 
    # KEM suite: classical + hybrid decomposition + concurrent load curve
    docker run --rm -v ${PWD}/results:/app/results quantum-safe-bench \
@@ -420,6 +422,92 @@ the cross-environment speedup analysis.
 
 ----
 
+Re-measurement on liboqs 0.16.0
+-------------------------------
+
+The submitted papers report the liboqs 0.15.0 measurements above, and those numbers are unchanged.
+The release builds against liboqs 0.16.0, so the same protocol was run again on that pair: one
+discarded warm-up run plus 15 timed runs of 3,000 iterations each, in the Docker image built from
+commit ``49edb09``, with the Windows "Ultimate Performance" power plan on AC power
+(``results/env2/2026-10-19_maxperf/``). The table gives the median across runs of each run's
+median, the fastest and slowest run, and the run-to-run coefficient of variation.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 46 14 22 18
+
+   * - Operation
+     - Median (µs)
+     - Fastest–slowest run (µs)
+     - Run-to-run CoV
+   * - X25519 key generation
+     - 21.5
+     - 18.7–30.7
+     - 19.8%
+   * - X25519 key agreement
+     - 24.4
+     - 19.3–30.2
+     - 18.0%
+   * - ML-KEM-768 key generation
+     - 9.8
+     - 8.6–12.8
+     - 15.9%
+   * - ML-KEM-768 encapsulate
+     - 9.7
+     - 9.3–13.5
+     - 14.2%
+   * - ML-KEM-768 decapsulate
+     - 10.9
+     - 10.5–16.7
+     - 17.7%
+   * - HybridKEM X25519+ML-KEM-768 key generation
+     - 39.3
+     - 37.9–55.7
+     - 14.4%
+   * - HybridKEM encapsulate
+     - 68.2
+     - 62.1–86.4
+     - 13.5%
+   * - HybridKEM decapsulate
+     - 68.7
+     - 63.7–89.4
+     - 14.1%
+   * - ML-DSA-65 key generation
+     - 28.1
+     - 27.2–39.3
+     - 15.7%
+   * - ML-DSA-65 sign (32 B)
+     - 65.8
+     - 62.1–89.6
+     - 11.2%
+   * - ML-DSA-65 verify (32 B)
+     - 28.1
+     - 26.7–38.5
+     - 13.5%
+   * - HybridSign Ed25519+ML-DSA-65 sign (32 B)
+     - 143.8
+     - 134.9–162.4
+     - 5.4%
+   * - HybridSign verify (32 B)
+     - 103.8
+     - 95.9–139.2
+     - 13.7%
+
+The raw samples of this run are attached to the `1.0.0 release <https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0>`_ as
+``quantum-safe-py-benchmarks-liboqs-0.16.0-2026-10-19.tar.gz``, with checksums and the steps to recompute the
+published figures.
+
+Two things changed against the 0.15.0 run in the same environment. The hybrid wrappers no longer
+pay a per-call cost for locating the optional RustCrypto backend (a failed import repeated on every
+object construction), so the combined ``HybridKEM`` rows are 16–25% faster than the 0.15.0 run.
+Operations that run entirely inside liboqs or Ed25519 are within the usual session-to-session
+spread of this machine (about ±10%). The leakage screen was repeated in three further sessions
+(``results/env2/2026-10-19_leakage_repeats/``) with an added calibration that compares two
+different fixed keys; the fixed-versus-random difference for ML-KEM-768 decapsulation did not
+reproduce consistently in those sessions.
+
+----
+
 Statistical post-processing
 -----------------------------
 
@@ -591,13 +679,8 @@ ACVP conformance testing
 ``tests/conformance/acvp_kat.py`` runs NIST's own published ACVP
 known-answer vectors against the installed backend.
 
-.. warning::
-
-   This is **not** a CAVP or CMVP validation. Validation is performed by
-   accredited laboratories against NIST's production ACVTS server and results
-   in a certificate. This module produces none of that. The supported claim
-   is "answers NIST-issued ACVP vectors correctly", not "validated" — never
-   describe a passing run as validation, certification, or compliance.
+The supported claim is "answers NIST-issued ACVP vectors correctly", for the
+test types listed below.
 
 Vectors are fetched from a pinned commit of ``usnistgov/ACVP-Server`` (so a
 re-run reproduces the same answers) and cached under
@@ -607,14 +690,19 @@ re-run reproduces the same answers) and cached under
 
    python tests/conformance/acvp_kat.py --save results/acvp_kat.json
 
-Current result: **225 of 225 runnable cases** produce the expected answer —
-ML-KEM keyGen (75/75, seeded from the 64-byte ``d‖z``), ML-KEM encapsulation
-(75/75, reached through ``OQS_KEM_encaps_derand`` via ``ctypes`` since the
-high-level binding can't accept ACVP's supplied randomness), ML-KEM
-decapsulation (30/30, including implicit-rejection cases), and ML-DSA sigVer
-(45/45, across both acceptance and rejection cases — an implementation that
-rejected everything would pass only the rejection cases, so both polarities
-matter). ML-KEM key-validation checks and ML-DSA keyGen/sigGen remain out of
-reach of the current API surface; the runner reports this as a scope limit,
-not a failure. Full detail, including *why* each unreachable test type is
+Current result: **638 of 638 runnable cases** produce the expected answer —
+ML-KEM keyGen (75/75, seeded from the 64-byte ``d‖z``; 50/50 ``ek`` through
+the ``cryptography`` backend), ML-KEM encapsulation (75/75, reached through
+``OQS_KEM_encaps_derand`` via ``ctypes`` since the high-level binding can't
+accept ACVP's supplied randomness), ML-KEM decapsulation (30/30, including
+implicit-rejection cases), ML-DSA keyGen (75/75 public keys from the seed
+through ``cryptography``; 75/75 NIST expanded secret keys sign in liboqs and
+verify in ``cryptography`` under NIST's public keys), ML-DSA sigVer (45/45 in
+liboqs and 45/45 in ``cryptography``, across both acceptance and rejection
+cases — an implementation that rejected everything would pass only the
+rejection cases, so both polarities matter) and SLH-DSA sigVer (168/168 over
+all twelve parameter sets, acceptance and rejection). ML-KEM key-validation
+checks, ML-DSA sigGen and externalMu, SLH-DSA keyGen/sigGen, and the pre-hash
+and internal-interface groups remain out of reach of the current API
+surface; the runner reports this as a scope limit, not a failure. Full detail, including *why* each unreachable test type is
 unreachable, is in ``results/BENCHMARKS.md`` and the module's own docstring.

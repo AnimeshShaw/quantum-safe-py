@@ -32,7 +32,7 @@ echo "== environment =="
   echo "runs: $RUNS (first discarded)  iterations: $ITER  leakage iterations: $LEAK_ITER  cpuset: $CPUS"
   echo "--- docker version"; docker version
   echo "--- docker info"; docker info
-  echo "--- running containers"; docker ps
+  echo "--- running containers"; echo "other containers running at the start: $(docker ps -q | wc -l) (names are not recorded)"
   echo "--- power plan"; (powercfg.exe /getactivescheme 2>/dev/null || echo "powercfg not available")
   echo "--- battery/AC"; (powershell.exe -NoProfile -Command "(Get-CimInstance Win32_Battery | Select-Object BatteryStatus | Out-String)" 2>/dev/null || true)
   echo "--- host uptime"; (powershell.exe -NoProfile -Command "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime" 2>/dev/null || true)

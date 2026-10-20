@@ -60,8 +60,8 @@ The same decision as code:
        return cnsa2.pqc_kem().generate_keypair() if cnsa2_profile else HybridKEM().generate_keypair()
 
    def signer(verifiers_are_all_0_3_1_or_later: bool = False):
-       """-v2 when every verifier can read it, the default format otherwise."""
-       return HybridSign("Ed25519", "ML-DSA-65-v2") if verifiers_are_all_0_3_1_or_later else HybridSign()
+       """-v2 when every verifier can read it, the original format otherwise."""
+       return HybridSign() if verifiers_are_all_0_3_1_or_later else HybridSign("Ed25519", "ML-DSA-65")
 
    for profile in (False, True):
        keys = encryption_keys(profile)
@@ -138,16 +138,16 @@ more than belt-and-braces. Measured sizes for ML-DSA-65: the raw signature is 33
 default-format ``SignedMessage`` signature is 3342 bytes (hedging prefix) and 3476 for the
 hybrid; with ``-v2`` it is 3309 (pure) and 3373 (hybrid).
 
-Default format or ``-v2``?
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Original format or ``-v2``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
    :widths: 25 37 38
 
    * -
-     - Default (v1)
-     - ``-v2``
+     - Original format (v1)
+     - ``-v2`` (the default for ``HybridSign``)
    * - Who can verify
      - quantum-safe (Python 0.2.1+ and TypeScript)
      - quantum-safe 0.3.1+ and quantum-safe-ts; the ML-DSA half is plain FIPS 204, so any
@@ -165,9 +165,10 @@ Default format or ``-v2``?
      - Every ML-DSA suite, hybrids, SLH-DSA
      - ML-DSA-44/65/87, Ed25519 and P-256 hybrids (no SLH-DSA)
 
-**Recommendation.** For *new* signatures where every verifier you control runs 0.3.1 or
-later, use ``-v2``. Keep the default while an older verifier is in the loop. The default
-will move to ``-v2`` in a later minor release.
+**Recommendation.** ``-v2`` is the default hybrid format from 1.0.0, so ``HybridSign()``
+is right for new signatures wherever every verifier you control runs 0.3.1 or later. Name
+the original format (``HybridSign("Ed25519", "ML-DSA-65")``) while an older verifier is in
+the loop.
 
 .. warning::
 
@@ -208,14 +209,71 @@ Use ``Upgrader`` to produce a hybrid key that *contains* the classical key, and
 Give the manager a store with ``compare_and_set`` whenever more than one process shares it
 (see :doc:`migration`).
 
+Algorithm reference
+-------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 14 10 14 34
+
+   * - Algorithm
+     - Type
+     - NIST level
+     - Standard
+     - Notes
+   * - ``ML-KEM-512``
+     - KEM
+     - 1
+     - FIPS 203
+     - Smallest; use ML-KEM-768 for new deployments.
+   * - ``ML-KEM-768``
+     - KEM
+     - 3
+     - FIPS 203
+     - Default.
+   * - ``ML-KEM-1024``
+     - KEM
+     - 5
+     - FIPS 203
+     - Highest level; the CNSA 2.0 parameter set.
+   * - ``ML-DSA-44`` / ``65`` / ``87``
+     - Signature
+     - 2 / 3 / 5
+     - FIPS 204
+     - ``ML-DSA-65`` is the default; ``ML-DSA-87`` is the CNSA 2.0 parameter set.
+   * - ``SLH-DSA-*`` (12 sets)
+     - Signature
+     - 1 / 3 / 5
+     - FIPS 205
+     - Hash-based; ``s`` sets are smaller and slower to sign, ``f`` sets are faster and larger.
+   * - ``X25519+ML-KEM-768``
+     - Hybrid KEM
+     - 3
+     - IETF drafts
+     - Default hybrid combination. ``X-Wing`` is available for interoperability with other X-Wing implementations.
+   * - ``P-384+ML-KEM-1024``, ``P-384+ML-DSA-87``
+     - Hybrid
+     - 5
+     - library format
+     - For estates that hold CNSA 1.0 P-384 keys. ML-DSA-87 is the only level paired with P-384.
+   * - ``Ed25519+ML-DSA-65-v2``
+     - Hybrid signature
+     - 3
+     - library format
+     - Default hybrid signature. ``Ed25519+ML-DSA-65`` is the original format; name it explicitly.
+   * - ``HQC-128`` / ``192`` / ``256``, ``BIKE-L1`` / ``L3`` / ``L5``
+     - KEM
+     - 1 / 3 / 5
+     - liboqs
+     - Available through liboqs; experimental.
+
 Where quantum-safe is not the right tool
 -----------------------------------------
 
 Being straightforward about limits is part of being safe to adopt:
 
-- **You need a validated module.** quantum-safe is not FIPS 140-3 validated and is not a
-  CAVP or CMVP result. Its conformance evidence (ACVP known-answer tests) is evidence, not
-  validation. If a procurement rule requires a certificate, use a validated module.
+- **A procurement rule requires a CMVP certificate.** Use a certified module for the
+  primitives; quantum-safe's value there is the migration and audit tooling around them.
 - **You need constant-time guarantees.** Python gives none. liboqs is the constant-time
   layer; this library adds Python code around it. See :doc:`security`.
 - **You need hardware or embedded targets.** This is a Python library. Use liboqs,

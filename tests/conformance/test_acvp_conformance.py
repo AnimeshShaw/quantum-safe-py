@@ -129,3 +129,58 @@ def test_ml_kem_encapsulation_matches_nist_vectors(vectors: dict) -> None:
         f"{result.total_run - result.total_passed} of {result.total_run} "
         f"vectors mismatched: {result.failures[:3]}"
     )
+
+
+pyca_required = pytest.mark.skipif(
+    not acvp_kat._pyca_available(), reason="cryptography >= 48 not installed (the [pyca] extra)"
+)
+
+
+def _assert_all_passed(result: acvp_kat.SuiteResult, minimum: int) -> None:
+    assert result.runnable, f"no runnable cases for {result.suite} {result.test_type}"
+    assert result.total_run >= minimum, f"only {result.total_run} cases ran, expected >= {minimum}"
+    assert result.errors == 0, f"errors: {result.failures[:3]}"
+    assert result.total_passed == result.total_run, (
+        f"{result.total_run - result.total_passed} of {result.total_run} "
+        f"vectors mismatched: {result.failures[:3]}"
+    )
+
+
+@oqs_required
+def test_slh_dsa_sigver_covers_all_twelve_sets(vectors: dict) -> None:
+    """Every SLH-DSA parameter set verifies NIST's accept cases and rejects its reject cases."""
+    suite = vectors["SLH-DSA-sigVer-FIPS205"]
+    result = acvp_kat.run_slh_dsa_sigver(suite["prompt"], suite["expectedResults"])
+    _assert_all_passed(result, 168)
+    assert result.meaningful, "needs both accepting and rejecting cases"
+    assert any("12 of 12" in note for note in result.notes)
+
+
+@pyca_required
+def test_ml_dsa_keygen_from_seed_matches_nist_vectors(vectors: dict) -> None:
+    suite = vectors["ML-DSA-keyGen-FIPS204"]
+    result = acvp_kat.run_ml_dsa_keygen_pyca(suite["prompt"], suite["expectedResults"])
+    _assert_all_passed(result, 75)
+
+
+@oqs_required
+@pyca_required
+def test_ml_dsa_expanded_secret_key_agrees_with_its_public_key(vectors: dict) -> None:
+    suite = vectors["ML-DSA-keyGen-FIPS204"]
+    result = acvp_kat.run_ml_dsa_keygen_expanded(suite["prompt"], suite["expectedResults"])
+    _assert_all_passed(result, 75)
+
+
+@pyca_required
+def test_ml_kem_keygen_from_seed_via_pyca_matches_nist_vectors(vectors: dict) -> None:
+    suite = vectors["ML-KEM-keyGen-FIPS203"]
+    result = acvp_kat.run_ml_kem_keygen_pyca(suite["prompt"], suite["expectedResults"])
+    _assert_all_passed(result, 50)  # ML-KEM-512 is not in this backend
+
+
+@pyca_required
+def test_ml_dsa_sigver_via_pyca_matches_nist_vectors(vectors: dict) -> None:
+    suite = vectors["ML-DSA-sigVer-FIPS204"]
+    result = acvp_kat.run_ml_dsa_sigver_pyca(suite["prompt"], suite["expectedResults"])
+    _assert_all_passed(result, 45)
+    assert result.meaningful

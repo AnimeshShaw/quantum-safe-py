@@ -50,6 +50,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any
 
+from quantum_safe._version import __version__
+
 
 class Severity(IntEnum):
     """Finding severity levels, ordered so higher = worse."""
@@ -85,6 +87,7 @@ class Finding:
     fix_hint: str = ""
 
     def to_dict(self) -> dict[str, Any]:
+        """The finding as a JSON-serialisable dict; ``severity`` is the level's name."""
         return {
             "file": self.file,
             "line": self.line,
@@ -123,18 +126,22 @@ class ScanReport:
 
     @property
     def critical(self) -> list[Finding]:
+        """The findings with CRITICAL severity."""
         return [f for f in self.findings if f.severity == Severity.CRITICAL]
 
     @property
     def high(self) -> list[Finding]:
+        """The findings with HIGH severity."""
         return [f for f in self.findings if f.severity == Severity.HIGH]
 
     @property
     def medium(self) -> list[Finding]:
+        """The findings with MEDIUM severity."""
         return [f for f in self.findings if f.severity == Severity.MEDIUM]
 
     @property
     def info(self) -> list[Finding]:
+        """The findings with INFO severity."""
         return [f for f in self.findings if f.severity == Severity.INFO]
 
     @property
@@ -236,7 +243,7 @@ class ScanReport:
                     "tool": {
                         "driver": {
                             "name": "qs-audit",
-                            "version": "0.1.0",
+                            "version": __version__,
                             "rules": rules,
                         }
                     },
@@ -247,6 +254,7 @@ class ScanReport:
 
 
 def _sarif_level(severity: Severity) -> str:
+    """The SARIF level for ``severity``: error (CRITICAL, HIGH), warning (MEDIUM), note (INFO)."""
     return {
         Severity.CRITICAL: "error",
         Severity.HIGH: "error",
@@ -385,7 +393,7 @@ _RULES: list[dict[str, Any]] = [
         "message": "SHA-1 detected - cryptographically broken",
         "fix_hint": "Replace with SHA-256 or SHA-3",
         "imports": {"cryptography.hazmat.primitives.hashes", "hashlib"},
-        "calls": {("hashes", "SHA1"), ("hashlib", "sha1"), ("hashlib", "sha224")},
+        "calls": {("hashes", "SHA1"), ("hashlib", "sha1")},
         "string_patterns": {"SHA1", "SHA-1"},
     },
     {
@@ -415,7 +423,12 @@ _RULES: list[dict[str, Any]] = [
         "message": "pycryptodome RSA usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridKEM or HybridSign",
         "imports": {"Crypto.PublicKey.RSA", "Cryptodome.PublicKey.RSA"},
-        "calls": set(),
+        "calls": {
+            ("RSA", "generate"),
+            ("RSA", "construct"),
+            ("RSA", "import_key"),
+            ("RSA", "importKey"),
+        },
     },
     {
         "id": "QS051",
@@ -423,7 +436,11 @@ _RULES: list[dict[str, Any]] = [
         "message": "pycryptodome ECC usage detected - not quantum-safe",
         "fix_hint": "Replace with quantum_safe.HybridSign",
         "imports": {"Crypto.PublicKey.ECC", "Cryptodome.PublicKey.ECC"},
-        "calls": set(),
+        "calls": {
+            ("ECC", "generate"),
+            ("ECC", "construct"),
+            ("ECC", "import_key"),
+        },
     },
 ]
 
@@ -455,6 +472,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         self._active_rules: list[dict[str, Any]] = []
 
     def _snippet(self, lineno: int) -> str:
+        """The stripped source line at the 1-based ``lineno``, or ``""`` when out of range."""
         if 1 <= lineno <= len(self._lines):
             return self._lines[lineno - 1].strip()
         return ""
@@ -465,6 +483,11 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         rule: dict[str, Any],
         detail: str = "",
     ) -> None:
+        """Append a :class:`Finding` for ``rule`` at ``node``.
+
+        The line comes from ``node.lineno`` (0 if absent) and the column is 1-based. A non-empty
+        ``detail`` replaces ``{detail}`` in the rule's message.
+        """
         lineno = getattr(node, "lineno", 0)
         col = getattr(node, "col_offset", 0) + 1  # 1-based
         message = rule["message"].replace("{detail}", detail) if detail else rule["message"]
@@ -486,6 +509,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
     # ------------------------------------------------------------------
 
     def visit_Import(self, node: ast.Import) -> None:
+        """Record each imported name's alias and activate the rules triggered by that module."""
         for alias in node.names:
             name = alias.asname or alias.name.split(".")[0]
             self._module_aliases[name] = alias.name
@@ -496,6 +520,7 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        """Record each ``from`` import as an alias of ``module.name``; activate matching rules."""
         module = node.module or ""
         for alias in node.names:
             local_name = alias.asname or alias.name
@@ -566,6 +591,20 @@ class _ClassicalCryptoVisitor(ast.NodeVisitor):
 # ---------------------------------------------------------------------------
 
 
+def _is_excluded(name: str, rel_path: str, patterns: set[str]) -> bool:
+    """True if a glob in ``patterns`` matches the entry's name or its path below the scan root.
+
+    ``rel_path`` uses forward slashes. A directory also matches a pattern written with a trailing
+    ``/`` or ``/**``, such as ``tests/**``.
+    """
+    return any(
+        fnmatch.fnmatch(name, pat)
+        or fnmatch.fnmatch(rel_path, pat)
+        or fnmatch.fnmatch(rel_path + "/", pat)
+        for pat in patterns
+    )
+
+
 class Scanner:
     """Scans Python source files for classical cryptography usage.
 
@@ -607,13 +646,20 @@ class Scanner:
 
         Args:
             directory:          Root directory to scan.
-            exclude:            Glob patterns to exclude.
-                                Default excludes: .git, __pycache__, .venv, node_modules.
+            exclude:            Glob patterns to exclude. A pattern is matched against a file or
+                                directory name and against its path below ``directory``
+                                (forward slashes), so ``tests`` and ``tests/**`` both work.
+                                Default excludes: .git, __pycache__, .venv, venv, node_modules,
+                                .mypy_cache, .pytest_cache, dist, build, ``*.egg-info``. Directories
+                                whose name starts with a dot are never entered.
             max_file_size_kb:   Skip files larger than this
                                 (avoid scanning minified/generated code).
 
         Returns:
             ScanReport with aggregated findings.
+
+        Raises:
+            FileNotFoundError: if ``directory`` does not exist.
         """
         directory = pathlib.Path(directory)
         if not directory.exists():
@@ -643,9 +689,19 @@ class Scanner:
 
     @classmethod
     def scan_source(cls, source: str, filename: str = "<string>") -> ScanReport:
-        """Scan a source string directly (useful for testing or inline analysis)."""
+        """Scan a source string directly (useful for testing or inline analysis).
+
+        Args:
+            source: Python source text.
+            filename: Name used as the report root and as ``Finding.file``.
+
+        Returns:
+            ScanReport with the findings sorted by line and column. Source that does not parse is
+            recorded in ``errors`` and ``files_scanned`` stays 0.
+        """
         report = ScanReport(root=filename)
         cls._scan_source_text(source, filename, report)
+        report.findings.sort(key=lambda f: (f.file, f.line, f.col))
         return report
 
     # ------------------------------------------------------------------
@@ -660,13 +716,19 @@ class Scanner:
     ) -> Iterator[pathlib.Path]:
         """Yield .py files under root, respecting exclusions."""
         for dirpath, dirnames, filenames in os.walk(root):
-            # Prune excluded directories in-place
-            dirnames[:] = [d for d in dirnames if d not in excluded and not d.startswith(".")]
+            rel_dir = pathlib.PurePath(os.path.relpath(dirpath, root)).as_posix()
+            prefix = "" if rel_dir == "." else rel_dir + "/"
+            # Prune excluded directories in-place (hidden directories are never entered)
+            dirnames[:] = [
+                d
+                for d in dirnames
+                if not d.startswith(".") and not _is_excluded(d, prefix + d, excluded)
+            ]
             for filename in filenames:
                 if not filename.endswith(".py"):
                     continue
-                # Check filename against exclusion patterns (supports fnmatch globs)
-                if any(fnmatch.fnmatch(filename, pat) for pat in excluded):
+                # A pattern may name the file or its path below the scanned directory
+                if _is_excluded(filename, prefix + filename, excluded):
                     continue
                 full = pathlib.Path(dirpath) / filename
                 try:

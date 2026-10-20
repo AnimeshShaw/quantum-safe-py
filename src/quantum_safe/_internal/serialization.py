@@ -41,11 +41,16 @@ BACKEND = "cbor2"
 
 
 def dumps(obj: Any) -> bytes:  # noqa: ANN401
-    """Serialize obj to CBOR."""
+    """Serialize obj to CBOR.
+
+    Returns:
+        The CBOR encoding of ``obj`` as produced by ``cbor2.dumps``.
+    """
     return _cbor2.dumps(obj)
 
 
 def _check_size(data: bytes) -> None:
+    """Raise ValueError if ``data`` is longer than the 10 MB limit applied before decoding."""
     if len(data) > _MAX_PAYLOAD_BYTES:
         raise ValueError(
             f"Payload size {len(data)} exceeds maximum allowed {_MAX_PAYLOAD_BYTES} bytes"
@@ -53,7 +58,12 @@ def _check_size(data: bytes) -> None:
 
 
 def loads(data: bytes) -> Any:  # noqa: ANN401
-    """Deserialize CBOR. Stops after the first item, ignoring trailing bytes."""
+    """Deserialize CBOR. Stops after the first item, ignoring trailing bytes.
+
+    Raises:
+        ValueError: If ``data`` is larger than 10 MB. Malformed CBOR raises the decode error of
+            ``cbor2``.
+    """
     _check_size(data)
     return _cbor2.loads(data)
 
@@ -64,6 +74,10 @@ def loads_single(data: bytes) -> Any:  # noqa: ANN401
     cbor2.loads() stops after the first item and ignores anything after it,
     which lets two different byte strings decode to the same value. Use this
     for data whose bytes must have a single spelling.
+
+    Raises:
+        ValueError: If ``data`` is larger than 10 MB or bytes remain after the first item.
+            Malformed CBOR raises the decode error of ``cbor2``.
     """
     _check_size(data)
     fp = io.BytesIO(data)

@@ -128,6 +128,11 @@ class Upgrader:
 
         Returns:
             UpgradeResult with the new hybrid KeyPair.
+
+        Raises:
+            ValueError: if ``classical_algorithm`` and ``target_pqc`` are not an approved hybrid
+                KEM combination, or the backend name is unknown.
+            BackendNotAvailable: if the requested backend is not installed.
         """
         from quantum_safe.backends import get_kem_backend
         from quantum_safe.kem.algorithms import canonical_hybrid_name, validate_hybrid_combination
@@ -178,10 +183,13 @@ class Upgrader:
         classical_secret_bytes: bytes,
         classical_public_bytes: bytes,
         classical_algorithm: str = "Ed25519",
-        target_pqc: str = "ML-DSA-65",
+        target_pqc: str | None = None,
         backend: str = "auto",
     ) -> UpgradeResult:
         """Upgrade a classical signing key to a hybrid signing key.
+
+        The default target is the library's default suite, ``ML-DSA-65-v2``, so the key works
+        with ``HybridSign()``. Name ``"ML-DSA-65"`` (without ``-v2``) for the original format.
 
         Args:
             classical_secret_bytes: Raw bytes of the classical private key.
@@ -189,25 +197,43 @@ class Upgrader:
             classical_public_bytes: Raw bytes of the classical public key.
                                     For Ed25519: 32 bytes.
             classical_algorithm:    "Ed25519" or "P-256".
-            target_pqc:             PQC signature algorithm. Default "ML-DSA-65".
+            target_pqc:             PQC signature algorithm, with or without the ``-v2``
+                                    suffix. Default ``DEFAULT_HYBRID_PQC`` ("ML-DSA-65-v2").
             backend:                PQC backend.
 
         Returns:
             UpgradeResult with the new hybrid signing KeyPair.
+
+        Raises:
+            ValueError: if ``classical_algorithm`` and ``target_pqc`` (without any ``-v2`` suffix)
+                are not an approved hybrid signature combination, if a ``-v2`` target is not a v2
+                combination for that classical algorithm, or if the backend name is unknown.
+            BackendNotAvailable: if the requested backend is not installed.
         """
         from quantum_safe.backends import get_signature_backend
+        from quantum_safe.signatures import _v2
         from quantum_safe.signatures.algorithms import (
+            DEFAULT_HYBRID_PQC,
             canonical_hybrid_name,
             validate_hybrid_combination,
         )
         from quantum_safe.signatures.hybrid import _pack_components
 
-        validate_hybrid_combination(classical_algorithm, target_pqc)
+        if target_pqc is None:
+            target_pqc = DEFAULT_HYBRID_PQC
+        # A "-v2" suffix selects the v2 format: same key material, different format tag.
+        pqc_base = target_pqc.removesuffix(_v2.SUFFIX)
+        validate_hybrid_combination(classical_algorithm, pqc_base)
+        if target_pqc != pqc_base and pqc_base not in _v2.V2_HYBRIDS.get(classical_algorithm, ()):
+            raise ValueError(
+                f"{classical_algorithm}+{target_pqc} is not a v2 combination "
+                f"(available: {_v2.V2_HYBRIDS})"
+            )
         new_algo = canonical_hybrid_name(classical_algorithm, target_pqc)
 
         # Generate a fresh PQC signing sub-key
         sig_backend = get_signature_backend(backend)
-        pqc_pub_bytes, pqc_sec_bytes = sig_backend.keygen(target_pqc)
+        pqc_pub_bytes, pqc_sec_bytes = sig_backend.keygen(pqc_base)
 
         # Pack: classical first, PQC second
         combined_pub = _pack_components(classical_public_bytes, pqc_pub_bytes)
@@ -319,6 +345,10 @@ class Upgrader:
         """Return a human-readable description of a key's migration status.
 
         Useful for reporting tools and dashboards.
+
+        The dict has the keys ``algorithm``, ``migration_state`` (the state's value),
+        ``is_hybrid``, ``needs_upgrade``, ``fingerprint`` (first 16 characters of the public key
+        fingerprint followed by ``...``), ``public_key_size`` (bytes) and ``recommendation``.
         """
         pub = keypair.public
         is_hybrid = "+" in keypair.algorithm
@@ -335,6 +365,7 @@ class Upgrader:
 
     @staticmethod
     def _recommend(state: MigrationState, is_hybrid: bool) -> str:
+        """The next-step text for a migration state; ``is_hybrid`` does not affect the result."""
         if state == MigrationState.CLASSICAL_ONLY:
             return (
                 "Upgrade to HYBRID_TRANSITION using "

@@ -6,7 +6,13 @@ in `tests/bench/`; nothing is edited by hand.
 | Directory | What it is |
 |---|---|
 | `env2/2026-10-06_16runs/` | ENV-2 (Docker, Linux): one discarded warm-up run plus 15 timed runs, 3,000 iterations each, with every timed sample (`kem_run*.json`, `sigs_run*.json`); the two-class leakage screen (`leakage.json`); the GIL scaling test (`gil.json`, `gil_replicate.json`); `ENVIRONMENT.txt` (machine, kernel, Docker, power plan); `paper_numbers.json` (every number the papers print, computed from the files above) |
+| `env2/2026-10-19_maxperf/` | ENV-2 re-measurement on liboqs 0.16.0 at commit 49edb09 (Docker, Linux, Windows "Ultimate Performance" power plan): the same protocol (1 discarded + 15 timed runs, 3,000 iterations). The summaries are here (`kem_aggregate.json`, `sigs_aggregate.json`, `leakage.json`, `ENVIRONMENT.txt`); the per-run sample files are attached to the release |
+| `env2/2026-10-19_leakage_repeats/` | Three further leakage-screen sessions, run alone, with the added calibration of two different fixed keys against each other |
 | `env1/2026-10-06/` | ENV-1 (Windows 11, native Python): the same protocol, plus `leakage.json` |
+
+The per-run sample files and the leakage sessions behind `env2/2026-10-19_maxperf/` and `env2/2026-10-19_leakage_repeats/` are attached to the
+[1.0.0 release](https://github.com/AnimeshShaw/quantum-safe-py/releases/tag/v1.0.0) as `quantum-safe-py-benchmarks-liboqs-0.16.0-2026-10-19.tar.gz`, with checksums and the steps to recompute the published figures.
+Anyone can download it, check the checksums and rerun `tests/bench/aggregate_runs.py` on it.
 
 Reproduce: `bash tests/bench/run_env2.sh`, `bash tests/bench/run_env1.sh`, then
 `python tests/bench/paper_numbers.py results/env2/<dir> --env1 results/env1/<dir> --out paper_numbers.json`.

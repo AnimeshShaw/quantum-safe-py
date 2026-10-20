@@ -31,6 +31,8 @@ from enum import IntEnum
 
 
 class NISTLevel(IntEnum):
+    """NIST security level, 1 (L1) to 5 (L5); compares as the integer."""
+
     L1 = 1
     L2 = 2
     L3 = 3
@@ -106,49 +108,51 @@ SIGNATURE_ALGORITHMS: dict[str, SignatureAlgorithmSpec] = {
         sign_speed="fast",
         notes="FIPS 204 level 5. Maximum security.",
     ),
-    # SLH-DSA (FIPS 205) — hash-based, large sigs, different math than ML-DSA
-    "SLH-DSA-SHAKE-128s": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-128s",
-        nist_level=NISTLevel.L1,
-        public_key_bytes=32,
-        secret_key_bytes=64,
-        signature_bytes=7856,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="slow",
-        notes=(
-            "FIPS 205, small variant, level 1. Extremely slow to sign (~seconds). "
-            "Use when you need a non-lattice backup. Verify is fast."
-        ),
-    ),
-    "SLH-DSA-SHAKE-128f": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-128f",
-        nist_level=NISTLevel.L1,
-        public_key_bytes=32,
-        secret_key_bytes=64,
-        signature_bytes=17088,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="medium",
-        notes=(
-            "FIPS 205, fast variant, level 1. Faster signing than -128s but ~2× larger signatures."
-        ),
-    ),
-    "SLH-DSA-SHAKE-256s": SignatureAlgorithmSpec(
-        name="SLH-DSA-SHAKE-256s",
-        nist_level=NISTLevel.L5,
-        public_key_bytes=64,
-        secret_key_bytes=128,
-        signature_bytes=29792,
-        is_nist_standard=True,
-        is_lattice_based=False,
-        supports_context=True,
-        sign_speed="slow",
-        notes="FIPS 205, small variant, level 5. Maximum security, hash-based.",
-    ),
+    # SLH-DSA (FIPS 205) — hash-based, large sigs, different math than ML-DSA.
+    # All twelve parameter sets (2 hash families x 3 security levels x 2 variants) are added below
+    # from _SLH_DSA_SETS, in the order SHAKE then SHA2.
 }
+
+# FIPS 205, Table 2 (sizes in bytes). Public key, secret key, signature, NIST level.
+_SLH_DSA_SETS: dict[str, tuple[int, int, int, NISTLevel]] = {
+    "128s": (32, 64, 7856, NISTLevel.L1),
+    "128f": (32, 64, 17088, NISTLevel.L1),
+    "192s": (48, 96, 16224, NISTLevel.L3),
+    "192f": (48, 96, 35664, NISTLevel.L3),
+    "256s": (64, 128, 29792, NISTLevel.L5),
+    "256f": (64, 128, 49856, NISTLevel.L5),
+}
+
+
+def _register_slh_dsa() -> None:
+    """Add the twelve SLH-DSA parameter sets (SHAKE and SHA2) to ``SIGNATURE_ALGORITHMS``."""
+    for family in ("SHAKE", "SHA2"):
+        for variant, (pk, sk, sig, level) in _SLH_DSA_SETS.items():
+            name = f"SLH-DSA-{family}-{variant}"
+            small = variant.endswith("s")
+            SIGNATURE_ALGORITHMS[name] = SignatureAlgorithmSpec(
+                name=name,
+                nist_level=level,
+                public_key_bytes=pk,
+                secret_key_bytes=sk,
+                signature_bytes=sig,
+                is_nist_standard=True,
+                is_lattice_based=False,
+                supports_context=True,
+                sign_speed="slow" if small else "medium",
+                notes=(
+                    f"FIPS 205, {'small' if small else 'fast'} variant, level {int(level)}, "
+                    f"{family}. "
+                    + (
+                        "Smaller signatures, very slow to sign (verification is fast)."
+                        if small
+                        else "Faster signing than the small variant, about 2x larger signatures."
+                    )
+                ),
+            )
+
+
+_register_slh_dsa()
 
 # Classical signature companions for hybrid mode
 CLASSICAL_SIGNATURE_ALGORITHMS: dict[str, ClassicalSignatureSpec] = {
@@ -164,16 +168,26 @@ CLASSICAL_SIGNATURE_ALGORITHMS: dict[str, ClassicalSignatureSpec] = {
         secret_key_bytes=32,
         signature_bytes=72,  # DER-encoded ECDSA, max
     ),
+    "P-384": ClassicalSignatureSpec(
+        name="P-384",
+        public_key_bytes=96,  # raw (x, y) coordinates
+        secret_key_bytes=48,
+        signature_bytes=104,  # DER-encoded ECDSA, max
+    ),
 }
 
 # Valid hybrid combinations: classical -> [pqc, ...]
 HYBRID_SIGNATURE_COMBINATIONS: dict[str, list[str]] = {
     "Ed25519": ["ML-DSA-65", "ML-DSA-44", "ML-DSA-87"],
     "P-256": ["ML-DSA-44", "ML-DSA-65"],
+    "P-384": ["ML-DSA-87"],
 }
 
 DEFAULT_HYBRID_CLASSICAL = "Ed25519"
-DEFAULT_HYBRID_PQC = "ML-DSA-65"
+# The default hybrid suite is the -v2 format (no hedging prefix, FIPS 204 native context,
+# byte-compatible with quantum-safe-ts). The previous default, "ML-DSA-65" (the library's original
+# prefix format), is unchanged and reachable under that identifier.
+DEFAULT_HYBRID_PQC = "ML-DSA-65-v2"
 DEFAULT_SINGLE_PQC = "ML-DSA-65"
 
 # Hedged signing injects this many random bytes before the message.
@@ -182,10 +196,16 @@ HEDGED_RANDOMNESS_BYTES = 32
 
 
 def canonical_hybrid_name(classical: str, pqc: str) -> str:
+    """Return the canonical hybrid name ``"<classical>+<pqc>"``, e.g. ``"Ed25519+ML-DSA-65"``."""
     return f"{classical}+{pqc}"
 
 
 def parse_hybrid_name(name: str) -> tuple[str, str]:
+    """Split a hybrid name at its first ``+`` into ``(classical, pqc)``.
+
+    Raises:
+        ValueError: if the name contains no ``+``.
+    """
     if "+" not in name:
         raise ValueError(
             f"'{name}' is not a hybrid signature algorithm name (expected 'Classical+PQC')"
@@ -195,6 +215,13 @@ def parse_hybrid_name(name: str) -> tuple[str, str]:
 
 
 def validate_hybrid_combination(classical: str, pqc: str) -> None:
+    """Check that a classical and a PQC algorithm form an approved hybrid.
+
+    Raises:
+        ValueError: if the classical algorithm is not in ``CLASSICAL_SIGNATURE_ALGORITHMS``, the
+            PQC algorithm is not in ``SIGNATURE_ALGORITHMS``, or the pair is not listed in
+            ``HYBRID_SIGNATURE_COMBINATIONS``.
+    """
     if classical not in CLASSICAL_SIGNATURE_ALGORITHMS:
         raise ValueError(
             f"Classical signature algorithm '{classical}' is not supported. "
@@ -215,6 +242,11 @@ def validate_hybrid_combination(classical: str, pqc: str) -> None:
 
 
 def get_algorithm_spec(name: str) -> SignatureAlgorithmSpec:
+    """Return the registry spec for a PQC signature algorithm.
+
+    Raises:
+        UnsupportedAlgorithm: if the name is not in ``SIGNATURE_ALGORITHMS``.
+    """
     spec = SIGNATURE_ALGORITHMS.get(name)
     if spec is None:
         from quantum_safe.exceptions import UnsupportedAlgorithm

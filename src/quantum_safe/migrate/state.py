@@ -96,9 +96,14 @@ class MigrationRecord:
 
     @property
     def is_backward(self) -> bool:
+        """True if this transition does not move toward more PQC (not ``is_forward``)."""
         return not self.is_forward
 
     def to_dict(self) -> dict[str, Any]:
+        """The record as a plain dict. States are stored as their string values.
+
+        The dict also carries ``is_forward``, which :meth:`from_dict` ignores.
+        """
         return {
             "record_id": self.record_id,
             "key_id": self.key_id,
@@ -113,10 +118,17 @@ class MigrationRecord:
         }
 
     def to_bytes(self) -> bytes:
+        """The record serialised with the library serializer (the ``<key_id>_current`` value)."""
         return _ser.dumps(self.to_dict())
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> MigrationRecord:
+        """Rebuild a record from :meth:`to_dict` output.
+
+        ``actor`` defaults to ``"system"``, ``reason`` to ``""`` and ``metadata`` to ``{}`` when
+        absent. A missing required key raises ``KeyError``; an unknown state value raises
+        ``ValueError``.
+        """
         return cls(
             record_id=d["record_id"],
             key_id=d["key_id"],
@@ -131,6 +143,7 @@ class MigrationRecord:
 
     @classmethod
     def from_bytes(cls, data: bytes) -> MigrationRecord:
+        """Rebuild a record from :meth:`to_bytes` output."""
         return cls.from_dict(_ser.loads(data))
 
 
@@ -148,6 +161,7 @@ class MemoryMigrationStore(dict):  # type: ignore[type-arg]
     """
 
     def __init__(self, initial: dict[str, bytes] | None = None) -> None:
+        """Create the store, optionally pre-filled with a copy of the ``initial`` entries."""
         super().__init__(initial or {})
         self._cas_lock = threading.Lock()
 
@@ -219,6 +233,11 @@ class MigrationStateManager:
     """
 
     def __init__(self, store: dict[str, bytes]) -> None:
+        """Wrap ``store``, a dict-like mapping of key names to bytes.
+
+        If the store has a callable ``compare_and_set`` attribute, :meth:`transition` commits
+        through it; otherwise it uses a per-key thread lock (see the class documentation).
+        """
         self._store = store
         # A store with compare_and_set makes transition() atomic across processes.
         self._cas = callable(getattr(store, "compare_and_set", None))
@@ -270,7 +289,10 @@ class MigrationStateManager:
 
         Raises:
             ValueError: if the transition is not valid or current state
-                        doesn't match from_state.
+                        doesn't match from_state. Also raised for a backward transition
+                        without ``allow_backward=True`` or without a reason, and, with a
+                        ``compare_and_set`` store, when 20 attempts lose the race to other
+                        writers.
         """
         # Validate the transition
         forward_targets = _FORWARD_TRANSITIONS.get(from_state, set())
@@ -315,7 +337,7 @@ class MigrationStateManager:
             # History first, then the current state: a crash between the two
             # leaves _current behind the audit log rather than the log behind
             # the state.
-            history = self._load_history(key_id)
+            history = self._history_for_write(key_id, self._store.get(f"{key_id}_history"))
             history.append(record.to_dict())
             self._store[f"{key_id}_history"] = _ser.dumps(history)
             self._store[f"{key_id}_current"] = record.to_bytes()
@@ -332,6 +354,7 @@ class MigrationStateManager:
         reason: str,
         metadata: dict[str, Any] | None,
     ) -> MigrationRecord:
+        """Build the record for a transition with a fresh UUID and the current time."""
         return MigrationRecord(
             record_id=str(uuid.uuid4()),
             key_id=key_id,
@@ -359,7 +382,7 @@ class MigrationStateManager:
         history_key = f"{key_id}_history"
         for _ in range(_MAX_CAS_ATTEMPTS):
             raw = store.get(history_key)
-            history = self._parse_history(raw)
+            history = self._history_for_write(key_id, raw)
             current = self._state_from(history, key_id)
             if current is not None and current != from_state:
                 raise ValueError(
@@ -391,6 +414,7 @@ class MigrationStateManager:
         return legacy.to_state if legacy else None
 
     def _legacy_current(self, key_id: str) -> MigrationRecord | None:
+        """The record in ``<key_id>_current``, or ``None`` if it is absent or cannot be parsed."""
         current_key = f"{key_id}_current"
         if current_key not in self._store:
             return None
@@ -401,6 +425,7 @@ class MigrationStateManager:
 
     @staticmethod
     def _parse_history(raw: bytes | None) -> list[dict[str, Any]]:
+        """Decode history bytes to a list of record dicts; ``[]`` for ``None`` or bad data."""
         if raw is None:
             return []
         try:
@@ -482,7 +507,33 @@ class MigrationStateManager:
                 counts["unknown"] += 1
         return counts
 
+    def _history_for_write(self, key_id: str, raw: bytes | None) -> list[dict[str, Any]]:
+        """The stored history of ``key_id``, for a write that will append to it.
+
+        An absent history is ``[]``. A history that is present but cannot be read raises
+        ``ValueError``: appending to ``[]`` would replace the existing audit trail, so the write is
+        refused until the stored value is repaired or removed. ``raw`` is the stored bytes when the
+        caller read for ``<key_id>_history`` (``None`` when the entry is absent).
+        """
+        history_key = f"{key_id}_history"
+        if raw is None:
+            return []
+        try:
+            data = _ser.loads(raw)
+        except Exception as exc:
+            raise ValueError(
+                f"The migration history of key '{key_id}' cannot be read; refusing to overwrite "
+                f"it. Repair or remove the stored '{history_key}' entry."
+            ) from exc
+        if not isinstance(data, list):
+            raise ValueError(
+                f"The migration history of key '{key_id}' is not a list; refusing to overwrite "
+                f"it. Repair or remove the stored '{history_key}' entry."
+            )
+        return data
+
     def _load_history(self, key_id: str) -> list[dict[str, Any]]:
+        """The stored history of ``key_id`` as record dicts; ``[]`` if absent or unreadable."""
         history_key = f"{key_id}_history"
         if history_key not in self._store:
             return []

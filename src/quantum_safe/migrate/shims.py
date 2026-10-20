@@ -76,6 +76,7 @@ class _ShimBase:
 
     @classmethod
     def _log_shim_call(cls, method: str, note: str = "") -> None:
+        """Increment the class-level call counter and log the call at DEBUG level."""
         cls._call_count += 1
         _logger.debug(
             "[quantum-safe shim] %s.%s() called (total calls: %d)%s",
@@ -87,6 +88,10 @@ class _ShimBase:
 
     @classmethod
     def shim_stats(cls) -> dict[str, Any]:
+        """The shim's name and how many calls it has served: ``{"shim": ..., "call_count": ...}``.
+
+        The counter belongs to the class and is shared by all instances.
+        """
         return {
             "shim": cls._shim_name,
             "call_count": cls._call_count,
@@ -110,6 +115,14 @@ class FernetShim(_ShimBase):
     _shim_name = "FernetShim"
 
     def __init__(self, backend: str = "auto") -> None:
+        """Generate a fresh hybrid KEM keypair for this instance.
+
+        Emits a ``DeprecationWarning``. Each instance has its own keypair, so tokens can only be
+        decrypted by the instance that produced them (or by code holding its ``secret_key``).
+
+        Args:
+            backend: the PQC backend name passed to ``HybridKEM`` (``"auto"`` by default).
+        """
         warnings.warn(
             "FernetShim: you are using a migration shim. "
             "This replaces Fernet with quantum-safe encryption (HybridKEM + AES-256-GCM). "
@@ -125,7 +138,10 @@ class FernetShim(_ShimBase):
         self._log_shim_call("__init__")
 
     def encrypt(self, data: bytes) -> bytes:
-        """Encrypt data. Returns a SealedMessage serialized to bytes."""
+        """Encrypt data. Returns a SealedMessage serialized to bytes.
+
+        The data is sealed to this instance's public key with its hybrid KEM.
+        """
         from quantum_safe.protocols.envelope import Envelope
 
         self._log_shim_call("encrypt")
@@ -133,7 +149,11 @@ class FernetShim(_ShimBase):
         return sealed.to_bytes()
 
     def decrypt(self, token: bytes) -> bytes:
-        """Decrypt a token produced by encrypt()."""
+        """Decrypt a token produced by encrypt().
+
+        Raises whatever ``SealedMessage.from_bytes`` or ``Envelope.open`` raise for a malformed
+        token or one sealed to a different key.
+        """
         from quantum_safe.protocols.envelope import Envelope, SealedMessage
 
         self._log_shim_call("decrypt")
@@ -184,6 +204,12 @@ class JWTShim(_ShimBase):
     ) -> str:
         """Sign a JWT payload.
 
+        Emits a ``DeprecationWarning``. ``algorithm`` and ``**kwargs`` are accepted for PyJWT
+        call compatibility and are not used: the token is signed with the algorithm of ``key``,
+        which is written to the header. An ``iss`` claim in ``payload`` becomes the signer's
+        issuer. If ``payload`` has an ``exp``, the token keeps it; without one, the token has no
+        expiry.
+
         Args:
             payload:    Claims dict.
             key:        quantum_safe.types.KeyPair for signing.
@@ -191,6 +217,9 @@ class JWTShim(_ShimBase):
 
         Returns:
             JWT token string.
+
+        Raises:
+            TypeError: if ``key`` is not a ``KeyPair``.
         """
         JWTShim._log_shim_call("encode")
         warnings.warn(
@@ -228,6 +257,10 @@ class JWTShim(_ShimBase):
     ) -> dict[str, Any]:
         """Verify and decode a JWT.
 
+        Emits a ``DeprecationWarning``. ``**kwargs`` is accepted and not used. Signature and
+        claim errors are those raised by ``JWTVerifier.verify`` (for example ``VerificationError``
+        for a bad signature or an expired token).
+
         Args:
             token:      JWT string from encode().
             key:        quantum_safe.types.PublicKey for verification.
@@ -235,6 +268,9 @@ class JWTShim(_ShimBase):
 
         Returns:
             Verified claims dict.
+
+        Raises:
+            TypeError: if ``key`` is not a ``PublicKey``.
         """
         JWTShim._log_shim_call("decode")
         warnings.warn(

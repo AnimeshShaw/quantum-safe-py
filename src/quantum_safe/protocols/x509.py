@@ -22,12 +22,13 @@ The approach follows two IETF drafts:
     the PQC public key alongside the classical one.
 
 We implement a simplified version: the certificate is signed with a classical
-key (ECDSA P-256 or Ed25519) using standard X.509, and the PQC co-signature
-is stored in a non-critical extension (OID 1.3.6.1.4.1.99999.1) as a DER
-OCTET STRING. This is backward compatible: classical verifiers ignore the
-unknown extension; our verifier checks both.
+key (ECDSA P-256 or Ed25519) using standard X.509 and carries the PQC public
+key in a non-critical extension (OID 1.3.6.1.4.1.99999.2). The PQC co-signature
+over the certificate is a separate CBOR bundle that the builder returns next to
+the certificate. This is backward compatible: classical verifiers ignore the
+unknown extension; ``verify_cosig`` checks the bundle against the certificate.
 
-Note on the OID 1.3.6.1.4.1.99999.1: this is a placeholder. A real
+Note on the OID 1.3.6.1.4.1.99999.2: this is a placeholder. A real
 deployment would need a registered OID from IANA or a private enterprise
 arc. We document this prominently so it's never accidentally used as-is
 in production.
@@ -105,6 +106,26 @@ class HybridCertificateBuilder:
             validity_days=365,
         )
         cert_pem, cosig_bundle = builder.build()
+
+    Attributes:
+        subject_cn: Common name of the subject.
+        classical_private_key: Ed25519 or ECDSA (P-256, P-384) private key. Its public key is the
+            certificate's public key, and it signs the certificate unless ``issuer_key`` is set.
+        pqc_keypair: Key pair for the PQC co-signature; its public key is embedded in the
+            certificate in a non-critical extension.
+        validity_days: Days the certificate is valid for, counted from the build time. The
+            validity starts one minute before the build time.
+        is_ca: Mark the certificate as a CA (critical BasicConstraints, path length 0).
+        dns_names: DNS names for the Subject Alternative Name extension.
+        ip_addresses: IP addresses (as text) for the Subject Alternative Name extension. An
+            address that does not parse is skipped with a warning.
+        organization: Organization name added to the subject when not empty.
+        country: Country code added to the subject when not empty.
+        issuer_cert: The issuer's certificate. Its subject becomes the issuer name; when ``None``
+            the certificate is self-signed.
+        issuer_key: The issuer's classical private key, used to sign instead of
+            ``classical_private_key``.
+        extended_key_usage: Extended key usage OIDs; the extension is added when not empty.
     """
 
     subject_cn: str
@@ -123,15 +144,24 @@ class HybridCertificateBuilder:
     def build(self, signer: object = None) -> tuple[bytes, bytes]:
         """Build the hybrid certificate.
 
+        Args:
+            signer: A ``Sign`` or ``HybridSign`` instance that makes the PQC co-signature. If
+                ``None``, one is created for the algorithm of ``pqc_keypair`` with default
+                settings (hedged).
+
         Returns:
             (cert_pem, cosig_bundle):
                 cert_pem:      PEM-encoded X.509 certificate with embedded
                                PQC public key extension. Valid to classical
                                verifiers.
                 cosig_bundle:  CBOR-encoded co-signature bundle:
-                               {pqc_sig: bytes, pqc_algo: str, cert_fp: str}
+                               {v: int, algo: str, sig: bytes, context: bytes, cert_fp: str}
+                               where ``cert_fp`` is the fingerprint of the PQC public key.
                                Verifiers that support hybrid validation check
                                this alongside the certificate.
+
+        The co-signature covers ``b"qs-x509-cosig-v1\\x00"`` followed by the DER encoding of the
+        certificate, with the signing context ``b"qs-x509-cosig"``.
         """
         # Build subject name
         name_attrs = [x509.NameAttribute(NameOID.COMMON_NAME, self.subject_cn)]
@@ -228,7 +258,11 @@ class HybridCertificateBuilder:
         return cert_pem, cosig_bundle
 
     def _generate_cosig(self, data: bytes, signer: Any = None) -> bytes:  # noqa: ANN401
-        """Generate the PQC co-signature bundle."""
+        """Sign ``data`` with the PQC key and return the CBOR co-signature bundle.
+
+        Uses ``signer`` if given, else a ``Sign`` or ``HybridSign`` built from the key pair's
+        algorithm. The signing context is always ``_COSIG_CONTEXT``.
+        """
         from quantum_safe.signatures.core import Sign
         from quantum_safe.signatures.hybrid import HybridSign
 
@@ -279,7 +313,11 @@ class HybridCertificateBuilder:
 
         Raises:
             VerificationError: if the co-signature is invalid.
-            KeyParseError:     if the bundle is malformed.
+            KeyParseError:     if the bundle is malformed, or the certificate cannot be loaded.
+
+        The check recomputes the signed data from the certificate (the prefix and the DER
+        encoding) and verifies it under the fixed context ``b"qs-x509-cosig"``; the context
+        stored in the bundle is not used. Returns ``None`` when the co-signature is valid.
         """
         from quantum_safe.exceptions import KeyParseError
         from quantum_safe.signatures.core import Sign
@@ -298,6 +336,9 @@ class HybridCertificateBuilder:
             bundle = _ser.loads(cosig_bundle)
         except Exception as exc:
             raise KeyParseError("cbor", f"Failed to decode cosig bundle: {exc}") from exc
+
+        if not isinstance(bundle, dict):
+            raise KeyParseError("cbor", "cosig bundle is not a map")
 
         algo = bundle.get("algo", "")
         sig = bytes(bundle.get("sig", b""))
@@ -338,6 +379,9 @@ def generate_classical_keypair_for_cert(
 
     Returns:
         A private key object from the cryptography library.
+
+    Raises:
+        ValueError: If ``algorithm`` is not one of the three options.
     """
     if algorithm == "Ed25519":
         return Ed25519PrivateKey.generate()

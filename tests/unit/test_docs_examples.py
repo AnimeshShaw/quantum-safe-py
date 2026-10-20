@@ -14,11 +14,15 @@ import warnings
 
 import pytest
 
+from quantum_safe.exceptions import AadOmittedWarning, ContextOmittedWarning
+
 pytestmark = pytest.mark.requires_liboqs
 
 GUIDES = pathlib.Path(__file__).resolve().parents[2] / "docs" / "guides"
 EXECUTABLE = [
     "upgrading.rst",
+    "upgrading-1.0.rst",
+    "context-and-aad.rst",
     "choosing.rst",
     "cookbook.rst",
     "interop.rst",
@@ -49,8 +53,9 @@ def test_guide_examples_run(name: str) -> None:
     for line, code in blocks:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            warnings.filterwarnings("error", message=r"verify\(\) without context=")
-            warnings.filterwarnings("error", message=r"Envelope.open\(\) without expected_aad=")
+            # The guides must show the context and AAD being passed, never rely on omission.
+            warnings.filterwarnings("error", category=ContextOmittedWarning)
+            warnings.filterwarnings("error", category=AadOmittedWarning)
             try:
                 exec(compile(code, f"{name}:{line}", "exec"), namespace)  # noqa: S102
             except Exception as exc:

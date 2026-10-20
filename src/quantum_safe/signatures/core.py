@@ -66,7 +66,12 @@ import warnings
 from typing import TYPE_CHECKING
 
 from quantum_safe.backends import get_signature_backend
-from quantum_safe.exceptions import InsecureOperationError, UnsupportedAlgorithm, VerificationError
+from quantum_safe.exceptions import (
+    ContextOmittedWarning,
+    InsecureOperationError,
+    UnsupportedAlgorithm,
+    VerificationError,
+)
 from quantum_safe.signatures import _v2
 from quantum_safe.signatures.algorithms import (
     HEDGED_RANDOMNESS_BYTES,
@@ -84,19 +89,29 @@ def check_expected_context(
 ) -> None:
     """Require the message's context to equal the verifier's expected context.
 
-    ``expected=None`` keeps the pre-0.3.1 behaviour (the context is taken from
-    the message) and emits a DeprecationWarning.
+    ``expected=None`` means "expect an empty context": a message that carries a
+    context is rejected, and a :class:`ContextOmittedWarning` says why (without
+    revealing the context). The wire error stays the opaque VerificationError.
+
+    Args:
+        signed_message: The message whose ``context`` is checked.
+        expected: The context the verifier expects, or None for an empty context.
+        algorithm: Algorithm name reported in the VerificationError.
+
+    Raises:
+        VerificationError: if the message's context differs from the expected one. The
+            comparison is constant time.
     """
     if expected is None:
-        warnings.warn(
-            "verify() without context= is deprecated: pass the context you expect. "
-            "The context in the message is attacker-controlled, so without it a "
-            "signature made for one purpose verifies for another. context= will be "
-            "required (default b'') in the next minor release.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-        return
+        expected = b""
+        if signed_message.context:
+            warnings.warn(
+                "verify() was called without context= but the message carries a non-empty "
+                "context, so it is rejected: omitting context= means 'expect an empty "
+                "context'. Pass the context you expect.",
+                ContextOmittedWarning,
+                stacklevel=3,
+            )
     if not hmac.compare_digest(bytes(signed_message.context), bytes(expected)):
         raise VerificationError(algo=algorithm)
 
@@ -131,6 +146,19 @@ class Sign:
         hedged: bool = True,
         strict: bool = False,
     ) -> None:
+        """Create a signer/verifier for one PQC algorithm and bind it to a backend.
+
+        The arguments are described in the class docstring. A ``-v2`` identifier (for example
+        "ML-DSA-65-v2") selects the v2 signature format.
+
+        Raises:
+            UnsupportedAlgorithm: if the algorithm is not in the registry, or is a hybrid ``-v2``
+                identifier.
+            ValueError: if a ``-v2`` algorithm is combined with ``hedged=False``.
+            BackendNotAvailable: if the requested backend is not installed.
+            InsecureOperationError: if ``strict`` is True and the algorithm is not a NIST
+                standard.
+        """
         self._algorithm = algorithm
         self._hedged = hedged
         self._strict = strict
@@ -162,14 +190,17 @@ class Sign:
 
     @property
     def algorithm(self) -> str:
+        """The signature algorithm name, e.g. 'ML-DSA-65'."""
         return self._algorithm
 
     @property
     def is_hedged(self) -> bool:
+        """True if signing prepends 32 random bytes to the message."""
         return self._hedged
 
     @property
     def backend_name(self) -> str:
+        """Name of the backend being used."""
         return self._backend.name
 
     # ------------------------------------------------------------------
@@ -182,6 +213,10 @@ class Sign:
         Returns:
             KeyPair with .public and .secret. The secret key is needed to
             sign; the public key is needed to verify.
+
+        Raises:
+            KeyGenerationError: if the backend fails to generate the key pair.
+            UnsupportedAlgorithm: if the backend does not support the algorithm.
         """
         pub_bytes, sec_bytes = self._backend.keygen(
             _v2.require_base(self._algorithm) if self._v2 else self._algorithm
@@ -199,6 +234,99 @@ class Sign:
             backend_tag=self._backend.name,
         )
         return KeyPair(public=pub, secret=sec)
+
+    # ------------------------------------------------------------------
+    # Seed keys (pyca backend)
+    # ------------------------------------------------------------------
+
+    def _seed_backend(self) -> AbstractSignatureBackend:
+        """The backend that can derive a key from a seed: pyca/cryptography."""
+        if self._v2 or "ML-DSA" not in self._spec.name:
+            raise UnsupportedAlgorithm(
+                self._algorithm, available=["ML-DSA-44", "ML-DSA-65", "ML-DSA-87"]
+            )
+        if self._backend.name == "pyca":
+            return self._backend
+        return get_signature_backend("pyca")
+
+    def keypair_from_seed(self, seed: bytes) -> KeyPair:
+        """Rebuild an ML-DSA key pair from its 32-byte seed (FIPS 204's native secret key).
+
+        Needs the optional ``cryptography`` backend (``cryptography >= 48``). The result is a
+        *seed key*: ``secret.raw_bytes`` is the seed itself, which is what RFC 9964 stores in a
+        private JWK or COSE key, and what quantum-safe-ts's ``StandardKeyPair`` holds.
+
+        Args:
+            seed: The 32-byte ML-DSA seed.
+
+        Returns:
+            KeyPair whose secret key is the seed, tagged with the pyca backend.
+
+        Raises:
+            ValueError: if ``seed`` is not exactly 32 bytes.
+            UnsupportedAlgorithm: if the algorithm is not ML-DSA-44/65/87 (a ``-v2`` identifier
+                is refused too).
+            BackendNotAvailable: if the pyca backend is not available.
+        """
+        if len(seed) != 32:
+            raise ValueError(f"an ML-DSA seed is exactly 32 bytes, got {len(seed)}")
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen_from_seed(self._spec.name, bytes(seed))
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def generate_seed_keypair(self) -> KeyPair:
+        """Generate an ML-DSA key pair whose secret key is its 32-byte seed (pyca backend).
+
+        Raises:
+            UnsupportedAlgorithm: if the algorithm is not ML-DSA-44/65/87 (a ``-v2`` identifier
+                is refused too).
+            BackendNotAvailable: if the pyca backend is not available.
+        """
+        backend = self._seed_backend()
+        pub_bytes, sec_bytes = backend.keygen(self._spec.name)
+        return KeyPair(
+            public=PublicKey(
+                raw=pub_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+            secret=SecretKey(
+                raw=sec_bytes,
+                algorithm=self._algorithm,
+                migration_state=MigrationState.PQC_ONLY,
+                backend_tag=backend.name,
+            ),
+        )
+
+    def export_seed(self, secret_key: SecretKey) -> bytes:
+        """The 32-byte seed of a seed key. Raises ``ValueError`` for an expanded (liboqs) key.
+
+        Treat the result as a secret: store or move it as carefully as the key itself.
+
+        Args:
+            secret_key: A secret key; a seed key is exactly 32 bytes.
+        """
+        raw = secret_key.raw_bytes
+        if len(raw) != 32:
+            raise ValueError(
+                "this secret key is an expanded key (made by liboqs); no seed can be recovered "
+                "from it. Generate a seed key with generate_seed_keypair()."
+            )
+        return bytes(raw)
 
     # ------------------------------------------------------------------
     # Signing
@@ -223,11 +351,13 @@ class Sign:
 
         Returns:
             SignedMessage containing the message, signature, algorithm,
-            context, signer fingerprint, and timestamp. The SignedMessage
+            context and timestamp. ``signer_fingerprint`` is empty here (this method has only
+            the secret key); use :meth:`sign_with_fingerprint` to record it. The SignedMessage
             is self-contained — pass it to verify() directly.
 
         Raises:
             UnsupportedAlgorithm: if the key's algorithm doesn't match.
+            ValueError: if ``context`` is longer than 255 bytes.
         """
         if secret_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(
@@ -292,6 +422,19 @@ class Sign:
 
         Use this when the verifier won't have the public key in advance and
         needs to look it up from a key store by fingerprint.
+
+        Args:
+            message: Arbitrary bytes to sign.
+            keypair: The signer's key pair. The secret key signs; the public key's fingerprint
+                is stored in the result.
+            context: Domain-separation context, up to 255 bytes.
+
+        Returns:
+            SignedMessage with ``signer_fingerprint`` set.
+
+        Raises:
+            UnsupportedAlgorithm: if the key's algorithm doesn't match.
+            ValueError: if ``context`` is longer than 255 bytes.
         """
         sm = self.sign(message, keypair.secret, context)
         # We can't use dataclass._replace directly on a frozen dataclass field
@@ -396,6 +539,15 @@ class Sign:
 
         The prefix length must match this verifier's hedging mode: 32 bytes
         when hedged (the default), 0 when constructed with ``hedged=False``.
+
+        Args:
+            message: The signed message.
+            signature_blob: The packed signature blob.
+            public_key: The signer's public key.
+            context: The context used when signing (default empty).
+
+        Raises:
+            VerificationError: if the blob is malformed or the signature is invalid.
         """
         if self._v2:
             _v2.verify(
@@ -438,6 +590,14 @@ class Sign:
         docstring and the ``-v2`` format); use ``sign_raw`` / :meth:`verify_raw`
         when the other side is not this library or quantum-safe-ts.
 
+        Args:
+            message: The message to sign, signed exactly as given.
+            secret_key: The signer's secret key.
+            context: FIPS 204 context string, up to 255 bytes.
+
+        Returns:
+            The raw ML-DSA signature bytes.
+
         Raises:
             UnsupportedAlgorithm: if the key's algorithm doesn't match.
             ValueError: if ``context`` is longer than 255 bytes.
@@ -469,9 +629,16 @@ class Sign:
         message`` here, so they rejected every standard signature, empty context
         included.
 
+        Args:
+            message: The signed message.
+            raw_signature: The raw ML-DSA signature bytes.
+            public_key: The signer's public key.
+            context: FIPS 204 context string used when signing, up to 255 bytes.
+
         Raises:
             VerificationError: if the signature is not valid for this message,
-                context and key.
+                context and key, or ``context`` is longer than 255 bytes.
+            UnsupportedAlgorithm: if the key's algorithm doesn't match.
         """
         if public_key.algorithm not in (self._algorithm, self._spec.name):
             raise UnsupportedAlgorithm(public_key.algorithm, available=[self._algorithm])
@@ -482,6 +649,48 @@ class Sign:
         )
         if not ok:
             raise VerificationError(algo=self._algorithm)
+
+    def sign_standard(
+        self,
+        message: bytes,
+        secret_key: SecretKey,
+        context: bytes = b"",
+    ) -> bytes:
+        """The standard FIPS 204 signature of ``message`` under ``context``.
+
+        Identical to :meth:`sign_raw`; this is the name that says what it is. The result is a
+        bare ``ML-DSA.Sign`` signature that any FIPS 204 implementation can verify from the
+        message and context, as opposed to :meth:`sign`, which is the library's own format.
+
+        Args:
+            message: The message to sign, signed exactly as given.
+            secret_key: The signer's secret key.
+            context: FIPS 204 context string, up to 255 bytes.
+
+        Returns:
+            The raw ML-DSA signature bytes.
+        """
+        return self.sign_raw(message, secret_key, context)
+
+    def verify_standard(
+        self,
+        message: bytes,
+        signature: bytes,
+        public_key: PublicKey,
+        context: bytes = b"",
+    ) -> None:
+        """Verify a standard FIPS 204 signature. Identical to :meth:`verify_raw`.
+
+        Args:
+            message: The signed message.
+            signature: The raw ML-DSA signature bytes.
+            public_key: The signer's public key.
+            context: FIPS 204 context string used when signing, up to 255 bytes.
+
+        Raises:
+            VerificationError: if the signature is not valid.
+        """
+        self.verify_raw(message, signature, public_key, context)
 
     # ------------------------------------------------------------------
     # Internal: signature blob packing

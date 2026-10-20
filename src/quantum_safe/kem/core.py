@@ -62,8 +62,9 @@ class KEM:
         algorithm:        PQC algorithm name. Defaults to ML-KEM-768.
         backend:          Backend name: "auto", "liboqs", "rustcrypto".
                           "auto" tries rustcrypto first, then liboqs.
-        allow_low_security: If True, allows NIST level 1 algorithms without
-                          warning. Default False (warns on L1).
+        allow_low_security: Accepted for forward compatibility. It has no effect today: every
+                          algorithm in the registry meets ``MINIMUM_NIST_LEVEL`` (level 1),
+                          so there is nothing to warn about.
         strict:           If True, raises instead of warning for non-standard
                           configurations. Default False.
     """
@@ -75,6 +76,19 @@ class KEM:
         allow_low_security: bool = False,
         strict: bool = False,
     ) -> None:
+        """Create a KEM for one algorithm and bind it to a backend.
+
+        The arguments are described in the class docstring. The algorithm is looked up in the
+        registry, the backend is selected with ``get_kem_backend``, and then the algorithm's
+        NIST level and standard status are checked. Each failed check emits a warning, or
+        raises when ``strict`` is True.
+
+        Raises:
+            UnsupportedAlgorithm: if the algorithm is not in the registry.
+            BackendNotAvailable: if the requested backend is not installed.
+            InsecureOperationError: if ``strict`` is True and the algorithm is below the
+                minimum NIST level or is not a NIST standard.
+        """
         self._algorithm = algorithm
         self._strict = strict
         self._spec = get_algorithm_spec(algorithm)
@@ -149,6 +163,9 @@ class KEM:
 
         Raises:
             UnsupportedAlgorithm: if the key's algorithm doesn't match.
+
+        Errors raised by the backend (``CryptoError``) propagate. The shared secret is the first
+        32 bytes of the backend's output.
         """
         if public_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(
@@ -178,6 +195,9 @@ class KEM:
                 implements implicit rejection (FIPS 203 §6.3), so malformed
                 ciphertexts produce a pseudorandom value rather than raising.
                 The error is raised only for structural failures.
+            UnsupportedAlgorithm: if the key's algorithm doesn't match this KEM instance.
+
+        The shared secret is the first 32 bytes of the backend's output.
         """
         if secret_key.algorithm != self._algorithm:
             raise UnsupportedAlgorithm(

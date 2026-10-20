@@ -301,12 +301,12 @@ class TestVersionComparison:
 
 class TestComponentAssessment:
     def test_cryptography_old_not_ready(self):
-        a = _assess_component("cryptography", "43.0.0")
+        a = _assess_component("cryptography", "47.0.0")
         assert a.readiness == PQCReadiness.NOT_READY
-        assert a.since_version == "44.0.0"
+        assert a.since_version == "48.0.0"
 
     def test_cryptography_new_partial(self):
-        a = _assess_component("cryptography", "44.0.5")
+        a = _assess_component("cryptography", "48.0.1")
         assert a.readiness == PQCReadiness.PARTIAL
 
     def test_quantum_safe_ready(self):
@@ -443,10 +443,10 @@ class TestNISTComplianceChecker:
         report = NISTComplianceChecker.check(scan, target="test.py")
         assert report.overall_level == ComplianceLevel.NON_COMPLIANT
 
-    def test_md5_code_triggers_sp800208(self):
+    def test_md5_code_triggers_the_deprecated_algorithm_control(self):
         scan = self._scan(self._MD5_SRC)
         report = NISTComplianceChecker.check(scan)
-        sp800 = next((c for c in report.controls if c.control_id == "SP800208-3.1"), None)
+        sp800 = next((c for c in report.controls if c.control_id == "SP800131A-1"), None)
         assert sp800 is not None
         assert sp800.level == ComplianceLevel.NON_COMPLIANT
 

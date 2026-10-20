@@ -6,6 +6,73 @@ Envelope
 
 See :doc:`kem` for the full Envelope API.
 
+COSE_Sign1 (CBOR signatures, RFC 9964)
+--------------------------------------
+
+:mod:`quantum_safe.protocols.cose` signs and verifies **COSE_Sign1** messages with ML-DSA, the
+CBOR counterpart of a compact JWS (CBOR Web Tokens, WebAuthn, attestation formats). It is the COSE
+half of RFC 9964; :class:`~quantum_safe.protocols.standard_jwt.StandardJwt` is the JOSE half. The
+signed bytes are ``["Signature1", protected, external_aad, payload]`` under plain FIPS 204 with the
+empty context, so any compliant COSE library verifies the result.
+
+.. code-block:: python
+
+   from quantum_safe.protocols.cose import sign1, verify_sign1
+   from quantum_safe.signatures import Sign
+
+   kp = Sign("ML-DSA-65").generate_keypair()
+   message = sign1(b"hello", kp.secret, kid=b"key-1", external_aad=b"myapp-v1")
+   payload = verify_sign1(message, kp.public, external_aad=b"myapp-v1")
+   assert payload == b"hello"
+
+- Algorithms: ML-DSA-44 = -48, ML-DSA-65 = -49, ML-DSA-87 = -50.
+- ``detached=True`` leaves the payload out (``verify_sign1(..., detached_payload=...)``);
+  ``tagged=False`` omits CBOR tag 18.
+- ``encode_cose_key`` / ``decode_cose_key`` read and write AKP public keys.
+- Verification is strict: the algorithm must be protected and known, ``crit`` is refused, CBOR must
+  be minimal with unique labels and no trailing bytes.
+- Checked against RFC 9964 Appendix A (all three levels) and against quantum-safe-ts in both
+  directions.
+
+Streaming envelope (large or incremental data)
+----------------------------------------------
+
+An :class:`~quantum_safe.protocols.envelope.Envelope` encrypts one buffer. For files, uploads and
+pipes that do not fit in memory or arrive in pieces, the streaming envelope (format v3) encrypts
+with **one** KEM encapsulation per stream and AES-256-GCM per chunk, using the STREAM construction:
+chunks cannot be reordered, dropped, duplicated or truncated without detection. It is
+byte-compatible with quantum-safe-ts (``sealStream`` / ``openStream``).
+
+.. code-block:: python
+
+   from quantum_safe import HybridKEM
+   from quantum_safe.protocols.stream import open_stream, seal_stream
+
+   kp = HybridKEM().generate_keypair()
+
+   with open("report.bin", "rb") as src, open("report.bin.qss", "wb") as dst:
+       for piece in seal_stream(kp.public, src, aad=b"report-2026", chunk_size=64 * 1024):
+           dst.write(piece)
+
+   with open("report.bin.qss", "rb") as enc, open("report.out", "wb") as out:
+       for chunk in open_stream(kp.secret, enc, expected_aad=b"report-2026"):
+           out.write(chunk)
+
+- Suites: any hybrid (for example ``X25519+ML-KEM-768``), X-Wing, and pure ``ML-KEM-1024``
+  (key derivation with HKDF-SHA-384, the CNSA 2.0 profile).
+- ``chunk_size`` is 1,024 to 16,777,216 bytes (default 65,536). Every chunk but the last is exactly
+  that size; the last may be shorter or empty.
+- ``aad`` is bound to every chunk and is **not stored** in the stream: the opener must pass the same
+  ``expected_aad``. A different value fails authentication.
+- ``open_stream`` raises on the first bad chunk (``cryptography.exceptions.InvalidTag`` for
+  authentication, ``ValueError`` for a malformed prelude or frame); a truncated or extended stream
+  never completes silently.
+- Like envelopes, a stream is anonymous: it does not say who sent it. Sign the data separately when
+  that matters.
+- Low level: :class:`~quantum_safe.protocols.stream.StreamSealer` and
+  :class:`~quantum_safe.protocols.stream.StreamOpener` seal and open chunk by chunk;
+  ``seal_bytes`` / ``open_bytes`` handle a whole buffer.
+
 JWT (PQC-aware)
 ---------------
 
@@ -74,13 +141,25 @@ Verification is strict: the key's algorithm must equal the header ``alg``,
 base64url.  Only the pure ML-DSA algorithms are defined by the RFC; hybrids are
 not.
 
-.. note::
+Private JWKs
+~~~~~~~~~~~~
 
-   RFC 9964's private JWK member ``priv`` is the 32-byte ML-DSA *seed*.  The
-   liboqs backend cannot derive a key pair from a seed, so this class neither
-   writes nor reads private AKP JWKs: keys are ordinary quantum-safe key pairs,
-   and a private JWK made elsewhere (for example by quantum-safe-ts) cannot be
-   used to sign here.  Its public JWK verifies as usual.
+RFC 9964's private JWK member ``priv`` is the 32-byte ML-DSA *seed*. liboqs cannot derive a key
+from a seed, so private JWKs use the optional ``cryptography`` backend
+(``pip install 'quantum-safe-py[pyca]'``):
+
+.. code-block:: python
+
+   from quantum_safe.protocols.standard_jwt import StandardJwt
+
+   private = StandardJwt.generate_private_jwk("ML-DSA-65", kid="k1")   # a secret: priv is the seed
+   public = StandardJwt.public_jwk(private)                              # share this one
+   token = StandardJwt.sign({"sub": "alice"}, private, issuer="https://issuer.example")
+   claims = StandardJwt.verify(token, public, issuer="https://issuer.example")
+
+``StandardJwt.keypair_from_private_jwk`` and ``StandardJwt.private_jwk`` convert between a JWK and
+a ``KeyPair``. A private JWK made by quantum-safe-ts signs here and the reverse; RFC 9964's
+all-zero example key derives the RFC's public key (checked in the test suite).
 
 TLS hybrid key exchange
 -----------------------

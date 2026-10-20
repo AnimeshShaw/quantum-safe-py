@@ -37,6 +37,11 @@ from quantum_safe.migrate.scanner import Finding, ScanReport, Severity
 
 
 class ComplianceLevel(str, Enum):
+    """The assessed compliance level of a control or of a whole report.
+
+    The members are strings, so a level compares equal to its value (``"COMPLIANT"``, ...).
+    """
+
     COMPLIANT = "COMPLIANT"
     PARTIAL = "PARTIAL"
     NON_COMPLIANT = "NON_COMPLIANT"
@@ -66,6 +71,7 @@ class ComplianceControl:
     remediation: str = ""
 
     def to_dict(self) -> dict[str, Any]:
+        """The control as a JSON-serialisable dict; ``level`` is the level's string value."""
         return {
             "control_id": self.control_id,
             "standard": self.standard,
@@ -96,13 +102,20 @@ class ComplianceReport:
 
     @property
     def non_compliant_controls(self) -> list[ComplianceControl]:
+        """The controls assessed as NON_COMPLIANT."""
         return [c for c in self.controls if c.level == ComplianceLevel.NON_COMPLIANT]
 
     @property
     def partial_controls(self) -> list[ComplianceControl]:
+        """The controls assessed as PARTIAL."""
         return [c for c in self.controls if c.level == ComplianceLevel.PARTIAL]
 
     def to_dict(self) -> dict[str, Any]:
+        """The report as a JSON-serialisable dict.
+
+        Holds the header fields, every control, a ``summary`` with the number of controls per
+        level and the metadata.
+        """
         return {
             "generated_at": self.generated_at,
             "target": self.target,
@@ -121,6 +134,7 @@ class ComplianceReport:
         }
 
     def to_json(self, indent: int = 2) -> str:
+        """Serialise :meth:`to_dict` to a JSON string indented by ``indent`` spaces."""
         return json.dumps(self.to_dict(), indent=indent)
 
     def summary_lines(self) -> list[str]:
@@ -172,7 +186,7 @@ class NISTComplianceChecker:
             "title": "ML-KEM key encapsulation",
             "description": "Key encapsulation shall use ML-KEM-512, ML-KEM-768, or ML-KEM-1024 "
             "as specified in FIPS 203. RSA and ECDH are not quantum-safe.",
-            "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016"},
+            "check_rule_ids": {"QS001", "QS002", "QS003", "QS011", "QS016", "QS050", "QS051"},
             "remediation": "Replace RSA/ECDH key exchange with HybridKEM() "
             "(X25519+ML-KEM-768 by default).",
         },
@@ -182,9 +196,9 @@ class NISTComplianceChecker:
             "title": "ML-DSA digital signatures",
             "description": "Digital signatures shall use ML-DSA-44, ML-DSA-65, or ML-DSA-87 "
             "as specified in FIPS 204. RSA-PSS, ECDSA, DSA are not quantum-safe.",
-            "check_rule_ids": {"QS001", "QS010", "QS015"},
+            "check_rule_ids": {"QS001", "QS010", "QS015", "QS050", "QS051"},
             "remediation": "Replace ECDSA/RSA/DSA signatures with HybridSign() "
-            "(Ed25519+ML-DSA-65 by default).",
+            "(Ed25519+ML-DSA-65-v2 by default).",
         },
         {
             "id": "FIPS205-2.1",
@@ -199,14 +213,14 @@ class NISTComplianceChecker:
             "informational": True,
         },
         {
-            "id": "SP800208-3.1",
-            "standard": "NIST SP 800-208",
-            "title": "Deprecated algorithm deprecation",
-            "description": "SHA-1 and MD5 must not be used for any cryptographic purpose. "
-            "AES-128 should be phased out in favor of AES-256.",
-            "check_rule_ids": {"QS030", "QS031", "QS020"},
+            "id": "SP800131A-1",
+            "standard": "NIST SP 800-131A",
+            "title": "Disallowed and deprecated algorithms",
+            "description": "SHA-1, MD5 and 3DES must not be used for any cryptographic purpose. "
+            "AES-128 should be replaced by AES-256, as CNSA 2.0 requires.",
+            "check_rule_ids": {"QS030", "QS031", "QS020", "QS021"},
             "remediation": "Replace SHA-1/MD5 with SHA-256 or SHA3-256. "
-            "Replace AES-128 with AES-256.",
+            "Replace 3DES and AES-128 with AES-256.",
         },
         {
             "id": "CISA-PQC-1",
@@ -258,6 +272,12 @@ class NISTComplianceChecker:
 
         Returns:
             ComplianceReport with one ComplianceControl per NIST requirement.
+
+        A control is NON_COMPLIANT when a HIGH or CRITICAL finding from one of its scanner rules
+        exists, PARTIAL when only lower-severity findings do, and COMPLIANT when none do.
+        Informational controls without findings, and controls without rules, are NOT_APPLICABLE.
+        The overall level is the worst of NON_COMPLIANT, PARTIAL and COMPLIANT among the controls.
+        ``target`` defaults to the scan report's root.
         """
         # Index findings by rule_id for fast lookup
         findings_by_rule: dict[str, list[Finding]] = {}

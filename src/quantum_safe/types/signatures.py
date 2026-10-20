@@ -86,6 +86,10 @@ class SignedMessage:
                     This is metadata only — it's not part of the signed content
                     and should not be relied upon for security decisions.
         is_hybrid:  Whether this is a hybrid (classical + PQC) signature.
+
+    Raises:
+        ValueError: On construction, if ``context`` is longer than 255 bytes or if ``message``
+            or ``signature`` is empty.
     """
 
     message: bytes
@@ -122,7 +126,13 @@ class SignedMessage:
     # ------------------------------------------------------------------
 
     def to_cbor(self) -> bytes:
-        """Serialize to CBOR for storage or transmission."""
+        """Serialize to CBOR for storage or transmission.
+
+        Returns:
+            CBOR bytes of a map holding the format version (``v``), message, signature,
+            algorithm, context, signer fingerprint, timestamp and hybrid flag. Read it back with
+            :meth:`from_cbor`.
+        """
         return _ser.dumps(
             {
                 "v": _SIGNED_MSG_VERSION,
@@ -139,6 +149,14 @@ class SignedMessage:
     @classmethod
     def from_cbor(cls, data: bytes) -> SignedMessage:
         """Deserialize from CBOR bytes.
+
+        Args:
+            data: CBOR bytes as produced by :meth:`to_cbor`. Missing ``ctx``, ``fp`` and
+                ``hybrid`` entries default to ``b""``, ``""`` and ``False``; a missing ``ts``
+                becomes ``0.0``.
+
+        Returns:
+            The decoded ``SignedMessage``.
 
         Raises:
             KeyParseError: if the data is not a SignedMessage map of the
@@ -189,6 +207,11 @@ class SignedMessage:
 
         Note: this produces the *payload* dict. To get a full JWT string,
         use quantum_safe.protocols.jwt.sign() instead.
+
+        Returns:
+            A dict with ``msg``, ``sig`` and ``ctx`` as unpadded URL-safe base64 strings, ``alg``
+            (the algorithm name), ``fp`` (the signer fingerprint) and ``iat`` (``signed_at``
+            truncated to whole seconds).
         """
         return {
             "msg": base64.urlsafe_b64encode(self.message).rstrip(b"=").decode(),
@@ -225,6 +248,7 @@ class HybridSignature:
 
     @property
     def combined_algorithm(self) -> str:
+        """The algorithm names joined as ``"<classical>+<pqc>"``, e.g. ``Ed25519+ML-DSA-65``."""
         return f"{self.classical_algo}+{self.pqc_algo}"
 
     def to_bytes(self) -> bytes:
@@ -248,6 +272,15 @@ class HybridSignature:
         count five, which cbor2 hides by keeping the last value), with the
         documented types and no trailing bytes. Anything else would let
         several byte strings verify as the same signature.
+
+        Args:
+            data: CBOR bytes as produced by :meth:`to_bytes`.
+
+        Returns:
+            The decoded ``HybridSignature``.
+
+        Raises:
+            VerificationError: If ``data`` does not meet any of the conditions above.
         """
         if not data or data[0] != _CBOR_MAP_OF_FOUR:
             raise VerificationError()

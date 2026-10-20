@@ -37,7 +37,7 @@ This module holds the format. :class:`~quantum_safe.signatures.core.Sign` and
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from quantum_safe.exceptions import UnsupportedAlgorithm, VerificationError
 
@@ -46,15 +46,24 @@ if TYPE_CHECKING:
 
 SUFFIX = "-v2"
 LABEL = b"quantum-safe-sig-v2"
-CLASSICAL_SIG_LEN = 64
+CLASSICAL_SIG_LEN = 64  # Ed25519 and P-256; see _CLASSICAL_LEN for each classical half
 
-# Same group order as P-256 (NIST FIPS 186-4, curve P-256).
+#: Length of the fixed-size classical half of a v2 blob, per classical algorithm.
+_CLASSICAL_LEN: dict[str, int] = {"Ed25519": 64, "P-256": 64, "P-384": 96}
+
+# Group orders (NIST FIPS 186-4). The classical half is raw r || s, low-S only.
 _P256_ORDER = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+_P384_ORDER = int(
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "C7634D81F4372DDF581A0DB248B0A77AECEC196ACCC52973",
+    16,
+)
 
 #: Hybrid combinations that have a v2 identifier (same as quantum-safe-ts).
 V2_HYBRIDS: dict[str, tuple[str, ...]] = {
     "Ed25519": ("ML-DSA-44", "ML-DSA-65", "ML-DSA-87"),
     "P-256": ("ML-DSA-44", "ML-DSA-65"),
+    "P-384": ("ML-DSA-87",),
 }
 V2_ML_DSA = ("ML-DSA-44", "ML-DSA-65", "ML-DSA-87")
 
@@ -79,6 +88,11 @@ def base_of(algorithm: str) -> str | None:
 
 
 def require_base(algorithm: str) -> str:
+    """Return the base suite of a supported v2 identifier.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+    """
     base = base_of(algorithm)
     if base is None:
         raise UnsupportedAlgorithm(algorithm, available=all_identifiers())
@@ -86,13 +100,23 @@ def require_base(algorithm: str) -> str:
 
 
 def all_identifiers() -> list[str]:
+    """Every supported v2 identifier: the three ML-DSA suites, then each v2 hybrid."""
     out = [f"{p}{SUFFIX}" for p in V2_ML_DSA]
     out += [f"{c}+{p}{SUFFIX}" for c, ps in V2_HYBRIDS.items() for p in ps]
     return out
 
 
 def signed_input(algorithm: str, context: bytes, message: bytes) -> bytes:
-    """``M2``: the bytes both halves sign (the classical half adds a label in front)."""
+    """``M2``: the bytes both halves sign (the classical half adds a label in front).
+
+    Args:
+        algorithm: The full v2 identifier, ASCII, at most 255 bytes.
+        context: The caller's context, at most 255 bytes.
+        message: The message.
+
+    Raises:
+        ValueError: if ``algorithm`` or ``context`` is longer than 255 bytes.
+    """
     a = algorithm.encode("ascii")
     if len(a) > 255 or len(context) > 255:
         raise ValueError("algorithm and context must each be at most 255 bytes")
@@ -100,14 +124,21 @@ def signed_input(algorithm: str, context: bytes, message: bytes) -> bytes:
 
 
 def _classical_input(m2: bytes) -> bytes:
+    """The bytes the classical half signs: ``LABEL || 0x00 || M2``."""
     return LABEL + b"\x00" + m2
 
 
 def pack_components(a: bytes, b: bytes) -> bytes:
+    """Return ``len(a)`` (2 bytes, big-endian) || ``a`` || ``b``, the hybrid key framing."""
     return struct.pack(">H", len(a)) + a + b
 
 
 def unpack_components(data: bytes) -> tuple[bytes, bytes]:
+    """Split data packed by :func:`pack_components` into ``(a, b)``.
+
+    Raises:
+        ValueError: if ``data`` is shorter than its length prefix or the prefixed length.
+    """
     if len(data) < 2:
         raise ValueError("hybrid key too short")
     (n,) = struct.unpack(">H", data[:2])
@@ -121,55 +152,79 @@ def unpack_components(data: bytes) -> tuple[bytes, bytes]:
 # ---------------------------------------------------------------------------
 
 
+def _curve(classical: str) -> tuple[int, int, Any]:
+    """(group order, coordinate size in bytes, digest class) of an ECDSA classical half."""
+    from cryptography.hazmat.primitives import hashes
+
+    if classical == "P-384":
+        return _P384_ORDER, 48, hashes.SHA384
+    return _P256_ORDER, 32, hashes.SHA256
+
+
+def _curve_class(classical: str) -> Any:  # noqa: ANN401
+    """The ``cryptography`` curve class for P-384, or P-256 for any other name."""
+    from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, SECP384R1
+
+    return SECP384R1 if classical == "P-384" else SECP256R1
+
+
 def _classical_sign(classical: str, secret: bytes, data: bytes) -> bytes:
+    """Sign ``data`` with the classical half: Ed25519, or ECDSA as raw low-S ``r || s``.
+
+    ``secret`` is the raw Ed25519 key or a PEM-encoded EC key.
+
+    Raises:
+        UnsupportedAlgorithm: if ``classical`` is not Ed25519, P-256 or P-384.
+        ValueError: if an EC secret key is not an EC key.
+    """
     if classical == "Ed25519":
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         return Ed25519PrivateKey.from_private_bytes(secret).sign(data)
-    if classical == "P-256":
-        from cryptography.hazmat.primitives import hashes
+    if classical in ("P-256", "P-384"):
         from cryptography.hazmat.primitives.asymmetric.ec import ECDSA, EllipticCurvePrivateKey
         from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
         from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
+        order, size, digest = _curve(classical)
         key = load_pem_private_key(secret, password=None)
         if not isinstance(key, EllipticCurvePrivateKey):
-            raise ValueError("P-256 secret key is not an EC key")
-        r, s = decode_dss_signature(key.sign(data, ECDSA(hashes.SHA256())))
-        if s > _P256_ORDER // 2:  # low-S only: the high-S twin is a second encoding
-            s = _P256_ORDER - s
-        return r.to_bytes(32, "big") + s.to_bytes(32, "big")
+            raise ValueError(f"{classical} secret key is not an EC key")
+        r, s = decode_dss_signature(key.sign(data, ECDSA(digest())))
+        if s > order // 2:  # low-S only: the high-S twin is a second encoding
+            s = order - s
+        return r.to_bytes(size, "big") + s.to_bytes(size, "big")
     raise UnsupportedAlgorithm(classical, available=list(V2_HYBRIDS))
 
 
 def _classical_verify(classical: str, public: bytes, data: bytes, sig: bytes) -> bool:
+    """Verify the classical half; any failure, including a high-S ECDSA signature, is False."""
     try:
         if classical == "Ed25519":
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
             Ed25519PublicKey.from_public_bytes(public).verify(sig, data)
             return True
-        if classical == "P-256":
-            from cryptography.hazmat.primitives import hashes
+        if classical in ("P-256", "P-384"):
             from cryptography.hazmat.primitives.asymmetric.ec import (
                 ECDSA,
-                SECP256R1,
                 EllipticCurvePublicNumbers,
             )
             from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
 
-            if len(public) != 64 or len(sig) != 64:
+            order, size, digest = _curve(classical)
+            if len(public) != 2 * size or len(sig) != 2 * size:
                 return False
-            r = int.from_bytes(sig[:32], "big")
-            s = int.from_bytes(sig[32:], "big")
-            if s > _P256_ORDER // 2:
+            r = int.from_bytes(sig[:size], "big")
+            s = int.from_bytes(sig[size:], "big")
+            if s > order // 2:
                 return False  # the high-S twin is refused
             pub = EllipticCurvePublicNumbers(
-                int.from_bytes(public[:32], "big"),
-                int.from_bytes(public[32:], "big"),
-                SECP256R1(),
+                int.from_bytes(public[:size], "big"),
+                int.from_bytes(public[size:], "big"),
+                _curve_class(classical)(),
             ).public_key()
-            pub.verify(encode_dss_signature(r, s), data, ECDSA(hashes.SHA256()))
+            pub.verify(encode_dss_signature(r, s), data, ECDSA(digest()))
             return True
     except Exception:  # noqa: BLE001
         return False
@@ -188,7 +243,25 @@ def sign(
     context: bytes,
     backend: AbstractSignatureBackend,
 ) -> bytes:
-    """Return the v2 signature blob for ``message`` under ``algorithm``."""
+    """Return the v2 signature blob for ``message`` under ``algorithm``.
+
+    The blob is the ML-DSA signature for an ML-DSA suite, or ``classical signature || ML-DSA
+    signature`` for a hybrid. The ML-DSA half is made with ``sign_native_context`` and the
+    context :data:`LABEL`.
+
+    Args:
+        algorithm: The full v2 identifier, e.g. ``"ML-DSA-65-v2"`` or ``"Ed25519+ML-DSA-65-v2"``.
+        secret: The secret key bytes; for a hybrid, the length-prefixed packed classical and
+            ML-DSA secret keys.
+        message: The message to sign.
+        context: The caller's context, at most 255 bytes.
+        backend: The signature backend that signs the ML-DSA half.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+        ValueError: if ``context`` is longer than 255 bytes, or a hybrid secret key is
+            truncated.
+    """
     base = require_base(algorithm)
     m2 = signed_input(algorithm, context, message)
     if "+" not in base:
@@ -207,7 +280,25 @@ def verify(
     context: bytes,
     backend: AbstractSignatureBackend,
 ) -> None:
-    """Verify a v2 blob; raises :class:`VerificationError` if it is not valid."""
+    """Verify a v2 blob; raises :class:`VerificationError` if it is not valid.
+
+    For a hybrid, both halves are always checked before the result is combined, so a failure
+    does not show which half failed.
+
+    Args:
+        algorithm: The full v2 identifier, e.g. ``"ML-DSA-65-v2"`` or ``"Ed25519+ML-DSA-65-v2"``.
+        public: The public key bytes; for a hybrid, the length-prefixed packed classical and
+            ML-DSA public keys.
+        message: The signed message. An empty message is refused.
+        blob: The v2 signature blob.
+        context: The context the verifier expects, at most 255 bytes.
+        backend: The signature backend that verifies the ML-DSA half.
+
+    Raises:
+        UnsupportedAlgorithm: if ``algorithm`` is not a supported v2 identifier.
+        VerificationError: if the signature is invalid, the blob or key is malformed, the
+            context is longer than 255 bytes, or the message is empty.
+    """
     base = require_base(algorithm)
     if len(context) > 255 or not message:
         raise VerificationError(algo=algorithm)
@@ -221,9 +312,10 @@ def verify(
         c_pub, p_pub = unpack_components(public)
     except ValueError as exc:
         raise VerificationError(algo=algorithm) from exc
-    if len(blob) <= CLASSICAL_SIG_LEN:
+    classical_len = _CLASSICAL_LEN[classical]
+    if len(blob) <= classical_len:
         raise VerificationError(algo=algorithm)
-    c_sig, p_sig = blob[:CLASSICAL_SIG_LEN], blob[CLASSICAL_SIG_LEN:]
+    c_sig, p_sig = blob[:classical_len], blob[classical_len:]
     # Evaluate both halves before combining, so a failure does not reveal which.
     classical_ok = _classical_verify(classical, c_pub, _classical_input(m2), c_sig)
     pqc_ok = backend.verify_native_context(pqc, p_pub, m2, p_sig, LABEL)

@@ -55,7 +55,7 @@ Both sub-signatures must verify for the overall verification to pass.
 
    from quantum_safe import HybridSign
 
-   signer = HybridSign()               # Ed25519 + ML-DSA-65 by default
+   signer = HybridSign()               # Ed25519 + ML-DSA-65, -v2 format, by default
    kp     = signer.generate_keypair()
 
    # Sign a message
@@ -108,12 +108,12 @@ a unique context string for each signing context:
    signer.verify(sm_docs, kp.public, context=b"myapp-docs-v1")   # OK
    signer.verify(sm_auth, kp.public, context=b"myapp-docs-v1")   # VerificationError
 
-Always pass ``context=`` to ``verify()``.  The context stored in a
-``SignedMessage`` comes from whoever supplied the message, so a verifier that
-takes it from there would accept a signature made for one purpose as valid for
-another.  Calling ``verify()`` without ``context=`` still works in this
-release but emits a ``DeprecationWarning``; it will be required (default
-``b""``) in the next minor release.
+Pass ``context=`` to ``verify()``.  The context stored in a ``SignedMessage``
+comes from whoever supplied the message, so a verifier that took it from there
+would accept a signature made for one purpose as valid for another.  Leaving
+``context=`` out means "expect an empty context": a message that carries a
+context is rejected, and a ``ContextOmittedWarning`` tells the developer why.
+See :doc:`context-and-aad` for the use cases and the full table.
 
 Standard FIPS 204 signatures (interoperating with other libraries)
 -------------------------------------------------------------------
@@ -136,6 +136,9 @@ passes your message and context to ML-DSA unchanged and returns only the signatu
    # verifies it with the same message, context and public key.
 
    signer.verify_raw(b"release 1.2.3", sig, kp.public, context=b"myapp-release")
+
+``sign_standard()`` and ``verify_standard()`` are the same two operations under names that
+say what they are; use whichever reads better in your code.
 
 ``verify_raw()`` likewise verifies signatures made elsewhere (``ML-DSA.Sign`` with
 FIPS 204's context string). The randomness is FIPS 204's own hedged ``rnd`` input,
@@ -208,12 +211,13 @@ quantum-safe-ts, selected by an identifier suffix:
    sm = hybrid.sign(b"document", kp.secret, context=b"myapp-v1")
    hybrid.verify(sm, kp.public, context=b"myapp-v1")
 
-Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``
-and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
+Supported identifiers: ``ML-DSA-44/65/87-v2``, ``Ed25519+ML-DSA-44/65/87-v2``,
+``P-256+ML-DSA-44/65-v2`` and ``P-384+ML-DSA-87-v2`` (no SLH-DSA).  What differs:
 
 - **No prefix and no prefix length** in the signature, so there is no
   message/prefix boundary to move.  A hybrid signature is exactly
-  ``classical signature (64 bytes) || ML-DSA signature``.
+  ``classical signature || ML-DSA signature``, where the classical half is 64 bytes for
+  Ed25519 and P-256 and 96 bytes for P-384 (raw ``r || s``, low-S only).
 - The ML-DSA half is **plain FIPS 204** ``ML-DSA.Sign`` with the *native*
   context ``quantum-safe-sig-v2`` over
   ``M2 = u8(len(algo)) || algo || u8(len(ctx)) || ctx || message``, so any
@@ -222,13 +226,35 @@ and ``P-256+ML-DSA-44/65-v2`` (no SLH-DSA).  What differs:
 - The classical half signs ``"quantum-safe-sig-v2" || 0x00 || M2`` (Ed25519, or
   ECDSA P-256/SHA-256 as raw ``r || s``, low-S only).
 - ML-DSA signing is always hedged inside ML-DSA, so ``hedged=False`` does not
-  exist for ``-v2``.
+  exist for ``-v2``: naming a ``-v2`` suite together with ``hedged=False`` raises
+  ``ValueError``. (quantum-safe-ts accepts the combination, ignores the option and emits a
+  ``QS_HEDGED_IGNORED`` warning, so that existing code keeps working.)
 - Keys carry the ``-v2`` tag, but the tag is advisory: v1 and v2 keys have
   identical bytes.  **Never use the same key in both formats.**
 
-``-v2`` is not the default in this release; the default will move to it in the
-next minor release.  Versions of quantum-safe before this one cannot read
-``-v2`` signatures.
+``-v2`` is the default hybrid format from 1.0.0: ``HybridSign()`` is
+``Ed25519+ML-DSA-65-v2``.  Versions of quantum-safe before 0.3.1 cannot read
+``-v2`` signatures; to sign for them, name the original format explicitly
+(``HybridSign("Ed25519", "ML-DSA-65")``).  ``HybridSign(hedged=False)`` without a
+suite also selects the original format, because ``-v2`` is always hedged.
+
+Which default makes which format:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Call
+     - Format
+   * - ``HybridSign()``
+     - ``Ed25519+ML-DSA-65-v2`` (the clean format, no prefix).
+   * - ``Sign()``
+     - ``ML-DSA-65`` in the original format. ``ML-DSA-65`` is also the name the standards formats (JOSE, COSE)
+       use for the algorithm, so the bare name keeps its meaning; ask for ``Sign("ML-DSA-65-v2")`` for the clean format.
+   * - ``HybridSign("Ed25519", "ML-DSA-65")``
+     - The original hybrid format, by name.
+   * - ``Sign().sign_standard(...)``
+     - A bare FIPS 204 signature with a native context, for other ML-DSA implementations.
 
 SignedMessage
 -------------

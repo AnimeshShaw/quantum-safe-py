@@ -1,0 +1,1658 @@
+{
+  "metadata": {
+    "recorded_at": "2026-10-19T17:17:43.442747+00:00",
+    "python": "3.12.14",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "machine": "x86_64",
+    "cpu_model": "Intel(R) Core(TM) i9-14900HX",
+    "logical_cpus": 32,
+    "cpu_affinity": [
+      0,
+      1
+    ],
+    "liboqs": "0.16.0",
+    "git_commit": "56863c2da0cbf39c4f1bedfed8789c9acbf46f24",
+    "in_container": true
+  },
+  "iterations_per_class": 20000,
+  "t_clear_threshold": 10.0,
+  "t_suspicious_threshold": 5.0,
+  "results": [
+    {
+      "name": "CONTROL ML-KEM-768 decap: fixed vs fixed [untrimmed]",
+      "class_a": {
+        "label": "fixed key (A)",
+        "n": 20000,
+        "mean_us": 17.449517051363728,
+        "median_us": 16.751499970268924,
+        "stdev_us": 6.307719807807222,
+        "cov_pct": 36.14839189669296
+      },
+      "class_b": {
+        "label": "fixed key (B)",
+        "n": 20000,
+        "mean_us": 17.414353102526547,
+        "median_us": 16.729999970266363,
+        "stdev_us": 7.512386140297367,
+        "cov_pct": 43.139047979953034
+      },
+      "t_statistic": -0.5069586888572369,
+      "p_value": 0.6121866833973445,
+      "df": 38835.41692215526,
+      "delta_mean_us": -0.035163948837180214,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "NEGATIVE CONTROL: both classes use the same key and ciphertext. Any |t| reported here is apparatus noise, not signal, and sets the floor below which the other tests in this run cannot resolve anything."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: fixed vs fixed [top 0.1% dropped]",
+      "class_a": {
+        "label": "fixed key (A)",
+        "n": 19980,
+        "mean_us": 17.324931282742725,
+        "median_us": 16.749999986132025,
+        "stdev_us": 4.7612057316108025,
+        "cov_pct": 27.481815967451574
+      },
+      "class_b": {
+        "label": "fixed key (B)",
+        "n": 19980,
+        "mean_us": 17.252190142622947,
+        "median_us": 16.729499975554063,
+        "stdev_us": 4.764845765293585,
+        "cov_pct": 27.618787677986717
+      },
+      "t_statistic": -1.5264405229871636,
+      "p_value": 0.12690810701513477,
+      "df": 39957.97666282364,
+      "delta_mean_us": -0.07274114011977773,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes use the same key and ciphertext. Any |t| reported here is apparatus noise, not signal, and sets the floor below which the other tests in this run cannot resolve anything."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: fixed vs fixed [top 0.5% dropped]",
+      "class_a": {
+        "label": "fixed key (A)",
+        "n": 19900,
+        "mean_us": 17.114078192257946,
+        "median_us": 16.743999822210753,
+        "stdev_us": 3.3248932068486656,
+        "cov_pct": 19.42782526465713
+      },
+      "class_b": {
+        "label": "fixed key (B)",
+        "n": 19900,
+        "mean_us": 17.028659248783118,
+        "median_us": 16.724000033718767,
+        "stdev_us": 3.103954035067046,
+        "cov_pct": 18.227823986135945
+      },
+      "t_statistic": -2.6491485272213424,
+      "p_value": 0.00807268723874178,
+      "df": 39611.304821246275,
+      "delta_mean_us": -0.08541894347482781,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes use the same key and ciphertext. Any |t| reported here is apparatus noise, not signal, and sets the floor below which the other tests in this run cannot resolve anything."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: fixed vs fixed [top 1.0% dropped]",
+      "class_a": {
+        "label": "fixed key (A)",
+        "n": 19800,
+        "mean_us": 16.963588991254227,
+        "median_us": 16.736999896238558,
+        "stdev_us": 2.5484690430329895,
+        "cov_pct": 15.023171360417198
+      },
+      "class_b": {
+        "label": "fixed key (B)",
+        "n": 19800,
+        "mean_us": 16.88708313385995,
+        "median_us": 16.71900008659577,
+        "stdev_us": 2.3542848457901417,
+        "cov_pct": 13.941335085095973
+      },
+      "t_statistic": -3.1028573417748664,
+      "p_value": 0.00191797701892585,
+      "df": 39351.84359244418,
+      "delta_mean_us": -0.0765058573942774,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes use the same key and ciphertext. Any |t| reported here is apparatus noise, not signal, and sets the floor below which the other tests in this run cannot resolve anything."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: fixed vs fixed [top 5.0% dropped]",
+      "class_a": {
+        "label": "fixed key (A)",
+        "n": 19000,
+        "mean_us": 16.54330336972826,
+        "median_us": 16.68599998083664,
+        "stdev_us": 1.1782517330333455,
+        "cov_pct": 7.1222276875449655
+      },
+      "class_b": {
+        "label": "fixed key (B)",
+        "n": 19000,
+        "mean_us": 16.507440212918528,
+        "median_us": 16.664999748172704,
+        "stdev_us": 1.1416162502417138,
+        "cov_pct": 6.915767893245485
+      },
+      "t_statistic": -3.013164866161057,
+      "p_value": 0.002587088573384635,
+      "df": 37960.15150327357,
+      "delta_mean_us": -0.03586315680973229,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes use the same key and ciphertext. Any |t| reported here is apparatus noise, not signal, and sets the floor below which the other tests in this run cannot resolve anything."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: random vs random [untrimmed]",
+      "class_a": {
+        "label": "fresh key (A)",
+        "n": 20000,
+        "mean_us": 16.192133750087123,
+        "median_us": 15.615499933119281,
+        "stdev_us": 6.653274670856566,
+        "cov_pct": 41.089548626170206
+      },
+      "class_b": {
+        "label": "fresh key (B)",
+        "n": 20000,
+        "mean_us": 16.381156648071737,
+        "median_us": 15.610999980708584,
+        "stdev_us": 16.391163104560842,
+        "cov_pct": 100.06108516452214
+      },
+      "t_statistic": 1.5111286830013324,
+      "p_value": 0.13076763029148364,
+      "df": 26414.899340137166,
+      "delta_mean_us": 0.18902289798461425,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "NEGATIVE CONTROL: both classes cycle distinct keys, so the two treatments are statistically identical and |t| should be ~0.",
+        "Compare against the fixed-vs-random result: if that one is large and this one is not, the signal is about data repetition, not key dependence."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: random vs random [top 0.1% dropped]",
+      "class_a": {
+        "label": "fresh key (A)",
+        "n": 19980,
+        "mean_us": 16.06047217230846,
+        "median_us": 15.613499954270083,
+        "stdev_us": 4.75487462995631,
+        "cov_pct": 29.606069976913176
+      },
+      "class_b": {
+        "label": "fresh key (B)",
+        "n": 19980,
+        "mean_us": 16.06791711517624,
+        "median_us": 15.608000012434786,
+        "stdev_us": 4.760109879004994,
+        "cov_pct": 29.62493423935479
+      },
+      "t_statistic": 0.1564105192584319,
+      "p_value": 0.8757102362298275,
+      "df": 39957.951613805475,
+      "delta_mean_us": 0.0074449428677780816,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes cycle distinct keys, so the two treatments are statistically identical and |t| should be ~0.",
+        "Compare against the fixed-vs-random result: if that one is large and this one is not, the signal is about data repetition, not key dependence."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: random vs random [top 0.5% dropped]",
+      "class_a": {
+        "label": "fresh key (A)",
+        "n": 19900,
+        "mean_us": 15.8506235679646,
+        "median_us": 15.607000023010187,
+        "stdev_us": 3.3333129881634505,
+        "cov_pct": 21.029538515445832
+      },
+      "class_b": {
+        "label": "fresh key (B)",
+        "n": 19900,
+        "mean_us": 15.857435726744672,
+        "median_us": 15.598999880239717,
+        "stdev_us": 3.3597725327031465,
+        "cov_pct": 21.187363395940842
+      },
+      "t_statistic": 0.20304697805403216,
+      "p_value": 0.8390993518400707,
+      "df": 39795.512331556914,
+      "delta_mean_us": 0.0068121587800717975,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes cycle distinct keys, so the two treatments are statistically identical and |t| should be ~0.",
+        "Compare against the fixed-vs-random result: if that one is large and this one is not, the signal is about data repetition, not key dependence."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: random vs random [top 1.0% dropped]",
+      "class_a": {
+        "label": "fresh key (A)",
+        "n": 19800,
+        "mean_us": 15.702843939637049,
+        "median_us": 15.600000097037992,
+        "stdev_us": 2.585916608474431,
+        "cov_pct": 16.46782339820032
+      },
+      "class_b": {
+        "label": "fresh key (B)",
+        "n": 19800,
+        "mean_us": 15.709394392018506,
+        "median_us": 15.591000192216597,
+        "stdev_us": 2.619061145904149,
+        "cov_pct": 16.671942154783633
+      },
+      "t_statistic": 0.2504327970345941,
+      "p_value": 0.8022539685909049,
+      "df": 39591.57883601339,
+      "delta_mean_us": 0.006550452381457461,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes cycle distinct keys, so the two treatments are statistically identical and |t| should be ~0.",
+        "Compare against the fixed-vs-random result: if that one is large and this one is not, the signal is about data repetition, not key dependence."
+      ]
+    },
+    {
+      "name": "CONTROL ML-KEM-768 decap: random vs random [top 5.0% dropped]",
+      "class_a": {
+        "label": "fresh key (A)",
+        "n": 19000,
+        "mean_us": 15.341504421006615,
+        "median_us": 15.531999906670535,
+        "stdev_us": 1.7027031716987546,
+        "cov_pct": 11.098671453415609
+      },
+      "class_b": {
+        "label": "fresh key (B)",
+        "n": 19000,
+        "mean_us": 15.34037099808254,
+        "median_us": 15.52700041429489,
+        "stdev_us": 1.7022872268642006,
+        "cov_pct": 11.096780039263567
+      },
+      "t_statistic": -0.06488852402575536,
+      "p_value": 0.9482630991872363,
+      "df": 37997.99773190951,
+      "delta_mean_us": -0.0011334229240755889,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "NEGATIVE CONTROL: both classes cycle distinct keys, so the two treatments are statistically identical and |t| should be ~0.",
+        "Compare against the fixed-vs-random result: if that one is large and this one is not, the signal is about data repetition, not key dependence."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: fixed key vs fresh key [untrimmed]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 20000,
+        "mean_us": 14.636844800156723,
+        "median_us": 14.287999874795787,
+        "stdev_us": 6.724380508916173,
+        "cov_pct": 45.94146211650869
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 20000,
+        "mean_us": 14.833367349388027,
+        "median_us": 14.381999790202826,
+        "stdev_us": 8.70539127508731,
+        "cov_pct": 58.687896483912425
+      },
+      "t_statistic": 2.526577783121666,
+      "p_value": 0.011522055756268704,
+      "df": 37598.689113292145,
+      "delta_mean_us": 0.19652254923130386,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Both classes cycle 256 distinct KeyEncapsulation objects and 256 distinct ciphertext buffers, so allocation and cache behaviour are matched; only the key material differs between classes.",
+        "Every decapsulation in both classes uses a ciphertext correctly bound to the key decapsulating it, so both classes take the success path."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: fixed key vs fresh key [top 0.1% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19980,
+        "mean_us": 14.485438889088975,
+        "median_us": 14.286500118032563,
+        "stdev_us": 4.141603573477697,
+        "cov_pct": 28.591495260784416
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19980,
+        "mean_us": 14.640271620970504,
+        "median_us": 14.37900027667638,
+        "stdev_us": 4.547388932555079,
+        "cov_pct": 31.06082353036038
+      },
+      "t_statistic": 3.5582217760398698,
+      "p_value": 0.00037381013918395096,
+      "df": 39613.9121756318,
+      "delta_mean_us": 0.15483273188152857,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct KeyEncapsulation objects and 256 distinct ciphertext buffers, so allocation and cache behaviour are matched; only the key material differs between classes.",
+        "Every decapsulation in both classes uses a ciphertext correctly bound to the key decapsulating it, so both classes take the success path."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: fixed key vs fresh key [top 0.5% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19900,
+        "mean_us": 14.321966281633065,
+        "median_us": 14.280999948823592,
+        "stdev_us": 3.182243476302627,
+        "cov_pct": 22.219319706007372
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19900,
+        "mean_us": 14.449039597354783,
+        "median_us": 14.371499901244533,
+        "stdev_us": 3.2340956352822685,
+        "cov_pct": 22.38277231847535
+      },
+      "t_statistic": 3.9508851803227745,
+      "p_value": 7.799691708630868e-05,
+      "df": 39787.6077361156,
+      "delta_mean_us": 0.12707331572171832,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct KeyEncapsulation objects and 256 distinct ciphertext buffers, so allocation and cache behaviour are matched; only the key material differs between classes.",
+        "Every decapsulation in both classes uses a ciphertext correctly bound to the key decapsulating it, so both classes take the success path."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: fixed key vs fresh key [top 1.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19800,
+        "mean_us": 14.209810101190191,
+        "median_us": 14.275000012275996,
+        "stdev_us": 2.7603509822303804,
+        "cov_pct": 19.425671156570754
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19800,
+        "mean_us": 14.335976918527644,
+        "median_us": 14.36200000171084,
+        "stdev_us": 2.8137777572202873,
+        "cov_pct": 19.627387608191494
+      },
+      "t_statistic": 4.503973202007505,
+      "p_value": 6.688495831542395e-06,
+      "df": 39583.456871286384,
+      "delta_mean_us": 0.12616681733745239,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct KeyEncapsulation objects and 256 distinct ciphertext buffers, so allocation and cache behaviour are matched; only the key material differs between classes.",
+        "Every decapsulation in both classes uses a ciphertext correctly bound to the key decapsulating it, so both classes take the success path."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: fixed key vs fresh key [top 5.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19000,
+        "mean_us": 13.842448210700814,
+        "median_us": 14.218000160326483,
+        "stdev_us": 2.0311298440717933,
+        "cov_pct": 14.673198072734284
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19000,
+        "mean_us": 13.960493420463058,
+        "median_us": 14.29899975846638,
+        "stdev_us": 2.0607251847870405,
+        "cov_pct": 14.761119988541838
+      },
+      "t_statistic": 5.623524203865398,
+      "p_value": 1.8841263602360023e-08,
+      "df": 37990.05139992325,
+      "delta_mean_us": 0.11804520976224353,
+      "verdict": "SUSPICIOUS (|t|>5)",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct KeyEncapsulation objects and 256 distinct ciphertext buffers, so allocation and cache behaviour are matched; only the key material differs between classes.",
+        "Every decapsulation in both classes uses a ciphertext correctly bound to the key decapsulating it, so both classes take the success path."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext [untrimmed]",
+      "class_a": {
+        "label": "same ciphertext",
+        "n": 20000,
+        "mean_us": 12.72109709761935,
+        "median_us": 11.155999800394056,
+        "stdev_us": 7.520062965550121,
+        "cov_pct": 59.114893219056086
+      },
+      "class_b": {
+        "label": "fresh ciphertexts",
+        "n": 20000,
+        "mean_us": 12.626613201132386,
+        "median_us": 11.157999779243255,
+        "stdev_us": 4.091368196541116,
+        "cov_pct": 32.40273643746521
+      },
+      "t_statistic": -1.5608045907514991,
+      "p_value": 0.11858010994565282,
+      "df": 30884.70264682863,
+      "delta_mean_us": -0.0944838964869632,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext differs. Any |t| is therefore explained by public inputs and cache or branch state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        "Both classes cycle 256 distinct objects and buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext [top 0.1% dropped]",
+      "class_a": {
+        "label": "same ciphertext",
+        "n": 19980,
+        "mean_us": 12.554775122754638,
+        "median_us": 11.155000265716808,
+        "stdev_us": 2.9704192756358347,
+        "cov_pct": 23.659677266956066
+      },
+      "class_b": {
+        "label": "fresh ciphertexts",
+        "n": 19980,
+        "mean_us": 12.537332984081601,
+        "median_us": 11.156999789818656,
+        "stdev_us": 2.763054277617618,
+        "cov_pct": 22.03861284633512
+      },
+      "t_statistic": -0.6077301746687653,
+      "p_value": 0.5433699184503334,
+      "df": 39750.554976647196,
+      "delta_mean_us": -0.017442138673036567,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext differs. Any |t| is therefore explained by public inputs and cache or branch state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        "Both classes cycle 256 distinct objects and buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext [top 0.5% dropped]",
+      "class_a": {
+        "label": "same ciphertext",
+        "n": 19900,
+        "mean_us": 12.438168992756705,
+        "median_us": 11.151999842695659,
+        "stdev_us": 2.2083330873895433,
+        "cov_pct": 17.75448692388368
+      },
+      "class_b": {
+        "label": "fresh ciphertexts",
+        "n": 19900,
+        "mean_us": 12.437252212134009,
+        "median_us": 11.15300028686761,
+        "stdev_us": 2.173387125568028,
+        "cov_pct": 17.474817495842306
+      },
+      "t_statistic": -0.04173962152408213,
+      "p_value": 0.9667064774908055,
+      "df": 39787.878142142734,
+      "delta_mean_us": -0.0009167806226955122,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext differs. Any |t| is therefore explained by public inputs and cache or branch state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        "Both classes cycle 256 distinct objects and buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext [top 1.0% dropped]",
+      "class_a": {
+        "label": "same ciphertext",
+        "n": 19800,
+        "mean_us": 12.376993735015827,
+        "median_us": 11.147999884997262,
+        "stdev_us": 2.034144236218559,
+        "cov_pct": 16.43488135946736
+      },
+      "class_b": {
+        "label": "fresh ciphertexts",
+        "n": 19800,
+        "mean_us": 12.38154530412173,
+        "median_us": 11.15099985327106,
+        "stdev_us": 2.0296885583330444,
+        "cov_pct": 16.392853302869838
+      },
+      "t_statistic": 0.22288079191972052,
+      "p_value": 0.8236294358161739,
+      "df": 39597.809591635625,
+      "delta_mean_us": 0.004551569105903042,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext differs. Any |t| is therefore explained by public inputs and cache or branch state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        "Both classes cycle 256 distinct objects and buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: same key, same vs fresh ciphertext [top 5.0% dropped]",
+      "class_a": {
+        "label": "same ciphertext",
+        "n": 19000,
+        "mean_us": 12.171418681933382,
+        "median_us": 11.122000159957679,
+        "stdev_us": 1.7810302915537153,
+        "cov_pct": 14.632889871723693
+      },
+      "class_b": {
+        "label": "fresh ciphertexts",
+        "n": 19000,
+        "mean_us": 12.177141053837802,
+        "median_us": 11.124999673484126,
+        "stdev_us": 1.7803167643209845,
+        "cov_pct": 14.620153913384225
+      },
+      "t_statistic": 0.3132229469490033,
+      "p_value": 0.7541130049465289,
+      "df": 37997.99389882986,
+      "delta_mean_us": 0.005722371904420598,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "The secret key is IDENTICAL in both classes; only the (public) ciphertext differs. Any |t| is therefore explained by public inputs and cache or branch state, not by the secret. Compare with 'fixed key vs fresh key'.",
+        "Both classes cycle 256 distinct objects and buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret) [untrimmed]",
+      "class_a": {
+        "label": "same public key",
+        "n": 20000,
+        "mean_us": 11.03543030237688,
+        "median_us": 9.729500106914202,
+        "stdev_us": 18.250259531501545,
+        "cov_pct": 165.37877573809413
+      },
+      "class_b": {
+        "label": "fresh public keys",
+        "n": 20000,
+        "mean_us": 10.886702399261594,
+        "median_us": 9.779999800230144,
+        "stdev_us": 8.6890256345544,
+        "cov_pct": 79.81320069099844
+      },
+      "t_statistic": -1.0405755324144492,
+      "p_value": 0.29808138125356753,
+      "df": 28622.46780300398,
+      "delta_mean_us": -0.1487279031152866,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Encapsulation uses only the public key: NO SECRET is involved in either class. A class difference here is explained by public key content or repetition, not by secret dependence.",
+        "Both classes cycle 256 distinct buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret) [top 0.1% dropped]",
+      "class_a": {
+        "label": "same public key",
+        "n": 19980,
+        "mean_us": 10.664877129477338,
+        "median_us": 9.728999884828227,
+        "stdev_us": 2.6938317549102333,
+        "cov_pct": 25.258910367233195
+      },
+      "class_b": {
+        "label": "fresh public keys",
+        "n": 19980,
+        "mean_us": 10.683070519741529,
+        "median_us": 9.778999810805544,
+        "stdev_us": 2.3855120857798275,
+        "cov_pct": 22.32983561581454
+      },
+      "t_statistic": 0.7146940028720313,
+      "p_value": 0.47480238061697133,
+      "df": 39381.83263990887,
+      "delta_mean_us": 0.018193390264190867,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Encapsulation uses only the public key: NO SECRET is involved in either class. A class difference here is explained by public key content or repetition, not by secret dependence.",
+        "Both classes cycle 256 distinct buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret) [top 0.5% dropped]",
+      "class_a": {
+        "label": "same public key",
+        "n": 19900,
+        "mean_us": 10.547201509942527,
+        "median_us": 9.727000133352703,
+        "stdev_us": 1.7246590251729446,
+        "cov_pct": 16.35181638984674
+      },
+      "class_b": {
+        "label": "fresh public keys",
+        "n": 19900,
+        "mean_us": 10.585999898764051,
+        "median_us": 9.776000069905422,
+        "stdev_us": 1.6740019362026304,
+        "cov_pct": 15.813356812879578
+      },
+      "t_statistic": 2.277189371342804,
+      "p_value": 0.022780205996348852,
+      "df": 39762.681074729604,
+      "delta_mean_us": 0.0387983888215242,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Encapsulation uses only the public key: NO SECRET is involved in either class. A class difference here is explained by public key content or repetition, not by secret dependence.",
+        "Both classes cycle 256 distinct buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret) [top 1.0% dropped]",
+      "class_a": {
+        "label": "same public key",
+        "n": 19800,
+        "mean_us": 10.491310658996342,
+        "median_us": 9.72500038187718,
+        "stdev_us": 1.5352607302655272,
+        "cov_pct": 14.633640925969862
+      },
+      "class_b": {
+        "label": "fresh public keys",
+        "n": 19800,
+        "mean_us": 10.536913282016435,
+        "median_us": 9.772999874257948,
+        "stdev_us": 1.5262090378247097,
+        "cov_pct": 14.484403515301981
+      },
+      "t_statistic": 2.9641866239230334,
+      "p_value": 0.0030366483932492065,
+      "df": 39596.615445383744,
+      "delta_mean_us": 0.04560262302009299,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Encapsulation uses only the public key: NO SECRET is involved in either class. A class difference here is explained by public key content or repetition, not by secret dependence.",
+        "Both classes cycle 256 distinct buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 encap: fixed vs fresh PUBLIC key (no secret) [top 5.0% dropped]",
+      "class_a": {
+        "label": "same public key",
+        "n": 19000,
+        "mean_us": 10.31022152847072,
+        "median_us": 9.711000075185439,
+        "stdev_us": 1.2383760634977627,
+        "cov_pct": 12.011148936791534
+      },
+      "class_b": {
+        "label": "fresh public keys",
+        "n": 19000,
+        "mean_us": 10.35806642046641,
+        "median_us": 9.749000128067564,
+        "stdev_us": 1.2407237907703466,
+        "cov_pct": 11.97833399020122
+      },
+      "t_statistic": 3.762124489007112,
+      "p_value": 0.00016872900737653678,
+      "df": 37997.863690651146,
+      "delta_mean_us": 0.04784489199568931,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Encapsulation uses only the public key: NO SECRET is involved in either class. A class difference here is explained by public key content or repetition, not by secret dependence.",
+        "Both classes cycle 256 distinct buffers (equal footprint)."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B [untrimmed]",
+      "class_a": {
+        "label": "fixed key A",
+        "n": 20000,
+        "mean_us": 12.535525151520233,
+        "median_us": 11.137999990751268,
+        "stdev_us": 9.67027835666423,
+        "cov_pct": 77.14298555327359
+      },
+      "class_b": {
+        "label": "fixed key B",
+        "n": 20000,
+        "mean_us": 12.606135246642225,
+        "median_us": 11.121999705210328,
+        "stdev_us": 14.90982712554708,
+        "cov_pct": 118.27437064439292
+      },
+      "t_statistic": 0.5619062794089585,
+      "p_value": 0.5741835473029488,
+      "df": 34294.87548779232,
+      "delta_mean_us": 0.07061009512199234,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Both classes cycle the same number of objects and each class repeats its own key and ciphertext exactly; the two keys differ. Repetition is matched, the key is not."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B [top 0.1% dropped]",
+      "class_a": {
+        "label": "fixed key A",
+        "n": 19980,
+        "mean_us": 12.315810061539326,
+        "median_us": 11.137999990751268,
+        "stdev_us": 3.65618769768576,
+        "cov_pct": 29.68694449992826
+      },
+      "class_b": {
+        "label": "fixed key B",
+        "n": 19980,
+        "mean_us": 12.281911558233872,
+        "median_us": 11.12100017053308,
+        "stdev_us": 3.865599303295814,
+        "cov_pct": 31.473922320376026
+      },
+      "t_statistic": -0.900542027911276,
+      "p_value": 0.3678373139228788,
+      "df": 39834.68728792175,
+      "delta_mean_us": -0.033898503305453076,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Both classes cycle the same number of objects and each class repeats its own key and ciphertext exactly; the two keys differ. Repetition is matched, the key is not."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B [top 0.5% dropped]",
+      "class_a": {
+        "label": "fixed key A",
+        "n": 19900,
+        "mean_us": 12.145578544211398,
+        "median_us": 11.13500002247747,
+        "stdev_us": 2.21632963188677,
+        "cov_pct": 18.248036714093594
+      },
+      "class_b": {
+        "label": "fixed key B",
+        "n": 19900,
+        "mean_us": 12.104149393633808,
+        "median_us": 11.11999972636113,
+        "stdev_us": 2.0909276867105877,
+        "cov_pct": 17.274470255715066
+      },
+      "t_statistic": -1.918062544806719,
+      "p_value": 0.055110252760793225,
+      "df": 39663.74678088093,
+      "delta_mean_us": -0.041429150577590335,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Both classes cycle the same number of objects and each class repeats its own key and ciphertext exactly; the two keys differ. Repetition is matched, the key is not."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B [top 1.0% dropped]",
+      "class_a": {
+        "label": "fixed key A",
+        "n": 19800,
+        "mean_us": 12.061583890380177,
+        "median_us": 11.132000054203672,
+        "stdev_us": 1.864179946423326,
+        "cov_pct": 15.455515323407228
+      },
+      "class_b": {
+        "label": "fixed key B",
+        "n": 19800,
+        "mean_us": 12.031056309793216,
+        "median_us": 11.11799974751193,
+        "stdev_us": 1.8154580005188787,
+        "cov_pct": 15.089763972271541
+      },
+      "t_statistic": -1.6508089804910666,
+      "p_value": 0.09878552158328058,
+      "df": 39570.259410169965,
+      "delta_mean_us": -0.030527580586960923,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Both classes cycle the same number of objects and each class repeats its own key and ciphertext exactly; the two keys differ. Repetition is matched, the key is not."
+      ]
+    },
+    {
+      "name": "CALIBRATION ML-KEM-768 decap: fixed key A vs fixed key B [top 5.0% dropped]",
+      "class_a": {
+        "label": "fixed key A",
+        "n": 19000,
+        "mean_us": 11.820603843405383,
+        "median_us": 11.113000255136285,
+        "stdev_us": 1.420548173241335,
+        "cov_pct": 12.017560118418546
+      },
+      "class_b": {
+        "label": "fixed key B",
+        "n": 19000,
+        "mean_us": 11.800767312228057,
+        "median_us": 11.097999959019944,
+        "stdev_us": 1.412602060895235,
+        "cov_pct": 11.970425511496058
+      },
+      "t_statistic": -1.3648540563069365,
+      "p_value": 0.17230700658096954,
+      "df": 37996.804442617904,
+      "delta_mean_us": -0.019836531177325867,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Both classes cycle the same number of objects and each class repeats its own key and ciphertext exactly; the two keys differ. Repetition is matched, the key is not."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.00us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 13.653772552288501,
+        "median_us": 11.775500070143607,
+        "stdev_us": 13.98425826581824,
+        "cov_pct": 102.42047179462021
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 13.47952365092624,
+        "median_us": 11.774000086006708,
+        "stdev_us": 7.725037655530614,
+        "cov_pct": 57.30942617545532
+      },
+      "t_statistic": -1.5424615560594612,
+      "p_value": 0.12297162635124848,
+      "df": 31164.871567205966,
+      "delta_mean_us": -0.17424890136226168,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.00us on half of class B's keys (true mean difference 0.000us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.00us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 13.173107439495963,
+        "median_us": 11.766000170609914,
+        "stdev_us": 2.8912948244672907,
+        "cov_pct": 21.948464610548406
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 13.164974825165919,
+        "median_us": 11.764999726437964,
+        "stdev_us": 2.8857231751062016,
+        "cov_pct": 21.919701430722885
+      },
+      "t_statistic": -0.2808457077265754,
+      "p_value": 0.7788302040992499,
+      "df": 39797.85192595906,
+      "delta_mean_us": -0.008132614330044419,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.00us on half of class B's keys (true mean difference 0.000us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.25us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 13.263657447805599,
+        "median_us": 11.742999959096778,
+        "stdev_us": 9.538740926820148,
+        "cov_pct": 71.9163697068962
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 13.480333199890993,
+        "median_us": 11.839500075438991,
+        "stdev_us": 15.956676197194415,
+        "cov_pct": 118.37004294021047
+      },
+      "t_statistic": 1.6483009152121595,
+      "p_value": 0.09930055161588458,
+      "df": 32673.812163252795,
+      "delta_mean_us": 0.21667575208539347,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.25us on half of class B's keys (true mean difference 0.125us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.25us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 12.885933414824407,
+        "median_us": 11.733500059563085,
+        "stdev_us": 2.6179072133812866,
+        "cov_pct": 20.316007611598852
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 12.955745628163065,
+        "median_us": 11.824000011984026,
+        "stdev_us": 2.6526377380376003,
+        "cov_pct": 20.474604968094802
+      },
+      "t_statistic": 2.64245738840309,
+      "p_value": 0.00823390345833522,
+      "df": 39791.089336451245,
+      "delta_mean_us": 0.06981221333865761,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.25us on half of class B's keys (true mean difference 0.125us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.50us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 14.780782849811658,
+        "median_us": 14.139000086288434,
+        "stdev_us": 8.769727404879909,
+        "cov_pct": 59.3319548361517
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 14.886228551449676,
+        "median_us": 14.291999832494184,
+        "stdev_us": 7.656566110664918,
+        "cov_pct": 51.43388793341678
+      },
+      "t_statistic": 1.2809269403118775,
+      "p_value": 0.20022689120668624,
+      "df": 39282.97432153303,
+      "delta_mean_us": 0.10544570163801836,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.50us on half of class B's keys (true mean difference 0.250us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 0.50us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 14.390364924394415,
+        "median_us": 14.126000223768642,
+        "stdev_us": 3.434424575037449,
+        "cov_pct": 23.866139552968836
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 14.56222708699655,
+        "median_us": 14.271500049289898,
+        "stdev_us": 3.327859923291342,
+        "cov_pct": 22.852685261741176
+      },
+      "t_statistic": 5.069608840965903,
+      "p_value": 4.004199961908891e-07,
+      "df": 39758.52573501277,
+      "delta_mean_us": 0.17186216260213527,
+      "verdict": "SUSPICIOUS (|t|>5)",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 0.50us on half of class B's keys (true mean difference 0.250us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 1.00us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 14.559638800960784,
+        "median_us": 13.924000086262822,
+        "stdev_us": 7.931293272839824,
+        "cov_pct": 54.47451946621397
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 14.910714801749236,
+        "median_us": 14.325000165626989,
+        "stdev_us": 6.5125662282757295,
+        "cov_pct": 43.67708936067716
+      },
+      "t_statistic": 4.837967175436072,
+      "p_value": 1.3167993577614065e-06,
+      "df": 38539.01144689494,
+      "delta_mean_us": 0.3510760007884528,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 1.00us on half of class B's keys (true mean difference 0.500us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 1.00us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 14.190545478404555,
+        "median_us": 13.90999977957108,
+        "stdev_us": 2.90098396475518,
+        "cov_pct": 20.443075773020517
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 14.623577036908314,
+        "median_us": 14.308000118035125,
+        "stdev_us": 2.9146702483471216,
+        "cov_pct": 19.931308468446616
+      },
+      "t_statistic": 14.854611744326961,
+      "p_value": 8.832398378313251e-50,
+      "df": 39797.11838143985,
+      "delta_mean_us": 0.4330315585037585,
+      "verdict": "LEAK (|t|>10)",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 1.00us on half of class B's keys (true mean difference 0.500us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 2.00us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 14.821537002217156,
+        "median_us": 13.58700001219404,
+        "stdev_us": 53.61939718934595,
+        "cov_pct": 361.76678020184426
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 15.381889548780237,
+        "median_us": 14.462000308412826,
+        "stdev_us": 6.838187626905253,
+        "cov_pct": 44.456096276204974
+      },
+      "t_statistic": 1.4660577005087123,
+      "p_value": 0.14264779521832038,
+      "df": 20649.371614683292,
+      "delta_mean_us": 0.560352546563081,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 2.00us on half of class B's keys (true mean difference 1.000us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 2.00us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 14.111411861408463,
+        "median_us": 13.552999917010311,
+        "stdev_us": 3.2871111555423407,
+        "cov_pct": 23.2939920386836
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 15.088730752521673,
+        "median_us": 14.444000044022687,
+        "stdev_us": 3.5480188603231797,
+        "cov_pct": 23.514362596272218
+      },
+      "t_statistic": 28.50459542264136,
+      "p_value": 6.35701356979443e-177,
+      "df": 39568.05694836893,
+      "delta_mean_us": 0.9773188911132102,
+      "verdict": "LEAK (|t|>10)",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 2.00us on half of class B's keys (true mean difference 1.000us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 5.00us [untrimmed]",
+      "class_a": {
+        "label": "random keys",
+        "n": 20000,
+        "mean_us": 14.608216000146967,
+        "median_us": 14.045500165593694,
+        "stdev_us": 7.637750994082474,
+        "cov_pct": 52.2839407221637
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 20000,
+        "mean_us": 17.061102849356757,
+        "median_us": 16.27200026632636,
+        "stdev_us": 9.624476677754826,
+        "cov_pct": 56.41180856088498
+      },
+      "t_statistic": 28.232753634283096,
+      "p_value": 1.4397996589994028e-173,
+      "df": 38035.10522940044,
+      "delta_mean_us": 2.45288684920979,
+      "verdict": "LEAK (|t|>10)",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 5.00us on half of class B's keys (true mean difference 2.500us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "POSITIVE CONTROL ML-KEM-768 decap + secret-dependent delay 5.00us [top 0.5% dropped]",
+      "class_a": {
+        "label": "random keys",
+        "n": 19900,
+        "mean_us": 14.25463326636898,
+        "median_us": 14.007500112711568,
+        "stdev_us": 3.387925362882633,
+        "cov_pct": 23.767187128382883
+      },
+      "class_b": {
+        "label": "random keys + delay on half",
+        "n": 19900,
+        "mean_us": 16.701015627601084,
+        "median_us": 16.25499999136082,
+        "stdev_us": 4.191828806178108,
+        "cov_pct": 25.099244858201587
+      },
+      "t_statistic": 64.0297477281923,
+      "p_value": 0.0,
+      "df": 38120.73032754304,
+      "delta_mean_us": 2.4463823612321036,
+      "verdict": "LEAK (|t|>10)",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Random-vs-random baseline plus a DELIBERATE secret-dependent delay of 5.00us on half of class B's keys (true mean difference 2.500us). 0.00us is the zero point and must not be flagged."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: valid ct vs implicit reject [untrimmed]",
+      "class_a": {
+        "label": "valid ciphertext",
+        "n": 20000,
+        "mean_us": 14.23107415234881,
+        "median_us": 14.17600014974596,
+        "stdev_us": 16.480057815698906,
+        "cov_pct": 115.80333036897925
+      },
+      "class_b": {
+        "label": "invalid ciphertext",
+        "n": 20000,
+        "mean_us": 14.22226259967374,
+        "median_us": 14.169999758451013,
+        "stdev_us": 14.457538736422045,
+        "cov_pct": 101.65428063994332
+      },
+      "t_statistic": -0.05684205936162707,
+      "p_value": 0.9546712983016696,
+      "df": 39331.336679910455,
+      "delta_mean_us": -0.008811552675069834,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Both classes use the same secret key; only ciphertext validity differs, so a class difference isolates the re-encryption-check branch.",
+        "Invalid ciphertext is a well-formed ML-KEM-768 ciphertext encapsulated to an unrelated key \u2014 correct length, fails the re-encryption check."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: valid ct vs implicit reject [top 0.1% dropped]",
+      "class_a": {
+        "label": "valid ciphertext",
+        "n": 19980,
+        "mean_us": 13.945316618947391,
+        "median_us": 14.174499938235385,
+        "stdev_us": 3.998750861790606,
+        "cov_pct": 28.67450751428286
+      },
+      "class_b": {
+        "label": "invalid ciphertext",
+        "n": 19980,
+        "mean_us": 13.92422402365971,
+        "median_us": 14.169000223773764,
+        "stdev_us": 3.7025500329504926,
+        "cov_pct": 26.590710022039342
+      },
+      "t_statistic": -0.5470886285317145,
+      "p_value": 0.584320917570626,
+      "df": 39723.64752360985,
+      "delta_mean_us": -0.021092595287681704,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Both classes use the same secret key; only ciphertext validity differs, so a class difference isolates the re-encryption-check branch.",
+        "Invalid ciphertext is a well-formed ML-KEM-768 ciphertext encapsulated to an unrelated key \u2014 correct length, fails the re-encryption check."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: valid ct vs implicit reject [top 0.5% dropped]",
+      "class_a": {
+        "label": "valid ciphertext",
+        "n": 19900,
+        "mean_us": 13.777488595324533,
+        "median_us": 14.167000244924566,
+        "stdev_us": 2.706337753005822,
+        "cov_pct": 19.643186305552327
+      },
+      "class_b": {
+        "label": "invalid ciphertext",
+        "n": 19900,
+        "mean_us": 13.774122361354415,
+        "median_us": 14.162999832478818,
+        "stdev_us": 2.72065286794255,
+        "cov_pct": 19.751914470977788
+      },
+      "t_statistic": -0.12374431402048156,
+      "p_value": 0.9015183486833405,
+      "df": 39796.89242117135,
+      "delta_mean_us": -0.0033662339701177046,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Both classes use the same secret key; only ciphertext validity differs, so a class difference isolates the re-encryption-check branch.",
+        "Invalid ciphertext is a well-formed ML-KEM-768 ciphertext encapsulated to an unrelated key \u2014 correct length, fails the re-encryption check."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: valid ct vs implicit reject [top 1.0% dropped]",
+      "class_a": {
+        "label": "valid ciphertext",
+        "n": 19800,
+        "mean_us": 13.695313032809336,
+        "median_us": 14.15999986420502,
+        "stdev_us": 2.4470160890898014,
+        "cov_pct": 17.86754405122087
+      },
+      "class_b": {
+        "label": "invalid ciphertext",
+        "n": 19800,
+        "mean_us": 13.690486817731745,
+        "median_us": 14.154999917082023,
+        "stdev_us": 2.4543869145928965,
+        "cov_pct": 17.927681807589234
+      },
+      "t_statistic": -0.19594462799958234,
+      "p_value": 0.8446545116473867,
+      "df": 39597.64180560621,
+      "delta_mean_us": -0.004826215077590845,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Both classes use the same secret key; only ciphertext validity differs, so a class difference isolates the re-encryption-check branch.",
+        "Invalid ciphertext is a well-formed ML-KEM-768 ciphertext encapsulated to an unrelated key \u2014 correct length, fails the re-encryption check."
+      ]
+    },
+    {
+      "name": "ML-KEM-768 decap: valid ct vs implicit reject [top 5.0% dropped]",
+      "class_a": {
+        "label": "valid ciphertext",
+        "n": 19000,
+        "mean_us": 13.43508416020038,
+        "median_us": 13.97450000695244,
+        "stdev_us": 2.0723709900555902,
+        "cov_pct": 15.425068911698439
+      },
+      "class_b": {
+        "label": "invalid ciphertext",
+        "n": 19000,
+        "mean_us": 13.427294947034266,
+        "median_us": 13.97250002810324,
+        "stdev_us": 2.068300511335496,
+        "cov_pct": 15.403702082170534
+      },
+      "t_statistic": -0.36670294723296804,
+      "p_value": 0.7138426497918229,
+      "df": 37997.85311831897,
+      "delta_mean_us": -0.007789213166114806,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Both classes use the same secret key; only ciphertext validity differs, so a class difference isolates the re-encryption-check branch.",
+        "Invalid ciphertext is a well-formed ML-KEM-768 ciphertext encapsulated to an unrelated key \u2014 correct length, fails the re-encryption check."
+      ]
+    },
+    {
+      "name": "ML-DSA-65 sign: fixed key vs fresh key [untrimmed]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 20000,
+        "mean_us": 98.49485700074183,
+        "median_us": 79.07399981377239,
+        "stdev_us": 71.2004360085134,
+        "cov_pct": 72.2884810198538
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 20000,
+        "mean_us": 98.49399060201449,
+        "median_us": 79.09099986136425,
+        "stdev_us": 68.24666147761027,
+        "cov_pct": 69.2901780712441
+      },
+      "t_statistic": -0.001242341276208511,
+      "p_value": 0.9990087616038392,
+      "df": 39926.407698679155,
+      "delta_mean_us": -0.0008663987273394014,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Both classes cycle 256 distinct Signature objects; the FIXED pool holds the same signing key in all of them, the RANDOM pool a different key in each, so allocation and cache behaviour are matched across classes.",
+        "Message is identical in both classes, so message-dependent cost cancels.",
+        "High dispersion is expected in both classes (FIPS 204 rejection sampling); the question is whether the distributions differ by key."
+      ]
+    },
+    {
+      "name": "ML-DSA-65 sign: fixed key vs fresh key [top 0.1% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19980,
+        "mean_us": 97.69519794872167,
+        "median_us": 79.03050004642864,
+        "stdev_us": 61.46012633278195,
+        "cov_pct": 62.91007912696096
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19980,
+        "mean_us": 97.7270175196834,
+        "median_us": 79.03949995125004,
+        "stdev_us": 61.84491794800871,
+        "cov_pct": 63.28333711355961
+      },
+      "t_statistic": 0.05158507914157055,
+      "p_value": 0.9588595664845863,
+      "df": 39956.44357617022,
+      "delta_mean_us": 0.03181957096172994,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct Signature objects; the FIXED pool holds the same signing key in all of them, the RANDOM pool a different key in each, so allocation and cache behaviour are matched across classes.",
+        "Message is identical in both classes, so message-dependent cost cancels.",
+        "High dispersion is expected in both classes (FIPS 204 rejection sampling); the question is whether the distributions differ by key."
+      ]
+    },
+    {
+      "name": "ML-DSA-65 sign: fixed key vs fresh key [top 0.5% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19900,
+        "mean_us": 96.34720789005709,
+        "median_us": 78.72200012570829,
+        "stdev_us": 57.73438398848157,
+        "cov_pct": 59.923255953989795
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19900,
+        "mean_us": 96.34808623323994,
+        "median_us": 78.83449984547042,
+        "stdev_us": 57.95874885282575,
+        "cov_pct": 60.15557871333211
+      },
+      "t_statistic": 0.0015145979784892437,
+      "p_value": 0.9987915339005152,
+      "df": 39797.40130453224,
+      "delta_mean_us": 0.0008783431828476296,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct Signature objects; the FIXED pool holds the same signing key in all of them, the RANDOM pool a different key in each, so allocation and cache behaviour are matched across classes.",
+        "Message is identical in both classes, so message-dependent cost cancels.",
+        "High dispersion is expected in both classes (FIPS 204 rejection sampling); the question is whether the distributions differ by key."
+      ]
+    },
+    {
+      "name": "ML-DSA-65 sign: fixed key vs fresh key [top 1.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19800,
+        "mean_us": 95.03401318262158,
+        "median_us": 78.47699998819735,
+        "stdev_us": 54.82694259752768,
+        "cov_pct": 57.691915516784285
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19800,
+        "mean_us": 94.99065252743038,
+        "median_us": 78.552000104537,
+        "stdev_us": 54.84679018075704,
+        "cov_pct": 57.73914455942807
+      },
+      "t_statistic": -0.07867573279501316,
+      "p_value": 0.9372909456059315,
+      "df": 39597.99481267844,
+      "delta_mean_us": -0.04336065519119359,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct Signature objects; the FIXED pool holds the same signing key in all of them, the RANDOM pool a different key in each, so allocation and cache behaviour are matched across classes.",
+        "Message is identical in both classes, so message-dependent cost cancels.",
+        "High dispersion is expected in both classes (FIPS 204 rejection sampling); the question is whether the distributions differ by key."
+      ]
+    },
+    {
+      "name": "ML-DSA-65 sign: fixed key vs fresh key [top 5.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19000,
+        "mean_us": 87.9621152635321,
+        "median_us": 76.38899978701374,
+        "stdev_us": 43.08957324662877,
+        "cov_pct": 48.98651324781536
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19000,
+        "mean_us": 87.86574405437358,
+        "median_us": 76.29300012013118,
+        "stdev_us": 42.87192414609224,
+        "cov_pct": 48.79253525647264
+      },
+      "t_statistic": -0.21854141077392542,
+      "p_value": 0.8270084705266965,
+      "df": 37997.02566156493,
+      "delta_mean_us": -0.09637120915851938,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct Signature objects; the FIXED pool holds the same signing key in all of them, the RANDOM pool a different key in each, so allocation and cache behaviour are matched across classes.",
+        "Message is identical in both classes, so message-dependent cost cancels.",
+        "High dispersion is expected in both classes (FIPS 204 rejection sampling); the question is whether the distributions differ by key."
+      ]
+    },
+    {
+      "name": "HybridKEM decap: fixed key vs fresh key [untrimmed]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 20000,
+        "mean_us": 97.07179825131789,
+        "median_us": 94.64999993724632,
+        "stdev_us": 33.415057730339434,
+        "cov_pct": 34.423033602229346
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 20000,
+        "mean_us": 97.40701989890113,
+        "median_us": 94.64000004300033,
+        "stdev_us": 55.32502643209544,
+        "cov_pct": 56.79778160703136
+      },
+      "t_statistic": 0.7334875428964637,
+      "p_value": 0.4632663530814931,
+      "df": 32876.2299122735,
+      "delta_mean_us": 0.33522164758323925,
+      "verdict": "no leak detected",
+      "trim_description": "untrimmed",
+      "notes": [
+        "Both classes cycle 256 distinct secret-key and ciphertext objects; the FIXED pool is deep-copied from one keypair so every entry holds identical material, matching the RANDOM pool's allocation and cache behaviour.",
+        "Covers X25519 scalar multiplication, ML-KEM decapsulation, HKDF-SHA256 combination and CBOR/PEM deserialisation in one measurement."
+      ]
+    },
+    {
+      "name": "HybridKEM decap: fixed key vs fresh key [top 0.1% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19980,
+        "mean_us": 96.53264099229632,
+        "median_us": 94.62800016990514,
+        "stdev_us": 28.016420530798662,
+        "cov_pct": 29.02274323255538
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19980,
+        "mean_us": 96.59130700592422,
+        "median_us": 94.61600029680994,
+        "stdev_us": 27.80206258872396,
+        "cov_pct": 28.783193281584623
+      },
+      "t_statistic": 0.2100961460616887,
+      "p_value": 0.8335937045997273,
+      "df": 39955.643060667375,
+      "delta_mean_us": 0.05866601362789936,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.1% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct secret-key and ciphertext objects; the FIXED pool is deep-copied from one keypair so every entry holds identical material, matching the RANDOM pool's allocation and cache behaviour.",
+        "Covers X25519 scalar multiplication, ML-KEM decapsulation, HKDF-SHA256 combination and CBOR/PEM deserialisation in one measurement."
+      ]
+    },
+    {
+      "name": "HybridKEM decap: fixed key vs fresh key [top 0.5% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19900,
+        "mean_us": 95.58058583052252,
+        "median_us": 94.55849999540078,
+        "stdev_us": 23.5291620459929,
+        "cov_pct": 24.617093357968457
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19900,
+        "mean_us": 95.66027974787674,
+        "median_us": 94.53400002712442,
+        "stdev_us": 23.52128666159011,
+        "cov_pct": 24.58835236901153
+      },
+      "t_statistic": 0.33791147146439965,
+      "p_value": 0.7354316848535806,
+      "df": 39797.99553997648,
+      "delta_mean_us": 0.07969391735421993,
+      "verdict": "no leak detected",
+      "trim_description": "top 0.5% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct secret-key and ciphertext objects; the FIXED pool is deep-copied from one keypair so every entry holds identical material, matching the RANDOM pool's allocation and cache behaviour.",
+        "Covers X25519 scalar multiplication, ML-KEM decapsulation, HKDF-SHA256 combination and CBOR/PEM deserialisation in one measurement."
+      ]
+    },
+    {
+      "name": "HybridKEM decap: fixed key vs fresh key [top 1.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19800,
+        "mean_us": 94.7896722741783,
+        "median_us": 94.48549985791033,
+        "stdev_us": 20.757201263973137,
+        "cov_pct": 21.898167559787645
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19800,
+        "mean_us": 94.87738838288351,
+        "median_us": 94.43799990549451,
+        "stdev_us": 20.812806881020954,
+        "cov_pct": 21.936530121412698
+      },
+      "t_statistic": 0.41990055815473526,
+      "p_value": 0.6745603781990721,
+      "df": 39597.71659618649,
+      "delta_mean_us": 0.08771610870520874,
+      "verdict": "no leak detected",
+      "trim_description": "top 1.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct secret-key and ciphertext objects; the FIXED pool is deep-copied from one keypair so every entry holds identical material, matching the RANDOM pool's allocation and cache behaviour.",
+        "Covers X25519 scalar multiplication, ML-KEM decapsulation, HKDF-SHA256 combination and CBOR/PEM deserialisation in one measurement."
+      ]
+    },
+    {
+      "name": "HybridKEM decap: fixed key vs fresh key [top 5.0% dropped]",
+      "class_a": {
+        "label": "fixed key",
+        "n": 19000,
+        "mean_us": 92.04028058054878,
+        "median_us": 93.85400016981293,
+        "stdev_us": 15.170364639312611,
+        "cov_pct": 16.48231029243366
+      },
+      "class_b": {
+        "label": "fresh key",
+        "n": 19000,
+        "mean_us": 92.092000314958,
+        "median_us": 93.78999993714388,
+        "stdev_us": 15.203140283659168,
+        "cov_pct": 16.508643781939664
+      },
+      "t_statistic": 0.3319349035538929,
+      "p_value": 0.7399402447642571,
+      "df": 37997.82301748896,
+      "delta_mean_us": 0.05171973440921818,
+      "verdict": "no leak detected",
+      "trim_description": "top 5.0% dropped",
+      "notes": [
+        "Both classes cycle 256 distinct secret-key and ciphertext objects; the FIXED pool is deep-copied from one keypair so every entry holds identical material, matching the RANDOM pool's allocation and cache behaviour.",
+        "Covers X25519 scalar multiplication, ML-KEM decapsulation, HKDF-SHA256 combination and CBOR/PEM deserialisation in one measurement."
+      ]
+    }
+  ]
+}

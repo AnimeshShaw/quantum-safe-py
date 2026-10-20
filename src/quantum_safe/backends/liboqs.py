@@ -14,7 +14,7 @@ is faster and doesn't require a compiled C library.
 
 Installation::
 
-    pip install 'quantum-safe[liboqs]'
+    pip install 'quantum-safe-py[liboqs]'
 
 The actual install pulls liboqs-python, which on its own does not ship a
 prebuilt liboqs binary — on first ``import oqs`` it uses a system liboqs if
@@ -34,11 +34,13 @@ new one per call rather than sharing instances.
 from __future__ import annotations
 
 import ctypes
+import functools
 import importlib.resources
 import os
 from pathlib import Path
 from typing import Any, ClassVar
 
+from quantum_safe._liboqs_version import LIBOQS_VERSION
 from quantum_safe.backends.base import AbstractKEMBackend, AbstractSignatureBackend, AlgorithmInfo
 from quantum_safe.exceptions import (
     BackendNotAvailable,
@@ -100,23 +102,67 @@ _KEM_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
         name="BIKE-L1",
         nist_level=1,
         public_key_size=1541,
-        secret_key_size=3114,
+        secret_key_size=5223,
         ciphertext_size=1573,
         is_kem=True,
         is_signature=False,
         is_nist_standard=False,
-        notes="NIST Round 4 candidate. Not standardized — research use only.",
+        notes="NIST Round 4 candidate. Not standardized.",
+    ),
+    "BIKE-L3": AlgorithmInfo(
+        name="BIKE-L3",
+        nist_level=3,
+        public_key_size=3083,
+        secret_key_size=10105,
+        ciphertext_size=3115,
+        is_kem=True,
+        is_signature=False,
+        is_nist_standard=False,
+        notes="NIST Round 4 candidate. Not standardized.",
+    ),
+    "BIKE-L5": AlgorithmInfo(
+        name="BIKE-L5",
+        nist_level=5,
+        public_key_size=5122,
+        secret_key_size=16494,
+        ciphertext_size=5154,
+        is_kem=True,
+        is_signature=False,
+        is_nist_standard=False,
+        notes="NIST Round 4 candidate. Not standardized.",
     ),
     "HQC-128": AlgorithmInfo(
         name="HQC-128",
         nist_level=1,
-        public_key_size=2249,
-        secret_key_size=2289,
+        public_key_size=2241,
+        secret_key_size=2321,
         ciphertext_size=4433,
         is_kem=True,
         is_signature=False,
         is_nist_standard=False,
-        notes="NIST Round 4 candidate. Not standardized — research use only.",
+        notes="Selected by NIST (2025); standard in preparation.",
+    ),
+    "HQC-192": AlgorithmInfo(
+        name="HQC-192",
+        nist_level=3,
+        public_key_size=4514,
+        secret_key_size=4602,
+        ciphertext_size=8978,
+        is_kem=True,
+        is_signature=False,
+        is_nist_standard=False,
+        notes="Selected by NIST (2025); standard in preparation.",
+    ),
+    "HQC-256": AlgorithmInfo(
+        name="HQC-256",
+        nist_level=5,
+        public_key_size=7237,
+        secret_key_size=7333,
+        ciphertext_size=14421,
+        is_kem=True,
+        is_signature=False,
+        is_nist_standard=False,
+        notes="Selected by NIST (2025); standard in preparation.",
     ),
 }
 
@@ -178,15 +224,49 @@ _SIGNATURE_ALGORITHM_INFO: dict[str, AlgorithmInfo] = {
     ),
 }
 
+
+def _register_slh_dsa_info() -> None:
+    """Add the SLH-DSA sets the table above does not list, from the signature registry."""
+    from quantum_safe.signatures.algorithms import SIGNATURE_ALGORITHMS
+
+    for name, spec in SIGNATURE_ALGORITHMS.items():
+        if name.startswith("SLH-DSA-") and name not in _SIGNATURE_ALGORITHM_INFO:
+            small = name.endswith("s")
+            _SIGNATURE_ALGORITHM_INFO[name] = AlgorithmInfo(
+                name=name,
+                nist_level=int(spec.nist_level),
+                public_key_size=spec.public_key_bytes,
+                secret_key_size=spec.secret_key_bytes,
+                ciphertext_size=spec.signature_bytes,  # signature size
+                is_kem=False,
+                is_signature=True,
+                is_nist_standard=True,
+                notes=(
+                    f"FIPS 205, security level {int(spec.nist_level)}, "
+                    + ("small signatures. Very slow to sign." if small else "fast signing.")
+                ),
+            )
+
+
+_register_slh_dsa_info()
+
 # liboqs uses different name formats internally. This maps our canonical names
 # to the names liboqs expects.  We keep our names aligned with the FIPS
 # standards, which use hyphens and no spaces.
-_KEM_LIBOQS_NAMES: dict[str, str] = {
-    "ML-KEM-512": "ML-KEM-512",
-    "ML-KEM-768": "ML-KEM-768",
-    "ML-KEM-1024": "ML-KEM-1024",
-    "BIKE-L1": "BIKE-L1",
-    "HQC-128": "HQC-128",
+#
+# A name maps to the candidates a liboqs build may call it, newest first: liboqs 0.16 renamed the
+# HQC mechanisms from HQC-128/192/256 to HQC-1/3/5 (and changed their sizes with the 2025
+# specification). The registry keeps one stable public name.
+_KEM_LIBOQS_NAMES: dict[str, tuple[str, ...]] = {
+    "ML-KEM-512": ("ML-KEM-512",),
+    "ML-KEM-768": ("ML-KEM-768",),
+    "ML-KEM-1024": ("ML-KEM-1024",),
+    "BIKE-L1": ("BIKE-L1",),
+    "BIKE-L3": ("BIKE-L3",),
+    "BIKE-L5": ("BIKE-L5",),
+    "HQC-128": ("HQC-1", "HQC-128"),
+    "HQC-192": ("HQC-3", "HQC-192"),
+    "HQC-256": ("HQC-5", "HQC-256"),
 }
 
 _SIG_LIBOQS_NAMES: dict[str, str] = {
@@ -227,6 +307,7 @@ _LEGACY_SPHINCS_NAMES: dict[str, str] = {
 _SIG_LIBOQS_NAMES.update(_LEGACY_SPHINCS_NAMES)
 
 
+@functools.lru_cache(maxsize=1)
 def _vendored_liboqs_dir() -> Path | None:
     """Return the bundled liboqs directory shipped inside our own wheel, if any.
 
@@ -235,6 +316,9 @@ def _vendored_liboqs_dir() -> Path | None:
     wheels). A plain `pip install -e .` / sdist install has no such directory,
     and liboqs-python falls back to its normal system-lib-or-build-from-source
     behavior.
+
+    The answer cannot change while the process runs, so it is computed once: this
+    function is on the path of every KEM and signature call.
     """
     try:
         base = Path(str(importlib.resources.files("quantum_safe"))) / "_vendor" / "liboqs"
@@ -263,6 +347,29 @@ def _import_oqs() -> Any:  # noqa: ANN401
         raise BackendNotAvailable("liboqs") from exc
 
 
+def liboqs_versions() -> dict[str, Any]:
+    """Report the loaded liboqs, the liboqs-python wrapping it, and whether they pair.
+
+    ``paired`` is True when both have the same major.minor, which is what liboqs-python needs to
+    load without its import-time warning, and what this release is built and tested with (see
+    ``quantum_safe._liboqs_version``). Raises ``BackendNotAvailable`` if liboqs-python is not
+    installed.
+    """
+    oqs = _import_oqs()
+    liboqs_version = str(oqs.oqs_version())
+    python_version = str(oqs.oqs_python_version())
+
+    def _mm(v: str) -> tuple[str, ...]:
+        return tuple(v.split(".")[:2])
+
+    return {
+        "liboqs": liboqs_version,
+        "liboqs_python": python_version,
+        "expected": LIBOQS_VERSION,
+        "paired": _mm(liboqs_version) == _mm(python_version),
+    }
+
+
 class LiboqsKEMBackend(AbstractKEMBackend):
     """KEM backend using liboqs-python."""
 
@@ -278,8 +385,8 @@ class LiboqsKEMBackend(AbstractKEMBackend):
         enabled = set(oqs.get_enabled_kem_mechanisms())
 
         result = []
-        for canonical, liboqs_name in _KEM_LIBOQS_NAMES.items():
-            if liboqs_name in enabled:
+        for canonical, candidates in _KEM_LIBOQS_NAMES.items():
+            if any(c in enabled for c in candidates):
                 info = _KEM_ALGORITHM_INFO.get(canonical)
                 if info:
                     result.append(info)
@@ -287,18 +394,41 @@ class LiboqsKEMBackend(AbstractKEMBackend):
         return result
 
     def _liboqs_name(self, algorithm: str) -> str:
-        name = _KEM_LIBOQS_NAMES.get(algorithm)
-        if name is None:
+        """Map a canonical name to the mechanism name the loaded liboqs build enables.
+
+        Raises ``UnsupportedAlgorithm`` if the name is unknown or no candidate is enabled.
+        """
+        candidates = _KEM_LIBOQS_NAMES.get(algorithm)
+        if candidates is None:
             raise UnsupportedAlgorithm(
                 algorithm,
                 available=list(_KEM_LIBOQS_NAMES.keys()),
             )
-        return name
+        enabled = set(_import_oqs().get_enabled_kem_mechanisms())
+        for candidate in candidates:
+            if candidate in enabled:
+                return candidate
+        # Known to the registry but not compiled into this liboqs: say what the build does offer.
+        raise UnsupportedAlgorithm(
+            algorithm,
+            available=[a.name for a in self.supported_algorithms()],
+        )
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
         """Generate an ML-KEM (or other KEM) key pair.
 
         Returns (public_key_bytes, secret_key_bytes).
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-KEM-768".
+
+        Returns:
+            (public_key_bytes, secret_key_bytes). The secret key is liboqs's expanded form
+            (2400 bytes for ML-KEM-768).
+
+        Raises:
+            UnsupportedAlgorithm: if the name is unknown or the liboqs build does not enable it.
+            KeyGenerationError: if liboqs fails to generate the key pair.
         """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
@@ -320,10 +450,51 @@ class LiboqsKEMBackend(AbstractKEMBackend):
                 algorithm=algorithm,
             ) from exc
 
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Deterministic key generation from the FIPS 203 seed ``d || z`` (64 bytes).
+
+        Returns (public_key_bytes, secret_key_bytes).
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-KEM-768".
+            seed: The 64-byte seed ``d || z``.
+
+        Returns:
+            (public_key_bytes, secret_key_bytes). The secret key is the expanded form.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is unknown or not enabled, or the installed
+                liboqs-python has no seeded key generation.
+            KeyGenerationError: if liboqs rejects the seed or fails to generate the key pair.
+        """
+        oqs = _import_oqs()
+        liboqs_name = self._liboqs_name(algorithm)
+        try:
+            kem = oqs.KeyEncapsulation(liboqs_name)
+            pub = kem.generate_keypair_seed(bytes(seed))
+            return bytes(pub), bytes(kem.export_secret_key())
+        except AttributeError as exc:  # a liboqs-python without seeded generation
+            raise UnsupportedAlgorithm(f"{algorithm} seeded key generation") from exc
+        except Exception as exc:
+            raise KeyGenerationError(
+                f"liboqs seeded keygen failed for {algorithm}: {exc}", algorithm=algorithm
+            ) from exc
+
     def encapsulate(self, algorithm: str, public_key: bytes) -> tuple[bytes, bytes]:
         """Encapsulate a shared secret under the given public key.
 
         Returns (ciphertext_bytes, shared_secret_bytes).
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-KEM-768".
+            public_key: The recipient's public key bytes.
+
+        Returns:
+            (ciphertext_bytes, shared_secret_bytes).
+
+        Raises:
+            UnsupportedAlgorithm: if the name is unknown or the liboqs build does not enable it.
+            CryptoError: if liboqs fails to encapsulate.
         """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
@@ -350,7 +521,28 @@ class LiboqsKEMBackend(AbstractKEMBackend):
         than raising an exception. We check the output length to detect the
         most obvious failure modes, but we cannot distinguish a bad ciphertext
         from a good one by inspecting the output.
+
+        A 64-byte seed key (``d || z``, made by the pyca backend) is decapsulated through
+        the pyca backend.
+
+        The local copy of the secret key is zeroed before the method returns.
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-KEM-768".
+            secret_key: The expanded secret key, or a 64-byte ML-KEM seed key.
+            ciphertext: The ciphertext produced by encapsulation.
+
+        Returns:
+            The shared secret bytes (32 bytes for ML-KEM).
+
+        Raises:
+            DecapsulationError: if liboqs fails or returns a secret that is not 32 or 64 bytes.
+            UnsupportedAlgorithm: if the name is unknown or the liboqs build does not enable it.
         """
+        if algorithm.startswith("ML-KEM-") and len(secret_key) == 64:
+            from quantum_safe.backends import get_kem_backend
+
+            return get_kem_backend("pyca").decapsulate(algorithm, secret_key, ciphertext)
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
@@ -360,7 +552,7 @@ class LiboqsKEMBackend(AbstractKEMBackend):
             kem = oqs.KeyEncapsulation(liboqs_name, secret_key=bytes(sk_buf))
             shared_secret = kem.decap_secret(ciphertext)
             result = bytes(shared_secret)
-            # 32 bytes expected for all standardized algorithms
+            # 32 bytes for ML-KEM, 64 for the larger shared secrets some mechanisms return
             if len(result) not in (32, 64):
                 raise DecapsulationError(algo=algorithm)
             return result
@@ -389,6 +581,10 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
     name: ClassVar[str] = "liboqs"
 
     def supported_algorithms(self) -> list[AlgorithmInfo]:
+        """Return the signature algorithms this liboqs build enables, with their metadata.
+
+        An algorithm is listed only if its liboqs mechanism is enabled in the installed build.
+        """
         oqs = _import_oqs()
         enabled = set(oqs.get_enabled_sig_mechanisms())
 
@@ -401,6 +597,11 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         return result
 
     def _liboqs_name(self, algorithm: str) -> str:
+        """Map a canonical name to its liboqs mechanism name.
+
+        Raises ``UnsupportedAlgorithm`` if the name is not in the table; it does not check
+        that the loaded build enables the mechanism.
+        """
         name = _SIG_LIBOQS_NAMES.get(algorithm)
         if name is None:
             raise UnsupportedAlgorithm(
@@ -410,6 +611,20 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         return name
 
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
+        """Generate a signing key pair.
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-DSA-65".
+
+        Returns:
+            (public_key_bytes, secret_key_bytes). The secret key is liboqs's expanded form
+            (4032 bytes for ML-DSA-65).
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not one this backend knows.
+            KeyGenerationError: if liboqs fails to generate the key pair, including when the
+                build does not enable the mechanism.
+        """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
         try:
@@ -423,6 +638,11 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
                 algorithm=algorithm,
             ) from exc
 
+    @staticmethod
+    def _seed_key(algorithm: str, secret_key: bytes) -> bool:
+        """True for a 32-byte ML-DSA seed key (made by the pyca backend); liboqs cannot use it."""
+        return algorithm.startswith("ML-DSA-") and len(secret_key) == 32
+
     def sign(
         self,
         algorithm: str,
@@ -431,6 +651,8 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         context: bytes = b"",
     ) -> bytes:
         """Sign a message.
+
+        A 32-byte seed key (made by the pyca backend) is signed through the pyca backend.
 
         Domain separation is done by a message prefix, not by FIPS 204's
         native context. This backend signs, with plain ML-DSA and an
@@ -443,7 +665,27 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         context natively will not accept these signatures. Moving to the
         native context would change what is signed, so it would be a new,
         separately identified signature format, not a silent switch.
+
+        The local copy of the secret key is zeroed before the method returns.
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-DSA-65".
+            secret_key: The expanded secret key, or a 32-byte ML-DSA seed key.
+            message: The message to sign.
+            context: Domain-separation context, at most 255 bytes.
+
+        Returns:
+            The signature bytes.
+
+        Raises:
+            ValueError: if ``context`` is longer than 255 bytes.
+            UnsupportedAlgorithm: if the name is not one this backend knows.
+            CryptoError: if liboqs fails to sign.
         """
+        if self._seed_key(algorithm, secret_key):
+            from quantum_safe.backends import get_signature_backend
+
+            return get_signature_backend("pyca").sign(algorithm, secret_key, message, context)
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
@@ -479,7 +721,26 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         signature: bytes,
         context: bytes = b"",
     ) -> bool:
-        """Verify a signature. Returns True if valid, False if not."""
+        """Verify a signature. Returns True if valid, False if not.
+
+        The message is verified under the same ``context_len || context || message`` prefix
+        that :meth:`sign` produces.
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-DSA-65".
+            public_key: The signer's public key bytes.
+            message: The signed message.
+            signature: The signature bytes.
+            context: Must match the context used when signing. A context longer than 255 bytes
+                returns False.
+
+        Returns:
+            True if the signature is valid. False for an invalid signature or when liboqs
+            raises while verifying.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not one this backend knows.
+        """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
 
@@ -503,9 +764,33 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         message: bytes,
         context: bytes,
     ) -> bytes:
-        """ML-DSA.Sign with FIPS 204's native context (liboqs ``sign_with_ctx_str``)."""
+        """ML-DSA.Sign with FIPS 204's native context (liboqs ``sign_with_ctx_str``).
+
+        A 32-byte seed key is signed through the pyca backend. The local copy of the secret key
+        is zeroed before the method returns.
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-DSA-65".
+            secret_key: The expanded secret key, or a 32-byte ML-DSA seed key.
+            message: The message to sign, passed to liboqs unchanged.
+            context: The FIPS 204 context string, at most 255 bytes.
+
+        Returns:
+            The signature bytes.
+
+        Raises:
+            ValueError: if ``context`` is longer than 255 bytes.
+            UnsupportedAlgorithm: if the name is not one this backend knows.
+            CryptoError: if liboqs fails to sign.
+        """
         from quantum_safe.exceptions import CryptoError
 
+        if self._seed_key(algorithm, secret_key):
+            from quantum_safe.backends import get_signature_backend
+
+            return get_signature_backend("pyca").sign_native_context(
+                algorithm, secret_key, message, context
+            )
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
         if len(context) > 255:
@@ -532,6 +817,23 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
         signature: bytes,
         context: bytes,
     ) -> bool:
+        """Verify a signature made with :meth:`sign_native_context` (``verify_with_ctx_str``).
+
+        Args:
+            algorithm: Canonical algorithm name, e.g. "ML-DSA-65".
+            public_key: The signer's public key bytes.
+            message: The signed message.
+            signature: The signature bytes.
+            context: The FIPS 204 context string used when signing. A context longer than
+                255 bytes returns False.
+
+        Returns:
+            True if the signature is valid. False for an invalid signature or when liboqs
+            raises while verifying.
+
+        Raises:
+            UnsupportedAlgorithm: if the name is not one this backend knows.
+        """
         oqs = _import_oqs()
         liboqs_name = self._liboqs_name(algorithm)
         if len(context) > 255:
@@ -543,6 +845,7 @@ class LiboqsSignatureBackend(AbstractSignatureBackend):
             return False
 
     def is_available(self) -> bool:
+        """Return True if liboqs is importable and has ML-DSA-65 enabled."""
         try:
             oqs = _import_oqs()
             enabled = oqs.get_enabled_sig_mechanisms()

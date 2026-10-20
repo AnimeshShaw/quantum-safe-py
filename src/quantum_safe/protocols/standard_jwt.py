@@ -19,15 +19,17 @@ is an ``AKP`` JWK (``{"kty": "AKP", "alg": ..., "pub": base64url(public key)}``)
 Only the pure ML-DSA algorithms (44, 65, 87) are defined by the RFC; hybrids
 are not.
 
-What is not supported, and why
-------------------------------
+Private JWKs
+------------
 RFC 9964 defines the private JWK member ``priv`` as the 32-byte ML-DSA *seed*.
-The liboqs backend can generate keys and sign, but it cannot derive a key pair
-from a seed (``OQS_SIG_keypair_derand`` does not exist in liboqs 0.15), so this
-module neither writes nor reads private AKP JWKs. Keys are quantum-safe
-``KeyPair`` objects; export the public key with :meth:`StandardJwt.public_jwk`.
-A private JWK produced elsewhere (for example by quantum-safe-ts) cannot be
-used for signing here; its public JWK verifies as usual.
+liboqs cannot derive a key pair from a seed (it has no seeded ML-DSA key
+generation), so private JWKs go through the optional ``cryptography`` backend
+(``cryptography >= 48``, ``pip install quantum-safe-py[pyca]``):
+:meth:`StandardJwt.generate_private_jwk`, :meth:`StandardJwt.private_jwk`,
+:meth:`StandardJwt.keypair_from_private_jwk`, and :meth:`StandardJwt.sign` with
+a private JWK. A private JWK made by quantum-safe-ts signs here and the
+reverse. Without that backend, plain ``KeyPair`` objects (expanded liboqs keys)
+sign as before, and a private JWK from elsewhere cannot be used.
 
 Verification is strict: the key's algorithm must equal the header ``alg``,
 ``crit`` headers are rejected, and the signature must be canonical unpadded
@@ -54,10 +56,12 @@ _ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
 
 def _b64url_encode(data: bytes) -> str:
+    """Base64url encode without padding."""
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
 
 
 def _b64url_decode(s: str) -> bytes:
+    """Base64url decode, restoring the padding. Does not require the canonical spelling."""
     return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
 
 
@@ -72,10 +76,12 @@ def _b64url_decode_strict(s: str) -> bytes:
 
 
 def _json_b64(obj: Any) -> str:  # noqa: ANN401
+    """Encode an object as compact JSON, then as unpadded base64url."""
     return _b64url_encode(json.dumps(obj, separators=(",", ":")).encode("utf-8"))
 
 
 def _decode_json(part: str, what: str) -> dict[str, Any]:
+    """Decode a base64url JWT part to a JSON object; ``ValueError`` if it is not one."""
     try:
         value = json.loads(_b64url_decode(part).decode("utf-8"))
     except Exception as exc:
@@ -86,12 +92,14 @@ def _decode_json(part: str, what: str) -> dict[str, Any]:
 
 
 def _check_alg(alg: object) -> str:
+    """Return ``alg`` if it is in ``ML_DSA_JOSE_ALGS``; otherwise raise ``UnsupportedAlgorithm``."""
     if not isinstance(alg, str) or alg not in ML_DSA_JOSE_ALGS:
         raise UnsupportedAlgorithm(str(alg), available=list(ML_DSA_JOSE_ALGS))
     return alg
 
 
 def _backend() -> Any:  # noqa: ANN401
+    """The signature backend (``"auto"``) used for the raw FIPS 204 sign and verify calls."""
     from quantum_safe.backends import get_signature_backend
 
     return get_signature_backend("auto")
@@ -126,8 +134,18 @@ class StandardJwt:
         return Sign(_check_alg(alg)).generate_keypair()
 
     @staticmethod
-    def public_jwk(public_key: PublicKey, kid: str | None = None) -> dict[str, Any]:
-        """The public key as an ``AKP`` JWK: ``{"kty": "AKP", "alg": ..., "pub": ...}``."""
+    def public_jwk(
+        public_key: PublicKey | dict[str, Any], kid: str | None = None
+    ) -> dict[str, Any]:
+        """The public key as an ``AKP`` JWK: ``{"kty": "AKP", "alg": ..., "pub": ...}``.
+
+        ``public_key`` is a :class:`PublicKey`, or a private AKP JWK (a dict with ``priv``), from
+        which the public JWK is derived and ``priv`` is dropped. ``kid`` defaults to the private
+        JWK's own.
+        """
+        if isinstance(public_key, dict):
+            keypair = StandardJwt.keypair_from_private_jwk(public_key)
+            return StandardJwt.public_jwk(keypair.public, kid or public_key.get("kid"))
         alg = _check_alg(public_key.algorithm)
         jwk: dict[str, Any] = {
             "kty": "AKP",
@@ -138,10 +156,72 @@ class StandardJwt:
             jwk["kid"] = kid
         return jwk
 
+    # -- private JWKs (the 32-byte seed): need the optional cryptography backend ----------------
+
+    @staticmethod
+    def generate_private_jwk(alg: str = "ML-DSA-65", kid: str | None = None) -> dict[str, Any]:
+        """Generate an ML-DSA key and return it as a private ``AKP`` JWK (``priv`` is the seed).
+
+        The result is a secret: store it as carefully as any private key. Needs the optional
+        ``cryptography >= 48`` backend.
+        """
+        from quantum_safe.signatures.core import Sign
+
+        keypair = Sign(_check_alg(alg), backend="pyca").generate_seed_keypair()
+        return StandardJwt.private_jwk(keypair, kid=kid)
+
+    @staticmethod
+    def private_jwk(keypair: KeyPair, kid: str | None = None) -> dict[str, Any]:
+        """The private ``AKP`` JWK of a seed key pair (see ``Sign.generate_seed_keypair``)."""
+        _check_alg(keypair.secret.algorithm)
+        seed = keypair.secret.raw_bytes
+        if len(seed) != 32:
+            raise ValueError(
+                "this key is an expanded liboqs key; a private JWK needs a 32-byte seed key "
+                "(Sign.generate_seed_keypair)"
+            )
+        jwk = StandardJwt.public_jwk(keypair.public, kid)
+        jwk["priv"] = _b64url_encode(seed)
+        return jwk
+
+    @staticmethod
+    def keypair_from_private_jwk(jwk: dict[str, Any]) -> KeyPair:
+        """Rebuild the key pair of a private ``AKP`` JWK.
+
+        Raises ``KeyParseError`` if the JWK is not an AKP private key, its ``priv`` is not a
+        canonical 32-byte seed, or its ``pub`` does not match the seed.
+        """
+        from quantum_safe.signatures.core import Sign
+
+        if not isinstance(jwk, dict):
+            raise KeyParseError("jwk", f"expected a JWK dict, got {type(jwk).__name__}")
+        if jwk.get("kty") != "AKP":
+            raise KeyParseError("jwk", f"'kty' must be 'AKP', got {jwk.get('kty')!r}")
+        alg = _check_alg(jwk.get("alg"))
+        priv = jwk.get("priv")
+        if not isinstance(priv, str):
+            raise KeyParseError("jwk", "a private JWK needs a string 'priv' (the 32-byte seed)")
+        try:
+            seed = _b64url_decode_strict(priv)
+        except ValueError as exc:
+            raise KeyParseError("jwk", f"'priv' is not canonical base64url: {exc}") from exc
+        if len(seed) != 32:
+            raise KeyParseError("jwk", f"'priv' must be a 32-byte seed, got {len(seed)} bytes")
+        keypair = Sign(alg, backend="pyca").keypair_from_seed(seed)
+        pub = jwk.get("pub")
+        if pub is not None:
+            try:
+                same = _b64url_decode(pub) == keypair.public.raw_bytes
+            except Exception:  # noqa: BLE001
+                same = False
+            if not same:
+                raise KeyParseError("jwk", "'pub' does not match the key derived from 'priv'")
+        return keypair
+
     @staticmethod
     def sign(
         claims: dict[str, Any],
-        secret_key: SecretKey,
+        secret_key: SecretKey | dict[str, Any],
         issuer: str | None = None,
         expires_in: int = 3600,
         kid: str | None = None,
@@ -151,11 +231,27 @@ class StandardJwt:
         Args:
             claims:     The claims. ``iss`` (if ``issuer``), ``iat`` and ``exp``
                         are added first and ``claims`` may override them.
-            secret_key: An ML-DSA secret key (a plain ``Sign`` key, not hybrid).
+            secret_key: An ML-DSA secret key (a plain ``Sign`` key, not hybrid), or a
+                        private ``AKP`` JWK dict (needs the ``cryptography`` backend).
             issuer:     Added as the ``iss`` claim.
             expires_in: Lifetime in seconds (default 3600); ``0`` omits ``exp``.
-            kid:        Added to the header when given.
+            kid:        Added to the header when given. For a private JWK it defaults to the
+                        JWK's own ``kid``.
+
+        Returns:
+            The compact JWS ``header.payload.signature``. The header is ``{"alg": <level>,
+            "typ": "JWT"}`` (plus ``kid``) and the signature is a raw ML-DSA signature over
+            ``header.payload`` with an empty context.
+
+        Raises:
+            UnsupportedAlgorithm: If the key is not an ML-DSA-44, -65 or -87 key.
+            KeyParseError: If a private JWK is malformed.
+            ValueError: If ``expires_in`` is negative or a bool.
         """
+        if isinstance(secret_key, dict):
+            if kid is None:
+                kid = secret_key.get("kid")
+            secret_key = StandardJwt.keypair_from_private_jwk(secret_key).secret
         alg = _check_alg(secret_key.algorithm)
         if isinstance(expires_in, bool) or expires_in < 0:
             raise ValueError(
@@ -205,6 +301,10 @@ class StandardJwt:
                           recommended for anything that should expire).
             now:          Unix time to check against (default: the clock).
 
+        Returns:
+            The verified claims dict. ``exp`` and ``nbf`` are checked with a tolerance of 30
+            seconds.
+
         Raises:
             ValueError:           the token is structurally malformed.
             UnsupportedAlgorithm: ``alg`` differs from the key's, or a ``crit``
@@ -250,9 +350,15 @@ class StandardJwt:
         now: float | None,
         alg: str,
     ) -> None:
+        """Check ``exp``, ``nbf``, ``iss`` and ``aud``; raise ``VerificationError`` on a failure.
+
+        ``exp`` and ``nbf`` must be numbers (not bools) and are compared with a 30 second
+        tolerance. The error does not say which check failed.
+        """
         current = time.time() if now is None else now
 
         def number(value: object) -> bool:
+            """True for an int or float that is not a bool."""
             return isinstance(value, (int, float)) and not isinstance(value, bool)
 
         # No detail on which check failed: callers can read the claims themselves.

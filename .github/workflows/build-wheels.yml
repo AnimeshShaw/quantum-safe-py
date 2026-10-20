@@ -82,9 +82,22 @@ jobs:
               "liboqs-python fell back to its own auto-build; vendoring didn't take effect"
           )
 
+          # The vendored liboqs and the liboqs-python that loads it must be the pair this
+          # release is built for (src/quantum_safe/_liboqs_version.py), with no import warning.
+          from quantum_safe.backends.liboqs import liboqs_versions
+
+          v = liboqs_versions()
+          assert v["paired"], f"liboqs / liboqs-python mismatch: {v}"
+          assert v["liboqs"].split(".")[:2] == v["expected"].split(".")[:2], f"unexpected liboqs: {v}"
+
           print("OQS_INSTALL_PATH used:", os.environ.get("OQS_INSTALL_PATH"))
-          print("liboqs OK —", oqs.oqs_version())
+          print("liboqs OK —", oqs.oqs_version(), "| pair:", v)
           EOF
+
+      - name: Importing the backend must not warn (fresh interpreter, warnings are errors)
+        shell: bash
+        run: |
+          python -W error -c "from quantum_safe.backends.liboqs import LiboqsKEMBackend; LiboqsKEMBackend().supported_algorithms(); print('no warning')"
 
   build-sdist:
     name: Build sdist

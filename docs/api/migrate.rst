@@ -35,6 +35,9 @@ Migration state
 .. autoclass:: quantum_safe.migrate.state.MemoryMigrationStore
    :members:
 
+.. autoclass:: quantum_safe.migrate.file_store.FileMigrationStore
+   :members: compare_and_set
+
 .. autoclass:: quantum_safe.migrate.state.MigrationStateManager
    :members:
    :show-inheritance:

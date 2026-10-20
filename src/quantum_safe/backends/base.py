@@ -96,6 +96,27 @@ class AbstractKEMBackend(ABC):
         """
         ...
 
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Generate a key pair deterministically from a seed (FIPS 203 ``d || z``, 64 bytes).
+
+        Used by constructions that define their keys as an expansion of a short seed, such as
+        X-Wing. Backends that cannot do seeded key generation inherit this default, which raises
+        ``UnsupportedAlgorithm``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-KEM-768".
+            seed: The 64-byte seed ``d || z``. The same seed always yields the same key pair.
+
+        Returns:
+            (public_key_bytes, secret_key_bytes)
+
+        Raises:
+            UnsupportedAlgorithm: always, in this default implementation.
+        """
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        raise UnsupportedAlgorithm(f"{algorithm} seeded key generation on backend '{self.name}'")
+
     @abstractmethod
     def decapsulate(self, algorithm: str, secret_key: bytes, ciphertext: bytes) -> bytes:
         """Decapsulate: recover the shared secret from a ciphertext.
@@ -147,10 +168,34 @@ class AbstractSignatureBackend(ABC):
     def keygen(self, algorithm: str) -> tuple[bytes, bytes]:
         """Generate a signing key pair.
 
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+
         Returns:
             (public_key_bytes, secret_key_bytes)
+
+        Raises:
+            UnsupportedAlgorithm: if the algorithm is not supported
+            KeyGenerationError: if keygen fails (RNG failure, etc.)
         """
         ...
+
+    def keygen_from_seed(self, algorithm: str, seed: bytes) -> tuple[bytes, bytes]:
+        """Generate a signing key pair deterministically from a seed (ML-DSA: 32 bytes).
+
+        Backends without seeded generation inherit this default, which raises
+        ``UnsupportedAlgorithm``. Returns ``(public_key_bytes, secret_key_bytes)``.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+            seed: The 32-byte seed. The same seed always yields the same key pair.
+
+        Raises:
+            UnsupportedAlgorithm: always, in this default implementation.
+        """
+        from quantum_safe.exceptions import UnsupportedAlgorithm
+
+        raise UnsupportedAlgorithm(f"{algorithm} seeded key generation on backend '{self.name}'")
 
     @abstractmethod
     def sign(
@@ -217,6 +262,18 @@ class AbstractSignatureBackend(ABC):
         empty FIPS 204 context), this passes ``context`` as the ``ctx`` input of
         ML-DSA.Sign. Used by the ``-v2`` signature format. Optional: backends
         that cannot do it raise BackendError.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+            secret_key: Signer's secret key bytes.
+            message: Message to sign, passed to ML-DSA.Sign unchanged.
+            context: FIPS 204 context string, up to 255 bytes.
+
+        Returns:
+            signature_bytes
+
+        Raises:
+            BackendError: always, in this default implementation.
         """
         from quantum_safe.exceptions import BackendError
 
@@ -234,7 +291,21 @@ class AbstractSignatureBackend(ABC):
         signature: bytes,
         context: bytes,
     ) -> bool:
-        """Verify a signature made with :meth:`sign_native_context`."""
+        """Verify a signature made with :meth:`sign_native_context`.
+
+        Args:
+            algorithm: Algorithm name, e.g. "ML-DSA-65".
+            public_key: Signer's public key bytes.
+            message: The signed message.
+            signature: Signature bytes from :meth:`sign_native_context`.
+            context: Must match the FIPS 204 context string used during signing.
+
+        Returns:
+            True if valid, False if invalid, as for :meth:`verify`.
+
+        Raises:
+            BackendError: always, in this default implementation.
+        """
         from quantum_safe.exceptions import BackendError
 
         raise BackendError(

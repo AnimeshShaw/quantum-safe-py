@@ -148,10 +148,12 @@ class LmsKeyInfo:
 
     @property
     def remaining(self) -> int:
+        """Signatures still available: ``max_signatures - used``."""
         return self.max_signatures - self.used
 
     @property
     def exhausted(self) -> bool:
+        """True when no signatures remain."""
         return self.remaining <= 0
 
 
@@ -164,12 +166,19 @@ class InMemoryLmsStateStore:
     """
 
     def __init__(self) -> None:
+        """Create a store with no recorded indices."""
         self._marks: dict[str, int] = {}
 
     def high_water_mark(self, key_id: str) -> int:
+        """Return the recorded mark for ``key_id``, or 0 if none has been recorded."""
         return self._marks.get(key_id, 0)
 
     def reserve(self, key_id: str, next_index: int) -> None:
+        """Record ``next_index`` as the new mark for ``key_id``.
+
+        Raises:
+            StatePersistenceError: if ``next_index`` is not above the current mark.
+        """
         current = self._marks.get(key_id, 0)
         if next_index <= current:
             raise StatePersistenceError(
@@ -180,6 +189,7 @@ class InMemoryLmsStateStore:
 
 
 def _require_pyhsslms() -> ModuleType:
+    """Import and return ``pyhsslms``; raise StatefulSignatureError if it is not installed."""
     try:
         import pyhsslms
     except ImportError as exc:  # pragma: no cover - depends on environment
@@ -204,6 +214,16 @@ class LmsSigner:
     """
 
     def __init__(self, key_id: str, private_key: _LmsPrivateKeyLike, store: LmsStateStore) -> None:
+        """Wrap an LMS private key and check it against the state store.
+
+        Args:
+            key_id: Identity under which the store tracks spent indices.
+            private_key: The pyhsslms private key.
+            store: Durable state store.
+
+        Raises:
+            IndexReuseError: if the key's index is below the store's high-water mark.
+        """
         self._key_id = key_id
         self._sk = private_key
         self._store = store
@@ -228,6 +248,14 @@ class LmsSigner:
                 extended afterwards, so size it for the whole deployment.
             winternitz: Winternitz parameter (1, 2, 4 or 8). Larger means smaller
                 signatures and slower signing.
+
+        Returns:
+            A signer holding the new key.
+
+        Raises:
+            ValueError: if pyhsslms has no parameter set for ``tree_height`` and ``winternitz``.
+            StatefulSignatureError: if the optional ``pyhsslms`` dependency is not installed.
+            IndexReuseError: if the store already holds a mark for ``key_id`` above 0.
         """
         pyhsslms = _require_pyhsslms()
         try:
@@ -247,12 +275,25 @@ class LmsSigner:
         The rewind check runs during construction, so a key restored from a stale
         backup raises :class:`IndexReuseError` here rather than silently signing
         at an index that has already been issued.
+
+        Args:
+            key_id: Identity under which the store tracks spent indices.
+            serialised_key: The bytes produced by :meth:`serialize`.
+            store: Durable state store.
+
+        Returns:
+            A signer holding the loaded key.
+
+        Raises:
+            IndexReuseError: if the key's index is below the store's high-water mark.
+            StatefulSignatureError: if the optional ``pyhsslms`` dependency is not installed.
         """
         pyhsslms = _require_pyhsslms()
         sk = pyhsslms.LmsPrivateKey.deserialize(serialised_key)
         return cls(key_id, sk, store)
 
     def _verify_not_rewound(self) -> None:
+        """Raise IndexReuseError if the key's index is below the store's high-water mark."""
         mark = self._store.high_water_mark(self._key_id)
         current = int(self._sk.q)
         if current < mark:
@@ -266,6 +307,7 @@ class LmsSigner:
 
     @property
     def key_info(self) -> LmsKeyInfo:
+        """Capacity and usage of the key as of now."""
         return LmsKeyInfo(
             key_id=self._key_id,
             max_signatures=int(self._sk.maxSignatures()),
@@ -273,6 +315,7 @@ class LmsSigner:
         )
 
     def public_key(self) -> bytes:
+        """The serialised LMS public key, for use with :func:`verify`."""
         return bytes(self._sk.publicKey().serialize())
 
     def serialize(self) -> bytes:
@@ -323,6 +366,18 @@ def verify(public_key: bytes, message: bytes, signature: bytes) -> bool:
     """Verify an LMS signature.
 
     Verification is stateless and carries none of the hazards above.
+
+    Args:
+        public_key: The serialised LMS public key (see :meth:`LmsSigner.public_key`).
+        message: The signed message.
+        signature: The LMS signature bytes.
+
+    Returns:
+        True if the signature is valid. False for an invalid signature or when the key or
+        signature cannot be parsed.
+
+    Raises:
+        StatefulSignatureError: if the optional ``pyhsslms`` dependency is not installed.
     """
     pyhsslms = _require_pyhsslms()
     try:

@@ -12,8 +12,8 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "quantum-safe"
 author = "Animesh"
 copyright = "2024–2026, Animesh"
-release = "0.1.0"
-version = "0.1"
+release = "1.0.0"
+version = "1.0"
 
 # ---------------------------------------------------------------------------
 # General config
@@ -21,11 +21,11 @@ version = "0.1"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",          # Google / NumPy docstrings
-    "sphinx.ext.viewcode",          # [source] links on every class/function
-    "sphinx.ext.intersphinx",       # links to Python / cryptography docs
+    "sphinx.ext.napoleon",  # Google / NumPy docstrings
+    "sphinx.ext.viewcode",  # [source] links on every class/function
+    "sphinx.ext.intersphinx",  # links to Python / cryptography docs
     "sphinx.ext.todo",
-    "sphinx_autodoc_typehints",     # renders type annotations as prose
+    "sphinx_autodoc_typehints",  # renders type annotations as prose
 ]
 
 autosummary_generate = True
@@ -35,7 +35,7 @@ autodoc_typehints_description_target = "documented"
 always_document_param_types = True
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
-napoleon_use_rtype = False          # rtype merged into Returns section
+napoleon_use_rtype = False  # rtype merged into Returns section
 napoleon_attr_annotations = True
 todo_include_todos = True
 
@@ -67,6 +67,7 @@ html_theme_options = {
     },
     "footer_icons": [],
 }
+
 
 # ---------------------------------------------------------------------------
 # Autodoc tweaks — skip private internals

@@ -43,7 +43,6 @@ What it does not defend against
   explains its own sensitivity limits; it is not a proof.
 - **Sender impersonation in envelopes.** An envelope is anonymous public-key encryption.
   Sign the payload if the sender matters.
-- **Validation requirements.** The library is not FIPS 140-3 validated (see :doc:`compliance`).
 
 Practices that matter most
 --------------------------
@@ -123,6 +122,83 @@ Details and the upgrade steps are in :doc:`upgrading`.
   interchangeable); corrected.
 - A benchmark harness defect caused a decapsulation benchmark to measure the implicit
   rejection path; corrected, with the affected published figure re-measured.
+
+Design notes
+------------
+
+Memory handling
+~~~~~~~~~~~~~~~
+
+``SecretKey`` and ``SharedSecret`` zero their memory on deletion with ``ctypes.memset`` against the
+live ``bytearray`` buffer; a Python byte loop can be removed by the optimiser, ``memset`` runs at
+the C level. Python's garbage collector still makes hard guarantees impossible, but this keeps the
+window in which secret material is visible in a heap dump short. To zero a copy right after use,
+take ``SecretKey._raw_bytearray`` (a fresh ``bytearray``) and zero it with ``ctypes.memset`` in a
+``try``/``finally``. For high-security deployments, keep keys in an HSM or a secrets manager.
+
+Constant-time behaviour
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Secret comparisons use ``hmac.compare_digest()``. Hybrid signature verification evaluates both
+sub-signatures unconditionally before combining the results, so the time does not reveal which
+component failed. The liboqs implementations are designed for constant-time operation.
+
+Two measurements back this and they answer different questions. The coefficient of variation is
+taken with the secret held fixed and shows timing stability under repetition. The fixed-versus-random
+test needs controls to be read: a random-versus-random control, a public-data calibration and a
+positive control that reports the smallest deliberate leak the harness detects. On the development
+host, encapsulation, which uses no secret, reproduces the fixed-versus-random decapsulation signal,
+so that signal on its own is a measurement artefact. See :doc:`benchmarks`. The harness screens for
+gross secret dependence; a formal check (``dudect`` or ``ct-verif`` against the compiled backend)
+is a different tool, and everything here is measured through the Python binding.
+
+Serialization
+~~~~~~~~~~~~~
+
+The ``_internal.serialization`` layer caps incoming payloads at 10 MB before parsing, which bounds
+memory use for deeply nested or padded CBOR and JSON. Key payloads with ``version < 1`` are rejected
+at once, so a version-rollback payload never reaches the key loaders.
+
+Threads and processes
+~~~~~~~~~~~~~~~~~~~~~
+
+``MigrationStateManager`` is safe across processes and hosts when its store has a
+``compare_and_set(key, expected, value) -> bool`` method (``MemoryMigrationStore`` is the in-process
+reference, ``FileMigrationStore`` works across processes on one host; ``manager.cross_process_safe``
+tells you which mode you are in): exactly one concurrent writer wins, with no external lock. With a
+plain dict it holds a per-key ``threading.Lock``, which covers the threads of one process; with
+several workers sharing a store (Gunicorn and Redis, for example) hold a distributed lock on the
+``key_id`` around ``transition()``. See :doc:`migration`.
+
+Hedged signing
+~~~~~~~~~~~~~~
+
+``HybridSign()`` defaults to the ``-v2`` format: ML-DSA hedges internally (FIPS 204's own fresh
+randomness) and there is no prefix. In the original format (``HybridSign("Ed25519", "ML-DSA-65")``,
+and ``Sign`` by default) hedged mode prepends a 32-byte random prefix before signing, which guards
+against the fault-injection attacks shown on lattice signatures in laboratory conditions. Opt out
+with ``hedged=False`` only when you need deterministic signatures.
+
+A verifier accepts only signatures made in its own hedging mode, because the prefix length is not
+covered by the signature and is therefore not read from it. Build the verifier with the signer's
+``hedged`` value and use one mode per key. The ``-v2`` format has no prefix and no hedging mode.
+
+State the context and AAD you expect
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``verify(sm, public_key, context=...)`` and ``Envelope.open(sealed, secret_key, expected_aad=...)``
+state what the verifier expects. The context and AAD inside a message come from whoever supplied
+it, so without them a signature made for one purpose verifies for another and a ciphertext sealed
+for one record opens for another. Omitting the context means "expect an empty context" and emits a
+``ContextOmittedWarning``; omitting the AAD accepts any AAD and emits an ``AadOmittedWarning``. See
+:doc:`context-and-aad`.
+
+Why hybrid by default
+~~~~~~~~~~~~~~~~~~~~~
+
+If ML-KEM is broken, X25519 still protects the data; if X25519 is broken by a quantum computer,
+ML-KEM still protects it; both would have to fail together. This is the position of NIST, CISA,
+BSI, NCSC and the TLS libraries that have added post-quantum support.
 
 Reporting a vulnerability
 -------------------------

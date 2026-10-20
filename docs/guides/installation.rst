@@ -42,16 +42,30 @@ Mac, macOS <14), liboqs-python's normal build-from-source path applies.
 
 .. note::
 
-   Tested against ``liboqs-python`` 0.10.x – 0.15.x.  The library emits a
-   version-mismatch warning at import time if the native liboqs binary version
-   differs from the Python wrapper; this is informational only.
+   Requires ``liboqs-python`` 0.16.x with liboqs 0.16.0 (the wheels bundle that
+   pair).  liboqs-python warns at import if the native liboqs differs from the
+   wrapper; use :func:`quantum_safe.backends.liboqs.liboqs_versions` to check.
 
 Verify the install:
 
 .. code-block:: bash
 
    python -c "from quantum_safe.backends import list_available_backends; print(list_available_backends())"
-   # → {'rustcrypto': False, 'liboqs': True, 'noble': False}
+   # → {'rustcrypto': False, 'liboqs': True, 'pyca': True, 'noble': False}
+
+With the ``cryptography`` backend (seed keys, no compiler)
+----------------------------------------------------------
+
+.. code-block:: bash
+
+   pip install 'quantum-safe-py[pyca]'
+
+``cryptography >= 48`` provides ML-KEM-768/1024 and ML-DSA-44/65/87 itself, so this needs **no
+compiler and no liboqs**. Its keys are *seeds* (32 bytes for ML-DSA, 64 for ML-KEM), which is what
+makes private RFC 9964 JWKs and COSE keys, seed export for quantum-safe-ts, and
+``Sign.keypair_from_seed`` possible. It does not have ML-KEM-512, SLH-DSA, BIKE or HQC (liboqs).
+With both installed, ``backend="auto"`` still prefers liboqs; ask for ``backend="pyca"`` to make seed
+keys, and a key made by either backend works with the other (told apart by length).
 
 With LMS stateful signatures (CNSA 2.0 software/firmware signing)
 --------------------------------------------------------------------

@@ -42,6 +42,14 @@ Typical usage::
 from quantum_safe.protocols.envelope import Envelope, SealedMessage
 from quantum_safe.protocols.jwt import JWTSigner, JWTVerifier
 from quantum_safe.protocols.standard_jwt import StandardJwt
+from quantum_safe.protocols.stream import (
+    StreamOpener,
+    StreamSealer,
+    open_bytes,
+    open_stream,
+    seal_bytes,
+    seal_stream,
+)
 from quantum_safe.protocols.tls import HybridTLSConfig, configure_hybrid_context
 from quantum_safe.protocols.x509 import HybridCertificateBuilder
 
@@ -51,6 +59,12 @@ __all__ = [
     "JWTSigner",
     "JWTVerifier",
     "StandardJwt",
+    "StreamSealer",
+    "StreamOpener",
+    "seal_stream",
+    "open_stream",
+    "seal_bytes",
+    "open_bytes",
     "HybridTLSConfig",
     "configure_hybrid_context",
     "HybridCertificateBuilder",

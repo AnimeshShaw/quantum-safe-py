@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The liboqs release liboqs-python builds on first import. It must equal LIBOQS_VERSION in
+# src/quantum_safe/_liboqs_version.py (tests/unit/test_liboqs_pairing.py checks that).
+env:
+  PYOQS_VERSION: "0.16.0"
+
 jobs:
   # ---------------------------------------------------------------------------
   # Unit tests — no PQC backend required (fast, runs on all Python versions)

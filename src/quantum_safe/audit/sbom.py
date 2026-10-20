@@ -38,6 +38,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from quantum_safe._version import __version__
+
 
 class PQCReadiness(str, Enum):
     """PQC readiness assessment for a software component."""
@@ -50,7 +52,17 @@ class PQCReadiness(str, Enum):
 
 @dataclass
 class ComponentAssessment:
-    """PQC readiness assessment for a single SBOM component."""
+    """PQC readiness assessment for a single SBOM component.
+
+    Attributes:
+        name: the component or package name.
+        version: the version taken from the SBOM or requirement, or ``None`` if there is none.
+        readiness: the assessed :class:`PQCReadiness`.
+        reason: why that status was assigned.
+        since_version: the version at which PQC support was added, when the knowledge base
+            records one.
+        action: the recommended action.
+    """
 
     name: str
     version: str | None
@@ -64,19 +76,19 @@ class ComponentAssessment:
 # Format: {package_name: {min_version: PQCReadiness, reason, since, action}}
 # Versions use simple string comparison — this works for well-formatted semver.
 _KNOWN_LIBRARIES: dict[str, dict[str, Any]] = {
-    # cryptography (PyCA) — PQC support added in 44.x
+    # cryptography (PyCA) — ML-KEM and ML-DSA are available from 48.0 (the [pyca] extra)
     "cryptography": {
-        "pqc_since": "44.0.0",
+        "pqc_since": "48.0.0",
         "status_before": PQCReadiness.NOT_READY,
         "status_at_or_after": PQCReadiness.PARTIAL,
-        "reason_before": "cryptography < 44.0.0 has no PQC support",
-        "reason_after": "cryptography >= 44.0.0 includes ML-KEM, ML-DSA via OpenSSL 3.x",
-        "since": "44.0.0",
-        "action_before": "Upgrade to cryptography >= 44.0.0 and add quantum-safe wrappers",
+        "reason_before": "cryptography < 48.0.0 has no ML-KEM or ML-DSA",
+        "reason_after": "cryptography >= 48.0.0 includes ML-KEM and ML-DSA",
+        "since": "48.0.0",
+        "action_before": "Upgrade to cryptography >= 48.0.0 or use quantum-safe-py with liboqs",
         "action_after": "Use quantum_safe.HybridKEM/HybridSign for hybrid mode",
     },
-    # quantum-safe (this library) — always READY
-    "quantum-safe": {
+    # quantum-safe-py (this library, formerly listed as quantum-safe) — always READY
+    "quantum-safe-py": {
         "pqc_since": "0.1.0",
         "status_before": PQCReadiness.NOT_READY,
         "status_at_or_after": PQCReadiness.READY,
@@ -164,6 +176,32 @@ _KNOWN_LIBRARIES: dict[str, dict[str, Any]] = {
 }
 
 
+def _normalize(name: str) -> str:
+    """The PEP 503 form of a package name: lower case, runs of ``-_.`` become one ``-``."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+_KNOWN_BY_NORMALIZED_NAME: dict[str, dict[str, Any]] = {
+    _normalize(_name): _info for _name, _info in _KNOWN_LIBRARIES.items()
+}
+# The library's former knowledge-base name still resolves to it.
+_KNOWN_BY_NORMALIZED_NAME.setdefault("quantum-safe", _KNOWN_LIBRARIES["quantum-safe-py"])
+
+
+def _lowest_version(specifiers: str) -> str | None:
+    """The lowest version a requirement allows: its ``==``, ``===``, ``~=``, ``>=`` or ``>`` bound.
+
+    ``specifiers`` is the text after the package name, for example ``>=1.0,<2``. An upper bound
+    (``<``, ``<=``) or ``!=`` says nothing about which version is installed and gives ``None``,
+    as does a requirement with no version. A trailing ``.*`` of an ``==`` pin is dropped.
+    """
+    for spec in specifiers.split(","):
+        found = re.match(r"^\s*(===|==|~=|>=|>)\s*(\S+)\s*$", spec)
+        if found:
+            return found.group(2).removesuffix(".*")
+    return None
+
+
 def _version_ge(v1: str, v2: str) -> bool:
     """Simple version comparison: return True if v1 >= v2.
 
@@ -174,16 +212,17 @@ def _version_ge(v1: str, v2: str) -> bool:
     def parts(v: str) -> tuple[int, ...]:
         cleaned = v.strip().lstrip("v")
         try:
-            return tuple(int(x) for x in cleaned.split(".")[:3])
+            numbers = tuple(int(x) for x in cleaned.split(".")[:3])
         except ValueError:
             return (0, 0, 0)
+        return numbers + (0,) * (3 - len(numbers))  # "48.0" is "48.0.0"
 
     return parts(v1) >= parts(v2)
 
 
 def _assess_component(name: str, version: str | None) -> ComponentAssessment:
     """Assess PQC readiness for a single component."""
-    info = _KNOWN_LIBRARIES.get(name) or _KNOWN_LIBRARIES.get(name.lower())
+    info = _KNOWN_LIBRARIES.get(name) or _KNOWN_BY_NORMALIZED_NAME.get(_normalize(name))
 
     if info is None:
         return ComponentAssessment(
@@ -305,7 +344,7 @@ class SBOMEnricher:
         meta_props.append(
             {
                 "name": "quantum-safe:enriched-by",
-                "value": "quantum-safe v0.1.0",
+                "value": f"quantum-safe v{__version__}",
             }
         )
 
@@ -335,11 +374,17 @@ class SBOMEnricher:
             pycryptodome>=3.20.0
             quantum-safe==0.1.0
 
+        Blank lines and ``#`` comment lines are skipped, and extras (``[crypto]``) and environment
+        markers (after ``;``) are removed. The version is the lowest one the line guarantees: the
+        first ``==``, ``===``, ``~=``, ``>=`` or ``>`` specifier, so for ``pkg>=1.0,<2`` it is
+        ``1.0``. An upper bound (``<``, ``<=``), ``!=`` or a line without a specifier gives no
+        version, and the component is then reported as UNKNOWN.
+
         Args:
             requirements_txt:   Contents of a requirements.txt file.
 
         Returns:
-            List of ComponentAssessment objects.
+            List of ComponentAssessment objects, one per package line, in file order.
         """
         assessments = []
         for line in requirements_txt.splitlines():
@@ -352,15 +397,11 @@ class SBOMEnricher:
             line = re.sub(r"\[.*?\]", "", line).strip()
 
             # Parse name and version
-            for sep in ("==", ">=", "<=", "~=", "!=", ">", "<"):
-                if sep in line:
-                    parts = line.split(sep, 1)
-                    name = parts[0].strip()
-                    version = parts[1].strip().split(",")[0].strip()
-                    break
+            match = re.match(r"^([A-Za-z0-9][A-Za-z0-9._-]*)\s*(.*)$", line)
+            if match is None:
+                name, version = line, None
             else:
-                name = line
-                version = None
+                name, version = match.group(1), _lowest_version(match.group(2))
 
             if name:
                 assessments.append(_assess_component(name, version))

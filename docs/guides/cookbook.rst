@@ -232,7 +232,7 @@ already did it".
    # In CI, fail hard if a service drifts below the parameter sets.
    cnsa2.enforce(kem="ML-KEM-1024", signature="ML-DSA-87")
 
-*Reminder:* this reports parameter selection only. It is not a validation.
+*Note:* this reports parameter selection: which algorithms, key sizes and hashes are in use.
 
 8. Find classical cryptography in CI
 ------------------------------------
@@ -275,11 +275,66 @@ Catch ``KeyParseError`` once around the code that parses untrusted keys. Compare
 value or by ``fingerprint()``, never by their serialised bytes (the CBOR decoder accepts
 non-minimal encodings, so two byte strings can decode to the same key).
 
+10. Keep secret keys wrapped by a KMS
+--------------------------------------
+
+A secret key on disk in clear is the weakest link. Envelope encryption fixes that with any key
+management service: ask the KMS for a fresh **data key**, encrypt the library's secret key with it
+locally, and store the KMS-wrapped data key next to the result. Only the KMS can unwrap the data
+key, and it works for any key size (a direct KMS ``Encrypt`` call has a small input limit that
+ML-DSA-87 secret keys exceed).
+
+.. code-block:: python
+
+   import os
+   from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+   from quantum_safe import HybridKEM
+   from quantum_safe.types import SecretKey
+
+   class Kms:
+       """Stands in for your KMS client; AWS KMS, GCP KMS and Vault transit offer these two calls."""
+       def __init__(self):
+           self._master = AESGCM.generate_key(bit_length=256)
+       def generate_data_key(self, context: bytes):          # -> (plaintext key, wrapped key)
+           plain, nonce = os.urandom(32), os.urandom(12)
+           return plain, nonce + AESGCM(self._master).encrypt(nonce, plain, context)
+       def decrypt(self, wrapped: bytes, context: bytes):    # -> plaintext key
+           return AESGCM(self._master).decrypt(wrapped[:12], wrapped[12:], context)
+
+   def wrap_secret_key(kms, secret: SecretKey, name: str) -> bytes:
+       context = name.encode()                                # binds the result to this key's name
+       data_key, wrapped_key = kms.generate_data_key(context)
+       nonce = os.urandom(12)
+       sealed = AESGCM(data_key).encrypt(nonce, secret.to_cbor(), context)
+       return len(wrapped_key).to_bytes(2, "big") + wrapped_key + nonce + sealed   # store this
+
+   def unwrap_secret_key(kms, stored: bytes, name: str) -> SecretKey:
+       context = name.encode()
+       n = int.from_bytes(stored[:2], "big")
+       wrapped_key, nonce, sealed = stored[2:2 + n], stored[2 + n:14 + n], stored[14 + n:]
+       data_key = kms.decrypt(wrapped_key, context)
+       return SecretKey.from_cbor(AESGCM(data_key).decrypt(nonce, sealed, context))
+
+   kms = Kms()
+   pair = HybridKEM().generate_keypair()
+   stored = wrap_secret_key(kms, pair.secret, "orders-service/recipient-key")
+   secret = unwrap_secret_key(kms, stored, "orders-service/recipient-key")   # fails for another name
+
+With a real service replace ``Kms`` by a thin adapter: in AWS KMS ``generate_data_key`` is
+``kms.generate_data_key(KeyId=..., KeySpec="AES_256", EncryptionContext={"name": name})`` (use
+``Plaintext`` and ``CiphertextBlob`` from the response) and ``decrypt`` is
+``kms.decrypt(CiphertextBlob=..., EncryptionContext={"name": name})``; the encryption context
+plays the role of the ``context`` above. The same shape works for the LMS signing key's
+``protection`` in quantum-safe-ts (the data key becomes ``{ key }``). Unwrap once at start-up,
+keep the key object for the life of the process, and do not log it. A key that must never leave
+a hardware module cannot be used through this library; keep it in the module and use the
+module's own signer.
+
 Patterns to avoid
 -----------------
 
-- **Verifying without a context.** It still works in 0.3.1 but warns, and the context in a
-  message is supplied by whoever supplied the message.
+- **Verifying without a context.** An omitted ``context`` means "expect an empty context" and
+  warns; the context in a message is supplied by whoever supplied the message.
 - **Sealing with AAD and opening without** ``expected_aad``: the ciphertext is then not
   bound to the context you meant.
 - **Using one key in two signature formats**, or in both hedging modes.
