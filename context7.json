@@ -1,7 +1,7 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "quantum-safe-py",
-  "description": "Hybrid post-quantum cryptography for Python: ML-KEM, ML-DSA, SLH-DSA, hybrid envelopes and signatures, migration tooling.",
+  "description": "Hybrid post-quantum cryptography for Python.",
   "folders": ["docs/guides", "docs/api"],
   "excludeFolders": ["node_modules", "_build"],
   "rules": [
