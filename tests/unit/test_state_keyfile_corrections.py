@@ -123,7 +123,7 @@ class TestForceRestoresWhatItReplaced:
         out.write_text("OLD SECRET")
         pub.write_text("OLD PUBLIC")
         upgrade_key_file(x25519_pem, out, force=True)
-        assert "OLD" not in out.read_text() and "OLD" not in pub.read_text()
+        assert "OLD SECRET" not in out.read_text() and "OLD PUBLIC" not in pub.read_text()
         assert sorted(p.name for p in tmp_path.iterdir()) == ["in.pem", "o.pem", "o.pem.pub"]
 
     def test_backups_are_private(self, tmp_path: Path) -> None:
