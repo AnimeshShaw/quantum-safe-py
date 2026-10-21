@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+The README has a Performance section that links the benchmarks guide and the data attached to the
+1.0.0 release, and the documentation guides no longer repeat the theme's "On this page" list. The
+full list is in ``CHANGELOG.md``.
+
 1.0.0
 -----
 

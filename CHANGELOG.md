@@ -4,6 +4,11 @@ All notable changes to quantum-safe are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- README: a Performance section with the liboqs 0.16.0 figures and links to the benchmarks guide and to the data attached to the 1.0.0 release.
+- `context7.json`: a plain one-line description for the Context7 listing.
+
 ### Fixed
 
 - Documentation: removed the per-page contents blocks that duplicated the sidebar and showed a theme error on Read the Docs; the Sphinx changelog lists 1.0.0 first; the project URLs in the package metadata point to quantum-safe-py.
